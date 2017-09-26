@@ -1,0 +1,104 @@
+//
+// tweakseq - provides an editor for and interface to various sequence alignment tools
+//
+// The MIT License (MIT)
+//
+// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
+
+#ifndef __SEQEDIT_MAINWIN_H_
+#define __SEQEDIT_MAINWIN_H_
+
+#include <QMainWindow>
+
+class QPrinter;
+class QToolBar;
+
+class MessageWin;
+class SeqEdit;
+
+class SeqEditMainWin: public QMainWindow
+{
+Q_OBJECT
+
+public:
+
+	SeqEditMainWin(QWidget *parent=0);
+	~SeqEditMainWin();
+	
+	void doAlignment();
+	
+	SeqEdit *se; 
+
+private slots:
+
+	void filePrint();
+	void fileImport();
+	void fileExportFASTA();
+	
+	void setupEditMenu();
+	void editUndo();
+	void editRedo();
+	void editCut();
+	
+	void editExclude();
+	void editRemoveExclude();
+	void editLock();
+	void editUnlock();
+	
+	void setupAlignmentMenu();
+	void alignmentGo();
+	void alignmentUndo();
+	
+	void helpHelp();
+	void helpAbout();
+	
+private:
+
+	void init();
+	
+	void createActions();
+	void createMenus();
+	void createToolBars();
+	void createStatusBar();
+	
+	void writeAlignment(int,QString);	
+	void readAlignment(int,QString);
+	void printRes( QPainter*,QChar,int,int );
+	
+	QMenu *fileMenu,*alignmentMenu,*editMenu,*helpMenu;
+	QAction  *importAction, *exportFASTAAction,*printAction, *quitAction;
+	QAction * goAction,*undoLastAction;
+	QAction * undoAction,*redoAction,*cutAction,*excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
+	QAction * helpAction,*aboutAction;
+	
+	QString seqAlignmentCommand;
+	QToolBar *seqEditTB;
+	MessageWin *mw;
+	
+	QPrinter *printer;	
+	int nAlignments;
+	
+	QString lastImportedFile;
+	
+};
+
+#endif

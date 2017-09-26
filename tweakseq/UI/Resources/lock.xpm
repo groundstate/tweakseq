@@ -1,0 +1,20 @@
+/* XPM */
+static const char * lock_xpm[] = {
+"16 13 4 1",
+" 	c #BEFBC30BBEFB",
+".	c #000000000000",
+"X	c #FFFFFFFFFFFF",
+"o	c #F7DEFFFFE79D",
+"   .....        ",
+"  .XXXXX.       ",
+"  .X...X.       ",
+"  .X. .X.       ",
+"  .X. .X.       ",
+" .........      ",
+" .ooooooo.      ",
+" .ooooooo.      ",
+" .ooooooo.      ",
+" .ooooooo.      ",
+" .ooooooo.      ",
+" .........      ",
+"                "};

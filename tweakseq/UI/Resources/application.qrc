@@ -1,0 +1,8 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+	<file>text/aboutdialog/about.html</file>
+	<file>text/aboutdialog/authors.html</file>
+	<file>text/aboutdialog/license</file>
+</qresource>
+</RCC>
+
