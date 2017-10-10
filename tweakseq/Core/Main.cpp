@@ -32,7 +32,7 @@
 
 #include "Application.h"
 #include "DebuggingInfo.h"
-#include "SeqEditMainWin.h"
+#include "Project.h"
 
 Application *app;
 
@@ -87,7 +87,8 @@ int main(int argc, char **argv){
 	
 	Application a(argc, argv);
 	QStringList args = a.arguments(); // FIXME unparsed
-	SeqEditMainWin mainWin;
-	mainWin.show();
+	
+	a.setup(); // FIXME placeholder
+	Project *p = new Project();
 	return a.exec();
 }

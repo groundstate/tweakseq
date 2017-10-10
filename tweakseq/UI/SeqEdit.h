@@ -53,6 +53,7 @@ class QDropEvent;
 
 enum alignmentFormats {FASTA,CLUSTALW};
 
+class Project;
 class Sequence;
 
 // Keeps information about an edit operation
@@ -75,7 +76,7 @@ class SeqEdit:public Q3GridView
 Q_OBJECT
 
 public:
-	SeqEdit(QWidget *parent);
+	SeqEdit(Project *,QWidget *parent);
 	~SeqEdit();
 	
 	QString getSequence(int,int);
@@ -124,7 +125,7 @@ protected:
 signals:
 
 	void alignmentChanged();
-			   
+	
 private:
 	
 	void insertCell(char c,int row,int col);
@@ -135,6 +136,8 @@ private:
 	void setAlignment(QList <Sequence *>);
 	void checkLength();
 	int  getSeqIndex(QString);
+	
+	Project *project_;
 	
 	QList <Sequence *> seq;
 	int isSelected;

@@ -64,12 +64,16 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 
+#include "MessageWin.h"
+#include "Project.h"
 #include "SeqEdit.h"
 #include "Sequence.h"
-#include "MessageWin.h"
+#include "SequenceSelection.h"
+
 
 using namespace std;
 
+#define FLAGSWIDTH 4
 #define LABELWIDTH 16
 #define NULLCHAR '\0'
 
@@ -130,12 +134,14 @@ TEditRec::~TEditRec()
 // SeqEdit - public members
 //
 
-SeqEdit::SeqEdit(QWidget *parent)
+SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	:Q3GridView(parent)
 {
 	
 	QColor bcolour;
 
+	project_=project;
+	
 	isSelected = FALSE;
 	draggingSequence = FALSE;
 	selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
@@ -270,19 +276,24 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 	// are added have to return valid values when the editor is empty
 	
 	if (!seq.isEmpty()){
-		if (col < LABELWIDTH ){ // in label field
+		if (col < FLAGSWIDTH){
+			// FIXME
+			return QChar(0);
+		}
+		else if (col >= FLAGSWIDTH && col < LABELWIDTH + FLAGSWIDTH ){ // in label field
 			s = seq.at(row)->label;
-			pChar = s[col];
-			if ((pChar.unicode() != 0) &&(col < s.length()))
+			pChar = s[col-FLAGSWIDTH];
+			// FIXME looks like random copypasta
+			if ((pChar.unicode() != 0) &&(col-FLAGSWIDTH < s.length()))
 				return QChar(pChar.unicode() & maskFlags);
 			else
 				return QChar(0); // don't want to un/mask NULLs
 		}
 		else{ // in sequence field
 			s=seq.at(row)->residues;
-			pChar= s[col-LABELWIDTH];
+			pChar= s[col-(LABELWIDTH+FLAGSWIDTH)];
 			if (pChar.unicode() != 0){
-				if (col < LABELWIDTH + s.length())
+				if (col < LABELWIDTH + FLAGSWIDTH + s.length())
 					return QChar(pChar.unicode() & maskFlags);
 				else
 					return QChar(0);
@@ -309,7 +320,7 @@ void SeqEdit::addSequence( QString l,QString s,QString c )
 	
 	rowNum = numRows();
 	setNumRows(rowNum+1);
-	rowLength = LABELWIDTH + strlen(s);
+	rowLength = FLAGSWIDTH + LABELWIDTH + strlen(s);
 	
 	qDebug() << trace.header() << "SeqEdit::addSequence() row length=" << rowLength << " numCols=" << numCols();
 	// numCols() is initialized to zero so the following will
@@ -321,11 +332,14 @@ void SeqEdit::addSequence( QString l,QString s,QString c )
 	// Now we update the new cells
 	// repainting only this line
 	
-	for (unsigned int i=0;i<LABELWIDTH;i++)
+	for (unsigned int i=0;i<FLAGSWIDTH;i++)
 		updateCell(rowNum,i);
+	
+	for (unsigned int i=0;i<LABELWIDTH;i++)
+		updateCell(rowNum,i+FLAGSWIDTH);
 		
 	for (unsigned int i=0;i<strlen(s);i++)
-		updateCell(rowNum,i+LABELWIDTH);
+		updateCell(rowNum,i+LABELWIDTH+FLAGSWIDTH);
 		
 	update();
 	
@@ -404,7 +418,7 @@ void SeqEdit::newAlignment(QList <Sequence *> s)
 	for (int i=0;i<s.count();i++)
 	{
 		seq.append(new Sequence(s.at(i)->label,s.at(i)->residues));
-		int rowLength = LABELWIDTH + s.at(i)->residues.length();
+		int rowLength = LABELWIDTH+FLAGSWIDTH+ s.at(i)->residues.length();
 		if (numCols()<rowLength) setNumCols(rowLength);
 	}	
 	update();
@@ -466,7 +480,7 @@ void SeqEdit::undoEdit()
 				firstRow=stopRow;
 				if (startRow<stopRow) firstRow=startRow;
 				for (row=firstRow;row<seq.count();row++)
-					for (col=0;col<seq.at(row)->residues.length()+LABELWIDTH;col++)
+					for (col=0;col<seq.at(row)->residues.length()+LABELWIDTH+FLAGSWIDTH;col++)
 						updateCell(row,col); 
     		break;
 			case Edit_Alignment:
@@ -609,11 +623,11 @@ void SeqEdit::setCellMark(int row,int col,int on)
 	qDebug() << trace.header() << "SeqEdit::setCellMark() row=" << row << " col=" << col << " on=" << on;
 	
 	if (on)
-		seq.at(row)->residues[col-LABELWIDTH] = 
-			seq.at(row)->residues[col-LABELWIDTH].unicode() | EXCLUDE_CELL;
+		seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)] = 
+			seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)].unicode() | EXCLUDE_CELL;
 	else
-		seq.at(row)->residues[col-LABELWIDTH] = 
-			seq.at(row)->residues[col-LABELWIDTH].unicode() & (~EXCLUDE_CELL);
+		seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)] = 
+			seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)].unicode() & (~EXCLUDE_CELL);
 }
 
 void SeqEdit::lockSelection()
@@ -748,7 +762,11 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	
 	//  Draw cell content (text)
 	
-	if (col < LABELWIDTH){ 
+	Sequence *currSeq = seq.at(row);
+	if (project_->sequenceSelection->selected(currSeq)){
+		p->fillRect(0,0,w,h,QColor(128,128,128));
+	}
+	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH){ 
 		// Set colour of text
 		txtColor.setRgb(255,255,255);
 	}
@@ -829,10 +847,39 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 		return;
 	}
 	
+	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH))
+	{
+		Sequence *selSeq = seq.at(clickedRow);
+		qDebug() << trace.header() << "Selected " << selSeq->label;
+		// The usual logic:
+		// If no key pressed then clear the selection
+		
+		switch (e->modifiers())
+		{
+			case Qt::NoModifier:
+				project_->sequenceSelection->set(selSeq);
+				break;
+			case Qt::ShiftModifier:
+				if (project_->sequenceSelection->selected(selSeq))
+					project_->sequenceSelection->toggle(selSeq);
+				else{
+					project_->sequenceSelection->set(selSeq);
+				}
+				break;
+			case Qt::ControlModifier:
+				project_->sequenceSelection->toggle(selSeq);
+				break;
+			default:
+				break;
+		}
+		this->viewport()->repaint();
+		return;
+	}
+	
 	// If we are in normal mode and we have clicked inside the sequence
 	// label field then start a drag
 	
-	if ((clickedCol < LABELWIDTH) && (clickedCol >= 0) && !lockModeOn){
+	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH) && !lockModeOn){
 		// Get  the label
 		draggedRowNum=clickedRow;
 		QString l = (seq.at(clickedRow)->label).stripWhiteSpace();
@@ -930,13 +977,13 @@ void SeqEdit::mouseMoveEvent( QMouseEvent* e ){
 		clickedCol=columnAt( clickedPos.x() + contentsX());
 		
 		// Must be moving the highlight box around in the sequence field
-		if (clickedCol < LABELWIDTH && clickedCol >= 0)
-			clickedCol = LABELWIDTH;
+		if (clickedCol < LABELWIDTH+FLAGSWIDTH && clickedCol >= FLAGSWIDTH)
+			clickedCol = LABELWIDTH+FLAGSWIDTH;
 		else if (clickedCol < 0){
 			if (clickedPos.x() >= 0)
 				clickedCol = numCols() -1;
 			else
-				clickedCol = LABELWIDTH;
+				clickedCol = LABELWIDTH+FLAGSWIDTH;
 		}
 		
 		if (clickedRow < 0){
@@ -1092,28 +1139,28 @@ void SeqEdit::insertCell(char c,int row,int col){
 	// TO DO - not actually using this function ...
 	// Can only insert into a sequence so ..
 	
-	seq.at(row)->residues.insert(col-LABELWIDTH+1,c);
+	seq.at(row)->residues.insert(col-LABELWIDTH-FLAGSWIDTH+1,c);
 	update();	
 }
 
 void SeqEdit::insertCells(QString s,int row,int col){
 	QString t;
 	
-	(seq.at(row)->residues).insert(col-LABELWIDTH+1,s); // post insertion
+	(seq.at(row)->residues).insert(col-LABELWIDTH-FLAGSWIDTH+1,s); // post insertion
 	update();
 }
 
 void SeqEdit::deleteCells(int row,int start,int stop){
 	
 
-	(seq.at(row)->residues).remove(start-LABELWIDTH,stop-start+1);
+	(seq.at(row)->residues).remove(start-(LABELWIDTH+FLAGSWIDTH),stop-start+1);
 	update();
 }
 
 void SeqEdit::lockCell(int row,int col){
-	if (col>=LABELWIDTH)
-		seq.at(row)->residues[col-LABELWIDTH] = 
-			seq.at(row)->residues[col-LABELWIDTH].unicode() ^ LOCK_CELL;
+	if (col>=LABELWIDTH+FLAGSWIDTH)
+		seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)] = 
+			seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)].unicode() ^ LOCK_CELL;
 	
 }
 
@@ -1142,7 +1189,7 @@ void SeqEdit::checkLength(){
 		for (i=0;i<seq.count();i++)
 			if (seq.at(i)->residues.length() > maxLength)
 				maxLength = seq.at(i)->residues.length();
-		maxLength+=LABELWIDTH; 
+		maxLength+=LABELWIDTH+FLAGSWIDTH; 
 	}
 	setNumCols(maxLength);
 	

@@ -10,17 +10,23 @@ HEADERS       =  include/AboutDialog.h \
 								 include/DebuggingInfo.h \
 								 include/FASTAFile.h \
 								 include/MessageWin.h \
+								 include/Project.h \
 								 include/SeqEdit.h \
 								 include/SeqEditMainWin.h \
 								 include/Sequence.h \
-								 include/SequenceFile.h 
+								 include/SequenceFile.h \
+								 include/SequenceGroup.h \
+								 include/SequenceSelection.h
 								 
 SOURCES				 =  Core/Application.cpp \
 									Core/ClustalFile.cpp \
 									Core/FASTAFile.cpp \
 									Core/Main.cpp \
+									Core/Project.cpp \
 									Core/Sequence.cpp \
-									Core/SequenceFile.cpp
+									Core/SequenceFile.cpp\
+									Core/SequenceGroup.cpp\
+									Core/SequenceSelection.cpp
 									
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/MessageWin.cpp \

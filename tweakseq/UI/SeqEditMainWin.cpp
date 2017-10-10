@@ -38,6 +38,7 @@
 #include <Q3PaintDeviceMetrics> // FIXME
 
 #include <QFile>
+#include <QFileDialog>
 #include <QTextStream>
 #include <QMenuBar>
 #include <QPixmap>
@@ -54,9 +55,11 @@
 #include "ClustalFile.h"
 #include "FASTAFile.h"
 #include "MessageWin.h"
+#include "Project.h"
 #include "SeqEdit.h"
 #include "SeqEditMainWin.h"
 #include "Sequence.h"
+#include "SequenceSelection.h"
 
 #include "Resources/lock.xpm"
 #include "Resources/seqedit.xpm"
@@ -72,12 +75,14 @@ const char *lockText = "Click this button to add and edit a new"
 // SeqEditMainWin - public members
 // 
 
-SeqEditMainWin::SeqEditMainWin(QWidget *parent)
-	:QMainWindow(parent)
+SeqEditMainWin::SeqEditMainWin(Project *project)
+	:QMainWindow()
 {
 	setWindowTitle("Sequence Editor");
 	setGeometry(0,0,640,400);
 	setWindowIcon(QIcon(seqedit_xpm));
+	
+	project_=project;
 	
 	init();
 	
@@ -94,15 +99,13 @@ SeqEditMainWin::SeqEditMainWin(QWidget *parent)
 	
 	QSplitter *split = new QSplitter(Qt::Vertical,this,"sew_split");
 	
-	se = new SeqEdit(split);
+	se = new SeqEdit(project_,split);
 	
 	mw = new MessageWin(split);
-	mw->setMinimumHeight(100);
 	
 	setCentralWidget(split);
 		
-	
-	
+
 	printer = new QPrinter();
 	printer->setFullPage(TRUE);
 	
@@ -123,10 +126,28 @@ void SeqEditMainWin::doAlignment(){
 
 // File menu slots
 
+void SeqEditMainWin::fileNewProject()
+{
+}
+
+void SeqEditMainWin::fileSaveProject()
+{
+}
+
+void SeqEditMainWin::fileSaveProjectAs()
+{
+}
+	
 void SeqEditMainWin::fileImport(){
+	
+	//QString fname = QFileDialog::getOpenFileName(this,
+  //   tr("Open Sequence"), "./", tr("Sequence Files (*.fasta *.aln *.clustal)"));
+	//if (fname.isNull()) return;
+	
 	//ClustalFile cf("/home/michael/src/da/src/alignmentin.aln");
 	// ClustalFile cf("/home/michael/src/seqme/seqme/test/Bcl2l15_12_10.clustal");
 	QString fname = "/home/michael/src/seqme/seqme/test/Bcl2l15_12_10.fasta";
+	
 	FASTAFile cf(fname);
 	QStringList seqnames,seqs,comments;
 	if (cf.read(seqnames,seqs,comments)){
@@ -142,7 +163,7 @@ void SeqEditMainWin::fileImport(){
 void SeqEditMainWin::fileExportFASTA(){
 	
 	FASTAFile cf("/home/michael/src/seqme/seqme/test/out.fasta");
-	cf.write();
+	//cf.write();
 }
 
 void SeqEditMainWin::filePrint(){
@@ -386,6 +407,14 @@ void SeqEditMainWin::editCut()
 	se->cutSelection();
 }
 
+void SeqEditMainWin::editGroupSequences()
+{
+}
+
+void SeqEditMainWin::editUngroupSequences()
+{
+}
+
 void SeqEditMainWin::editExclude(){
 	se->excludeSelection();
 }
@@ -483,6 +512,16 @@ void SeqEditMainWin::helpAbout(){
 	app->showAboutDialog(this);
 }
 
+void SeqEditMainWin::sequenceSelectionChanged()
+{
+	cutAction->setEnabled(!(project_->sequenceSelection->empty()));
+	groupSequencesAction->setEnabled(!(project_->sequenceSelection->empty()));
+}
+
+void SeqEditMainWin::residueSelectionChanged()
+{
+}
+	
 //
 // SeqEditMainWin - private members
 // 
@@ -497,16 +536,32 @@ void SeqEditMainWin::init()
 void SeqEditMainWin::createActions()
 {
 	// File actions
-	importAction = new QAction( tr("&Import"), this);
-	importAction->setStatusTip(tr("Import sequence file "));
+	
+	newProjectAction = new QAction( tr("&New project"), this);
+	newProjectAction->setStatusTip(tr("Open a new project"));
+	addAction(newProjectAction);
+	connect(newProjectAction, SIGNAL(triggered()), this, SLOT(fileNewProject()));
+	newProjectAction->setEnabled(false); // FIXME disabled for now
+	
+	saveProjectAction = new QAction( tr("&Save project"), this);
+	saveProjectAction->setStatusTip(tr("Save the project"));
+	addAction(saveProjectAction);
+	connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(fileSaveProject()));
+	
+	saveProjectAsAction = new QAction( tr("Save project as"), this);
+	saveProjectAsAction->setStatusTip(tr("Save the project under a new name"));
+	addAction(saveProjectAsAction);
+	connect(saveProjectAsAction, SIGNAL(triggered()), this, SLOT(fileSaveProjectAs()));
+	
+	importAction = new QAction( tr("&Import sequences"), this);
+	importAction->setStatusTip(tr("Import a sequence file"));
 	addAction(importAction);
 	connect(importAction, SIGNAL(triggered()), this, SLOT(fileImport()));
 	
-	exportFASTAAction = new QAction( tr("&Export FASTA"), this);
-	exportFASTAAction->setStatusTip(tr("Export sequences in FASTA format"));
+	exportFASTAAction = new QAction( tr("&Export as FASTA"), this);
+	exportFASTAAction->setStatusTip(tr("Export all project sequences in FASTA format"));
 	addAction(exportFASTAAction);
 	connect(exportFASTAAction, SIGNAL(triggered()), this, SLOT(fileExportFASTA()));
-	
 	
 	printAction = new QAction( tr("&Print"), this);
 	printAction->setStatusTip(tr("Print current "));
@@ -534,13 +589,6 @@ void SeqEditMainWin::createActions()
 	connect(redoAction, SIGNAL(triggered()), this, SLOT(editRedo()));
 	redoAction->setEnabled(false);
 	
-	// Alignment actions
-	goAction = new QAction( tr("&Go"), this);
-	goAction->setStatusTip(tr("Run alignment"));
-	addAction(goAction);
-	connect(goAction, SIGNAL(triggered()), this, SLOT(alignmentGo()));
-	goAction->setEnabled(false);
-	
 	undoLastAction = new QAction( tr("Undo &Last"), this);
 	undoLastAction->setStatusTip(tr("Undo last alignment"));
 	addAction(undoLastAction);
@@ -551,6 +599,19 @@ void SeqEditMainWin::createActions()
 	cutAction->setStatusTip(tr("Cut"));
 	addAction(cutAction);
 	connect(cutAction, SIGNAL(triggered()), this, SLOT(editCut()));
+	cutAction->setEnabled(false);
+	
+	groupSequencesAction = new QAction( tr("Group sequences"), this);
+	groupSequencesAction->setStatusTip(tr("Group the selected sequences"));
+	addAction(groupSequencesAction);
+	connect(groupSequencesAction, SIGNAL(triggered()), this, SLOT(editGroupSequences()));
+	groupSequencesAction->setEnabled(false);
+	
+	ungroupSequencesAction = new QAction( tr("Ungroup sequences"), this);
+	ungroupSequencesAction->setStatusTip(tr("Ungroup the selected sequences"));
+	addAction(ungroupSequencesAction);
+	connect(ungroupSequencesAction, SIGNAL(triggered()), this, SLOT(editUngroupSequences()));
+	ungroupSequencesAction->setEnabled(false);
 	
 	excludeAction = new QAction( tr("Exclude residues"), this);
 	excludeAction->setStatusTip(tr("Exclude residues"));
@@ -573,6 +634,13 @@ void SeqEditMainWin::createActions()
 	addAction(unlockAction);
 	connect(unlockAction, SIGNAL(triggered()), this, SLOT(editUnlock()));
 	
+	// Alignment actions
+	goAction = new QAction( tr("&Go"), this);
+	goAction->setStatusTip(tr("Run alignment"));
+	addAction(goAction);
+	connect(goAction, SIGNAL(triggered()), this, SLOT(alignmentGo()));
+	goAction->setEnabled(false);
+	
 	// Help actions
 	helpAction = new QAction( tr("&Help"), this);
 	helpAction->setStatusTip(tr("Help"));
@@ -588,7 +656,12 @@ void SeqEditMainWin::createActions()
 void SeqEditMainWin::createMenus()
 {
 	fileMenu = menuBar()->addMenu(tr("&File"));
+	fileMenu->addAction(newProjectAction);
+	fileMenu->addAction(saveProjectAction);
+	fileMenu->addAction(saveProjectAsAction);
+	fileMenu->addSeparator();
 	fileMenu->addAction(importAction);
+	fileMenu->addSeparator();
 	fileMenu->addAction(exportFASTAAction);
 	fileMenu->addSeparator();
 	fileMenu->addAction(printAction);
@@ -597,14 +670,22 @@ void SeqEditMainWin::createMenus()
 	
 	editMenu = menuBar()->addMenu(tr("&Edit"));
 	connect(editMenu,SIGNAL(aboutToShow()),this,SLOT(setupEditMenu()));
+	
 	editMenu->addAction(undoAction);
 	editMenu->addAction(redoAction);
 	editMenu->addSeparator();
+	
 	editMenu->addAction(cutAction);
 	editMenu->addSeparator();
+	
+	editMenu->addAction(groupSequencesAction);
+	editMenu->addAction(ungroupSequencesAction);
+	editMenu->addSeparator();
+	
 	editMenu->addAction(excludeAction);
 	editMenu->addAction(removeExcludeAction);
 	editMenu->addSeparator();
+	
 	editMenu->addAction(lockAction);
 	editMenu->addAction(unlockAction);
 	

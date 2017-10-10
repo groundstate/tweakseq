@@ -25,51 +25,54 @@
 //
 
 
-#ifndef __APPLICATION_H_
-#define __APPLICATION_H_
+#ifndef __PROJECT_H_
+#define __PROJECT_H_
 
-#include <QApplication>
-#include <QStringList>
-//#include "Settings.h"
+#include <QDir>
+#include <QObject>
+#include <QString>
 
-class AboutDialog;
+class SequenceSelection;
+class SeqEditMainWin;
 
-class Application : public QApplication
+class Project:public QObject
 {
 	Q_OBJECT
 	
 	public:
-	
-		Application(int &argc, char **argv);
 		
-		void setup();
+		Project();
+		Project(QString &);
 		
-		void showAboutDialog(QWidget *);
-		void showHelp(const char *);
-	
-		//Settings defaultSettings;
+		~Project();
 		
-		QString ClustalWPath();
+		SequenceSelection * sequenceSelection;
 		
-		QStringList previousProjects;
+		QString name(){return name_;}
+		void setName(QString &);
 		
 	public slots:
 	
-		void saveDefaultSettings();
-		
-	private slots:
+		void newProject();
+		void openProject();
+		void save();
+		void read(QString &);
 	
-		void helpClosed();
-		void cleanup();
+		void closeIt();
+		
+		void createMainWindow();
+		void mainWindowClosed();
 		
 	private:
 		
 		void init();
-		QString appDirPath_;
-	
-		AboutDialog *aboutDlg;
+		
+		// Widgets we keep track of
+		SeqEditMainWin *mainWindow_;
+		
+		QString fname_;
+		QString name_;
+		QDir path_;
 };
-
-extern Application *app;
 
 #endif

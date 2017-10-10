@@ -82,6 +82,7 @@ bool FASTAFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comme
 				if (firstChar == ';' || firstChar == '>'){
 					parseState = READING_COMMENT;
 					comments.append(s);
+					parseComment(s,l);
 					seqnames.append(l);
 					seqcnt++;
 				}

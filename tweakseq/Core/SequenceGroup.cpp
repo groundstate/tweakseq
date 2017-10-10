@@ -25,51 +25,37 @@
 //
 
 
-#ifndef __APPLICATION_H_
-#define __APPLICATION_H_
+#include "Sequence.h"
+#include "SequenceGroup.h"
 
-#include <QApplication>
-#include <QStringList>
-//#include "Settings.h"
-
-class AboutDialog;
-
-class Application : public QApplication
+SequenceGroup::SequenceGroup()
 {
-	Q_OBJECT
-	
-	public:
-	
-		Application(int &argc, char **argv);
-		
-		void setup();
-		
-		void showAboutDialog(QWidget *);
-		void showHelp(const char *);
-	
-		//Settings defaultSettings;
-		
-		QString ClustalWPath();
-		
-		QStringList previousProjects;
-		
-	public slots:
-	
-		void saveDefaultSettings();
-		
-	private slots:
-	
-		void helpClosed();
-		void cleanup();
-		
-	private:
-		
-		void init();
-		QString appDirPath_;
-	
-		AboutDialog *aboutDlg;
-};
+	locked_=false;
+}
 
-extern Application *app;
+SequenceGroup::~SequenceGroup()
+{
+}
 
-#endif
+void SequenceGroup::addSequence(Sequence *s)
+{
+	if (seqs_.contains(s))
+		return;
+	seqs_.append(s);
+}
+
+void SequenceGroup::removeSequence(Sequence *s)
+{
+	if (!(seqs_.contains(s)))
+		return;
+	seqs_.removeAll(s);
+}
+
+bool SequenceGroup::contains(Sequence *s)
+{
+		return seqs_.contains(s);
+}
+
+
+		
+	

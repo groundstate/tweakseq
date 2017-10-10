@@ -24,52 +24,31 @@
 // THE SOFTWARE.
 //
 
+#ifndef __SEQUENCE_GROUP_H_
+#define __SEQUENCE_GROUP_H_
 
-#ifndef __APPLICATION_H_
-#define __APPLICATION_H_
+#include <QList>
 
-#include <QApplication>
-#include <QStringList>
-//#include "Settings.h"
+class Sequence;
 
-class AboutDialog;
-
-class Application : public QApplication
+class SequenceGroup
 {
-	Q_OBJECT
-	
 	public:
-	
-		Application(int &argc, char **argv);
 		
-		void setup();
+		SequenceGroup();
+		~SequenceGroup();
 		
-		void showAboutDialog(QWidget *);
-		void showHelp(const char *);
-	
-		//Settings defaultSettings;
+		void addSequence(Sequence *);
+		void removeSequence(Sequence *);
+		bool contains(Sequence *);
 		
-		QString ClustalWPath();
-		
-		QStringList previousProjects;
-		
-	public slots:
-	
-		void saveDefaultSettings();
-		
-	private slots:
-	
-		void helpClosed();
-		void cleanup();
+		bool locked(){return locked_;}
 		
 	private:
 		
-		void init();
-		QString appDirPath_;
-	
-		AboutDialog *aboutDlg;
+		bool locked_;
+		QList<Sequence *> seqs_;
+		
 };
-
-extern Application *app;
 
 #endif

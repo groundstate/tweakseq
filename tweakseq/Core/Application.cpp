@@ -41,8 +41,13 @@ Application::Application(int &argc, char **argv):QApplication(argc,argv)
 	previousProjects.append("/home/mjw/da/src/untitled.da");
 	previousProjects.append("/home/mjw/da/src/test.da");
 	
-	connect(this,SIGNAL(lastWindowClosed()),this,SLOT(quit()));
+	connect(this,SIGNAL(lastWindowClosed()),this,SLOT(quit())); // FIXME mainwindows are parent to project so this may not work
 	connect(this,SIGNAL(aboutToQuit()),this,SLOT(cleanup()));
+}
+
+void Application::setup()
+{
+	// FIXME this does first time setup of the application
 }
 
 void Application::saveDefaultSettings()
@@ -101,12 +106,12 @@ void Application::init()
 	
 	// create a directory for the app if it doesn't exist etc
 	QString path = QDir::home().absolutePath();
-	appDirPath_ = path + "/.da";
+	appDirPath_ = path + "/.tweakseq";
 	QDir appDir(appDirPath_);
 	if (!(appDir.exists()))
 	{
 		appDir.setPath(path);
-		appDir.mkdir(".da");
+		appDir.mkdir(".tweakseq");
 	}
 	
 	// load default settings 

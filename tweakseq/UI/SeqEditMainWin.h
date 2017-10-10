@@ -33,6 +33,7 @@ class QPrinter;
 class QToolBar;
 
 class MessageWin;
+class Project;
 class SeqEdit;
 
 class SeqEditMainWin: public QMainWindow
@@ -41,7 +42,7 @@ Q_OBJECT
 
 public:
 
-	SeqEditMainWin(QWidget *parent=0);
+	SeqEditMainWin(Project *);
 	~SeqEditMainWin();
 	
 	void doAlignment();
@@ -51,6 +52,9 @@ public:
 private slots:
 
 	void filePrint();
+	void fileNewProject();
+	void fileSaveProject();
+	void fileSaveProjectAs();
 	void fileImport();
 	void fileExportFASTA();
 	
@@ -58,6 +62,9 @@ private slots:
 	void editUndo();
 	void editRedo();
 	void editCut();
+	
+	void editGroupSequences();
+	void editUngroupSequences();
 	
 	void editExclude();
 	void editRemoveExclude();
@@ -70,6 +77,9 @@ private slots:
 	
 	void helpHelp();
 	void helpAbout();
+	
+	void sequenceSelectionChanged();
+	void residueSelectionChanged();
 	
 private:
 
@@ -84,10 +94,12 @@ private:
 	void readAlignment(int,QString);
 	void printRes( QPainter*,QChar,int,int );
 	
-	QMenu *fileMenu,*alignmentMenu,*editMenu,*helpMenu;
+	QMenu    *fileMenu,*alignmentMenu,*editMenu,*helpMenu;
+	QAction  *newProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*printAction, *quitAction;
 	QAction * goAction,*undoLastAction;
 	QAction * undoAction,*redoAction,*cutAction,*excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
+	QAction * groupSequencesAction,*ungroupSequencesAction;
 	QAction * helpAction,*aboutAction;
 	
 	QString seqAlignmentCommand;
@@ -98,6 +110,8 @@ private:
 	int nAlignments;
 	
 	QString lastImportedFile;
+	
+	Project *project_;
 	
 };
 

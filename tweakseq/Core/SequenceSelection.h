@@ -25,51 +25,35 @@
 //
 
 
-#ifndef __APPLICATION_H_
-#define __APPLICATION_H_
+#ifndef __SEQUENCE_SELECTION_H_
+#define __SEQUENCE_SELECTION_H_
 
-#include <QApplication>
-#include <QStringList>
-//#include "Settings.h"
+#include <QObject>
 
-class AboutDialog;
+class Sequence;
 
-class Application : public QApplication
+class SequenceSelection:public QObject
 {
 	Q_OBJECT
 	
 	public:
+		SequenceSelection();
+		~SequenceSelection();
 	
-		Application(int &argc, char **argv);
-		
-		void setup();
-		
-		void showAboutDialog(QWidget *);
-		void showHelp(const char *);
+		void set(Sequence *);
+		void toggle(Sequence *);
+		void clear();
+		bool selected(Sequence *);
 	
-		//Settings defaultSettings;
+		bool empty(){return sel_.size() == 0;}
 		
-		QString ClustalWPath();
+	signals:
 		
-		QStringList previousProjects;
-		
-	public slots:
-	
-		void saveDefaultSettings();
-		
-	private slots:
-	
-		void helpClosed();
-		void cleanup();
+		void changed();
 		
 	private:
 		
-		void init();
-		QString appDirPath_;
-	
-		AboutDialog *aboutDlg;
+		QList<Sequence *> sel_;
 };
-
-extern Application *app;
 
 #endif

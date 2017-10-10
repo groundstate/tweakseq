@@ -25,51 +25,47 @@
 //
 
 
-#ifndef __APPLICATION_H_
-#define __APPLICATION_H_
+#include "SequenceSelection.h"
 
-#include <QApplication>
-#include <QStringList>
-//#include "Settings.h"
+//
+// 	Public members
+//
 
-class AboutDialog;
-
-class Application : public QApplication
+SequenceSelection::SequenceSelection()
 {
-	Q_OBJECT
-	
-	public:
-	
-		Application(int &argc, char **argv);
-		
-		void setup();
-		
-		void showAboutDialog(QWidget *);
-		void showHelp(const char *);
-	
-		//Settings defaultSettings;
-		
-		QString ClustalWPath();
-		
-		QStringList previousProjects;
-		
-	public slots:
-	
-		void saveDefaultSettings();
-		
-	private slots:
-	
-		void helpClosed();
-		void cleanup();
-		
-	private:
-		
-		void init();
-		QString appDirPath_;
-	
-		AboutDialog *aboutDlg;
-};
+}
 
-extern Application *app;
+SequenceSelection::~SequenceSelection()
+{
+}
 
-#endif
+void SequenceSelection::set(Sequence *s)
+{
+	sel_.clear();
+	sel_.append(s);
+	emit changed();
+}
+
+void SequenceSelection::toggle(Sequence *s)
+{
+	// If it's there, remove it
+	if (sel_.contains(s)){
+		sel_.removeOne(s);
+	}
+	// else add it
+	else
+		sel_.append(s);
+	emit changed();
+}
+
+void SequenceSelection::clear()
+{
+	sel_.clear();
+	emit changed();
+}
+
+bool SequenceSelection::selected(Sequence *s)
+{
+	return sel_.contains(s);
+}
+	
