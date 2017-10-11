@@ -29,9 +29,21 @@
 #define __PROJECT_H_
 
 #include <QDir>
+#include <QList>
 #include <QObject>
+#include <QStack>
 #include <QString>
 
+#define KEEP_FLAGS 0XFFFF // TO DO change all this to allow higher order bits
+#define REMOVE_FLAGS	0X007F	
+
+#define EXCLUDE_CELL 0x0080
+#define LOCK_CELL	0x0100
+
+enum alignmentFormats {FASTA,CLUSTALW};
+
+class Operation;
+class Sequence;
 class SequenceSelection;
 class SeqEditMainWin;
 
@@ -45,11 +57,41 @@ class Project:public QObject
 		Project(QString &);
 		
 		~Project();
-		
-		SequenceSelection * sequenceSelection;
-		
+	
 		QString name(){return name_;}
 		void setName(QString &);
+		
+		QList<Sequence *>  sequences;
+		SequenceSelection *sequenceSelection;
+		
+		int numSequences(){return sequences.size();}
+		
+		QString getSequence(int,int);
+		QString getSequence(QString);
+		QString getLabelAt(int);
+	
+		void clearSequences();
+		void addSequence(QString ,QString,QString );
+		int  deleteSequence(QString);
+		void insertSequence(QString,QString,int);
+		int  replaceSequence(QString,QString,QString);
+		void moveSequence(int,int);
+		void changeResidues(QString ,int pos);
+		void newAlignment(QList <Sequence *>);
+		void setAlignment(QList <Sequence *> );
+		
+		bool groupSelectedSequences();
+		
+		void logOperation(Operation *);
+		void undo();
+		void redo();
+		void undoLastAlignment();
+		
+	signals:
+		
+		void sequencesChanged(int,int);
+		void sequenceAdded(Sequence *);
+		void sequencesRemoved(int,int);
 		
 	public slots:
 	
@@ -57,7 +99,7 @@ class Project:public QObject
 		void openProject();
 		void save();
 		void read(QString &);
-	
+		
 		void closeIt();
 		
 		void createMainWindow();
@@ -66,13 +108,18 @@ class Project:public QObject
 	private:
 		
 		void init();
+		int  getSeqIndex(QString);
 		
 		// Widgets we keep track of
 		SeqEditMainWin *mainWindow_;
 		
-		QString fname_;
+		bool saved_;
 		QString name_;
 		QDir path_;
+		
+		int nAlignments;
+		
+		QStack<Operation *> undoStack;
 };
 
 #endif

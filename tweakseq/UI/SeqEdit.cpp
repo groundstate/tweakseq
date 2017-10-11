@@ -65,6 +65,7 @@
 #include <QMouseEvent>
 
 #include "MessageWin.h"
+#include "Operation.h"
 #include "Project.h"
 #include "SeqEdit.h"
 #include "Sequence.h"
@@ -89,40 +90,6 @@ static int find_smallest_int(int a,int b,int c);
 static int find_largest_int(int a,int b,int c);
 
 
-// -----------------------------------------------------------------------------
-//
-// TEditRec - private class  for the undo stack
-//
-// -----------------------------------------------------------------------------
-
-TEditRec::TEditRec(int eMode,int startR,int stopR,
-	int startC,int stopC,Q3StrList t){
-	
-	
-	editMode = eMode;
-	startRow = startR;
-	stopRow = stopR;
-	startCol = startC;
-	stopCol= stopC;
-	editText = t;
-	// seq.setAutoDelete(TRUE); // FIXME need to manage memory cleanup
-}
-
-TEditRec::TEditRec(int eMode,QList <Sequence *> s)
-{
-	// Constructor to store contents of the sequence editor
-	
-	editMode=eMode;
-	for ( int i=0;i<s.count();i++)
-		seq.append(new Sequence(s.at(i)->label,s.at(i)->residues));
-	
-}
-
-TEditRec::~TEditRec()
-{
-	//editText.~QStrList(); // Check THIS
-	//if (!seq.isEmpty()) seq.~QList(); // CHECK
-}
 
 // -----------------------------------------------------------------------------
 //
@@ -181,6 +148,8 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	nAlignments=0;
 	lockModeOn = FALSE;
 	
+	connect(project_,SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	
 }
 
 SeqEdit::~SeqEdit()
@@ -189,88 +158,13 @@ SeqEdit::~SeqEdit()
 	//undoStack.~QStack();
 }
 
-
-QString SeqEdit::getSequence(int i,int maskFlags)
-{
-	
-	// First sequence has id 0
-	// REMOVE_FLAGS in this context means return only those
-	// residues which are not to be excluded from the alignment
-	
-	// It is intended that this function be mainly used to construct
-	// a string suitable for use by an external alignment program
-	
-	QString r;
-	int j,k=0;
-	
-	qDebug() << trace.header() << "SeqEdit::getSequence()" << i << " " << maskFlags;
-	// Return NULL if the index is out of range
-	if ( i > seq.count()-1)
-		return NULL;
-	else{
-		r=seq.at(i)->residues;
-		switch (maskFlags)
-		{
-			case KEEP_FLAGS:
-				break;
-			case REMOVE_FLAGS:
-			  // Excluded residues are removed from the returned sequence
-				for (j=0;j<r.length();j++)
-				  if (!(r[j].unicode() & EXCLUDE_CELL))
-					{
-						r[k]=r[j];
-						k++;
-					}
-				// Chop off any remaining residues
-				// 09052007 BUG FIXED - was removing the last residue
-				r.truncate(k);
-				//if (k!=0)
-				//	r.truncate(k-1);
-				//else
-				//	r.truncate(0);
-					
-				break;
-		}
-		return r;
-	}
-	
-}
-
-QString SeqEdit::getSequence(QString l)
-{
-	// Returns the (masked) sequence with label l
-	// Mainly for use by other programs
-	// Returns NULL if nothing matching is found
-	qDebug() << trace.header() << "SeqEdit::getSequence() " << l;
-	
-	int i;
-	if ((i=getSeqIndex(l)) == -1)
-		return NULL;
-	else
-		return seq.at(i)->residues;
-}
-
-QString SeqEdit::getLabel(int i)
-{
-	qDebug() << trace.header() << "SeqEdit::getLabel() " << i;
-	// Return NULL if the index is out of range
-	if (i<0 || i > numRows()-1)
-		return NULL;
-	else
-		// strip white space from the end of the string
-		return (seq.at(i)->label).stripWhiteSpace(); 
-}
-
-int SeqEdit::numSequences()
-{
-	return seq.count();
-}
-
 QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 {
 	
 	QChar pChar;
 	QString s;
+	
+	QList<Sequence *> &seq = project_->sequences;
 	
 	// Note Since paintCell() calls this function before any sequences
 	// are added have to return valid values when the editor is empty
@@ -305,202 +199,6 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 	else 
 		return QChar(0);
 
-}
-
-void SeqEdit::addSequence( QString l,QString s,QString c )
-{
-	
-	int rowNum,rowLength;
-
-	qDebug() << trace.header() << "SeqEdit::addSequence()\n" << l << " " << s;
-	seq.append(new Sequence(l,s,c));
-	
-	// Stop setNumRows() from forcing a repaint
-	// FIXME setAutoUpdate(FALSE);
-	
-	rowNum = numRows();
-	setNumRows(rowNum+1);
-	rowLength = FLAGSWIDTH + LABELWIDTH + strlen(s);
-	
-	qDebug() << trace.header() << "SeqEdit::addSequence() row length=" << rowLength << " numCols=" << numCols();
-	// numCols() is initialized to zero so the following will
-	// set numCols when the editor is empty too
-	if (numCols()<rowLength) setNumCols(rowLength);
-	
-	//FIXME setAutoUpdate(TRUE);
-	
-	// Now we update the new cells
-	// repainting only this line
-	
-	for (unsigned int i=0;i<FLAGSWIDTH;i++)
-		updateCell(rowNum,i);
-	
-	for (unsigned int i=0;i<LABELWIDTH;i++)
-		updateCell(rowNum,i+FLAGSWIDTH);
-		
-	for (unsigned int i=0;i<strlen(s);i++)
-		updateCell(rowNum,i+LABELWIDTH+FLAGSWIDTH);
-		
-	update();
-	
-}
-
-void SeqEdit::clearSequences()
-{
-	// TO DO - more stuff ? Difference between clearing and a new project ?
-
-	qDebug() << trace.header() << "SeqEdit::clearSequences()";
-	
-	seq.clear();
-	update();
-	emit alignmentChanged();
-}
-
-int SeqEdit::deleteSequence(QString l){
-	// TODO
-	// Deletes the sequence with identifier id
-	// Returns position of the deleted sequence, -1 if id was not found
-	qWarning() << warning.header() << "SeqEdit::deleteSequence() NOT IMPLEMENTED!";
-	int i;
-	if ((i=getSeqIndex(l))>=0){ // found it
-	}
-	return i;
-}
-
-void SeqEdit::insertSequence(QString ,QString ,int )
-{
-	qWarning() << warning.header() << "SeqEdit::insertSequence() NOT IMPLEMENTED!";
-}
-
-int SeqEdit::replaceSequence(QString l,QString newLabel,QString newRes){
-	// Replace sequencewith identifier id
-	// Returns position of the replace sequence, -1 if id was not found
-	qDebug() << trace.header() << "SeqEdit::replaceSequence()";
-	int i;
-	if ((i=getSeqIndex(l))>=0){ // found it
-		deleteSequence(l);
-		insertSequence(newLabel,newRes,i);
-	}
-	update();
-	return  i;
-	
-}
-
-void SeqEdit::moveSequence(int i,int j)
-{
-	// Moves the sequence at position i to position j
-	qDebug() << trace.header() << "SeqEdit::moveSequence() from " << i << " " << j;
-	//Sequence *pSeq=seq.take(i);
-	//seq.insert(j,pSeq);
-	if (i<0 || j <0 || i >= seq.size() || j >= seq.size()){
-		return;
-	}
-	seq.move(i,j);
-	update();
-	emit alignmentChanged();
-}
-
-void SeqEdit::changeResidues(QString r,int pos)
-{
-	qDebug() << trace.header() << "SeqEdit::changeResidues()  " << r << " " << pos;
-	seq.at(pos)->residues=r;
-	update();
-	emit alignmentChanged();
-}
-
-
-void SeqEdit::newAlignment(QList <Sequence *> s)
-{
-	// Called after making an alignment
-	qDebug() << trace.header() << "SeqEdit::newAlignment()";
-	undoStack.push(new TEditRec(Edit_Alignment,seq));
-	seq.clear();
-	for (int i=0;i<s.count();i++)
-	{
-		seq.append(new Sequence(s.at(i)->label,s.at(i)->residues));
-		int rowLength = LABELWIDTH+FLAGSWIDTH+ s.at(i)->residues.length();
-		if (numCols()<rowLength) setNumCols(rowLength);
-	}	
-	update();
-	nAlignments++;
-	emit alignmentChanged();
-}
-
-void SeqEdit::undoEdit()
-{
-
-	// Undo last editing command
-	qDebug() << trace.header() << "SeqEdit::undoEdit()";
-	int startRow,stopRow,startCol,stopCol,row,firstRow;
-	int col;
-	TEditRec *er;
-	
-	if (!undoStack.isEmpty()){
-	
-		er = undoStack.top(); // FIXME ported but not tested
-		startRow=er->startRow;
-		stopRow =er->stopRow;
-		startCol=er->startCol;
-		stopCol=er->stopCol;
-		
-		switch (er->editMode){
-		
-   		case Edit_Insertion:
-     		for (row=startRow;row<=stopRow;row++){
-      		deleteCells(row,startCol,stopCol);
-					checkLength();
-      		// Update past the deletion point only
-      		for (col=startCol;col<numCols();col++)
-        		updateCell(row,col);
-    	 	}
-    		
-     		break;
-				
-   		case Edit_Deletion:
-    		
-    		for (row=startRow;row<=stopRow;row++){
-     			insertCells((er->editText).at(row-startRow),
-         		row,startCol-1); // subtract 1 because we get a post-insertion
-					checkLength();
-       		for (col=startCol;col< numCols();col++)
-       			updateCell(row,col);
-    		}
-    		
-     		break;
-				
-			case Edit_Mark:
-    		for (row=startRow;row<=stopRow;row++)
-      		for (col=startCol;col<=stopCol;col++){
-        		setCellMark(row,col,FALSE);
-        		updateCell(row,col);
-      		}
-				break;
-			case Edit_Move:
-				moveSequence(stopRow,startRow);
-				firstRow=stopRow;
-				if (startRow<stopRow) firstRow=startRow;
-				for (row=firstRow;row<seq.count();row++)
-					for (col=0;col<seq.at(row)->residues.length()+LABELWIDTH+FLAGSWIDTH;col++)
-						updateCell(row,col); 
-    		break;
-			case Edit_Alignment:
-				setAlignment(er->seq);
-				nAlignments--; // changeAlignment increments so decrement by 2
-				break;
-		} // end of case
- 		TEditRec * er = undoStack.pop(); delete er; // FIXME ported but not tested
- 		update();
-		emit alignmentChanged();
-	} // end of if
-	else{
-		// Make a rude sound
-		printf("\a");
-	}
-}
-
-void SeqEdit::redoEdit()
-{
-	// TO DO
 }
 
 void SeqEdit::cutSelection()
@@ -538,7 +236,7 @@ void SeqEdit::cutSelection()
 			buf[stopCol-startCol+1]=NULLCHAR;
 			l.append(buf);
 		}
-		undoStack.push( new TEditRec(Edit_Deletion,startRow,stopRow,
+		project_->logOperation( new Operation(Operation::Deletion,startRow,stopRow,
 			startCol,stopCol,l));
 		l.~Q3StrList();
 		delete[] buf;
@@ -551,7 +249,7 @@ void SeqEdit::cutSelection()
 				updateCell(row,col);
 		}
 		update();
-		emit alignmentChanged();
+		//emit alignmentChanged();
 	}	
 }
 
@@ -569,7 +267,7 @@ void SeqEdit::excludeSelection()
 		if (startCol > stopCol) swap_int(&startCol,&stopCol);
 		
 		// Create a new undo record
-		undoStack.push( new TEditRec(Edit_Mark,startRow,stopRow,
+		project_->logOperation( new Operation(Operation::Mark,startRow,stopRow,
 			startCol,stopCol,1));
 			
 		// Mark the residues
@@ -580,7 +278,6 @@ void SeqEdit::excludeSelection()
 				updateCell(row,col);
 			}
 		update();	
-		emit alignmentChanged();
 	}
 }
 
@@ -610,7 +307,7 @@ void SeqEdit::removeExcludeSelection()
 				updateCell(row,col);
 			}// of for (col=)
 		update();
-		emit alignmentChanged();
+		
 	}	// of if (isSelected)
 	
 }
@@ -621,6 +318,7 @@ void SeqEdit::setCellMark(int row,int col,int on)
 {
 	// TO DO - make portable the OR
 	qDebug() << trace.header() << "SeqEdit::setCellMark() row=" << row << " col=" << col << " on=" << on;
+	QList<Sequence *> &seq = project_->sequences;
 	
 	if (on)
 		seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)] = 
@@ -667,27 +365,7 @@ void SeqEdit::unlockSelection()
 }
 
 
-void SeqEdit::undoLastAlignment()
-{
-	qDebug() << trace.header() << "SeqEdit::undoLastAlignment";
-	TEditRec *er;
-	
-	if (nAlignments > 0){
-		// Find the most recent alignment on the undo stack
-		// removing all other edit records
-		// TO DO the redo stack
-		er=undoStack.top();
-		while (er->editMode != Edit_Alignment){ // FIXME ported but not checked yet
-			undoStack.pop();
-			delete er;
-			er = undoStack.top();
-		}
-		setAlignment(er->seq);
-		nAlignments--;
-		update();
-		emit alignmentChanged();
-	}
-}
+
 
 //
 // SeqEdit - public slots
@@ -709,7 +387,9 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	QChar c,cwflags;
 	QColor txtColor;
 	int cellSelected=FALSE;
-		
+	
+	QList<Sequence *> &seq=project_->sequences;
+	
 	c=cellContent(row,col,REMOVE_FLAGS);
 	if (c.unicode()==0) return;
 	cwflags=cellContent(row,col,KEEP_FLAGS);
@@ -763,7 +443,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	//  Draw cell content (text)
 	
 	Sequence *currSeq = seq.at(row);
-	if (project_->sequenceSelection->selected(currSeq)){
+	if (project_->sequenceSelection->contains(currSeq)){
 		p->fillRect(0,0,w,h,QColor(128,128,128));
 	}
 	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH){ 
@@ -827,6 +507,8 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 	// Handles mouse press events for the SeqEdit widget.
   // The current cell marker is set to the cell the mouse is clicked in.
 	
+	QList<Sequence *> &seq = project_->sequences;
+	
 	if (seq.count() == 0) return;
 	
 	QPoint clickedPos;
@@ -860,7 +542,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 				project_->sequenceSelection->set(selSeq);
 				break;
 			case Qt::ShiftModifier:
-				if (project_->sequenceSelection->selected(selSeq))
+				if (project_->sequenceSelection->contains(selSeq))
 					project_->sequenceSelection->toggle(selSeq);
 				else{
 					project_->sequenceSelection->set(selSeq);
@@ -1056,7 +738,7 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 							stopCol=startCol;
 						// Add 1 to startCol,stopCol because  post insertion is
 						// used and undo deletes [startCol,stopCol]
-						undoStack.push( new TEditRec(Edit_Insertion,startRow,stopRow,
+						project_->logOperation( new Operation(Operation::Insertion,startRow,stopRow,
 								startCol+1,stopCol+1,Q3StrList()));
 					
 						// Insertions across multiple rows are allowed
@@ -1069,7 +751,7 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 							for (col=startCol;col< numCols();col++)
 								updateCell(row,col);
 						}	// end of for loop
-						emit alignmentChanged();
+						//emit alignmentChanged();
 					} // end of if ... else
 				} // end of if
 				break;
@@ -1092,44 +774,40 @@ void SeqEdit::focusOutEvent( QFocusEvent* )
 	// updateCell( curRow, curCol );               // draw current cell
 }    
 
-void SeqEdit::dragEnterEvent(QDragEnterEvent *event){
-   event->accept(
-        Q3TextDrag::canDecode(event) ||
-        Q3ImageDrag::canDecode(event));
+
+//
+//
+//
+void SeqEdit::sequenceAdded(Sequence *s)
+{
+	int rowNum,rowLength;
+	int sequenceLength = s->residues.length();
+	// Stop setNumRows() from forcing a repaint
+	// FIXME setAutoUpdate(FALSE);
 	
+	rowNum = numRows();
+	setNumRows(rowNum+1);
+	rowLength = FLAGSWIDTH + LABELWIDTH + sequenceLength;
+	
+	// numCols() is initialized to zero so the following will
+	// set numCols when the editor is empty too
+	if (numCols()<rowLength) setNumCols(rowLength);
+	
+	// Now we update the new cells
+	// repainting only this line
+	
+	for (unsigned int i=0;i<FLAGSWIDTH;i++)
+		updateCell(rowNum,i);
+	
+	for (unsigned int i=0;i<LABELWIDTH;i++)
+		updateCell(rowNum,i+FLAGSWIDTH);
+		
+	for (unsigned int i=0;i<sequenceLength;i++)
+		updateCell(rowNum,i+LABELWIDTH+FLAGSWIDTH);
+	
+	this->viewport()->repaint();
 }
 
-void SeqEdit::dropEvent(QDropEvent *e)
-{
-	// TO DO
-	qDebug() << trace.header() << "SeqEdit::dropEvent()";
-	int droppedRow=rowAt(e->pos().y()+contentsY());
-	
-	// Dropped sequences are pre-inserted
-	// This means that there is no problem with dropping a sequence
-	// at the beginning of the list.
-	// To drop into the last place, have to do something yucky and use
-	// the value -1 return by findRow to indicate that the dragged row must
-	// be made the last row
-	
-	if (droppedRow != draggedRowNum){
-		if (droppedRow <0){ // move dragged row to the end
-			Sequence *pSeq=seq.takeAt(draggedRowNum); // FIXME checked darggedRowNum ??
-			seq.append(pSeq);
-			undoStack.push( new TEditRec(Edit_Move,draggedRowNum,numSequences()-1,
-				0,0,Q3StrList()));
-		}
-		else{
-			moveSequence(draggedRowNum,droppedRow);
-			undoStack.push( new TEditRec(Edit_Move,draggedRowNum,droppedRow,
-				0,0,Q3StrList()));
-		}
-	
-		update();
-		emit alignmentChanged();
-	}
-	
-}
 
 //
 // SeqEdit - private members
@@ -1138,39 +816,31 @@ void SeqEdit::dropEvent(QDropEvent *e)
 void SeqEdit::insertCell(char c,int row,int col){
 	// TO DO - not actually using this function ...
 	// Can only insert into a sequence so ..
-	
+	QList<Sequence *> &seq = project_->sequences;
 	seq.at(row)->residues.insert(col-LABELWIDTH-FLAGSWIDTH+1,c);
 	update();	
 }
 
 void SeqEdit::insertCells(QString s,int row,int col){
 	QString t;
-	
+	QList<Sequence *> &seq = project_->sequences;
 	(seq.at(row)->residues).insert(col-LABELWIDTH-FLAGSWIDTH+1,s); // post insertion
 	update();
 }
 
 void SeqEdit::deleteCells(int row,int start,int stop){
-	
-
+	QList<Sequence *> &seq = project_->sequences;
 	(seq.at(row)->residues).remove(start-(LABELWIDTH+FLAGSWIDTH),stop-start+1);
 	update();
 }
 
 void SeqEdit::lockCell(int row,int col){
+	QList<Sequence *> &seq = project_->sequences;
 	if (col>=LABELWIDTH+FLAGSWIDTH)
 		seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)] = 
 			seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)].unicode() ^ LOCK_CELL;
-	
 }
 
-void SeqEdit::setAlignment(QList <Sequence *> s){
-
-	seq.clear();
-	for (int i=0;i<s.count();i++)
-		seq.append(new Sequence(s.at(i)->label,s.at(i)->residues));	
-	update();
-}
 
 void SeqEdit::checkLength(){
 	// The size of the region displayed needs to be checked after some
@@ -1182,6 +852,7 @@ void SeqEdit::checkLength(){
 	// Number of rows is taken care of by deleteSequence(),
 	// addSequence() and clearSequence()
 	// All we need to do is find the longest row ..
+	QList<Sequence *> &seq = project_->sequences;
 	if (numRows()==0)
 		maxLength=0;
  	else{
@@ -1196,17 +867,6 @@ void SeqEdit::checkLength(){
   
 }
 
-int SeqEdit::getSeqIndex(QString l){
-	// Get the index of the sequence with label l
-	// Returns -1 if no match
-	int i=0;
-	QString t=l.stripWhiteSpace();// TO DO why is this here ?
-	while ((i<seq.count()) && (getLabel(i) != t)) i++;
-	if (i==seq.count())
-		return -1;
-	else
-		return i;
-}
 
 //
 //

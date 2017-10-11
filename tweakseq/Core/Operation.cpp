@@ -1,8 +1,4 @@
 //
-// tweakseq - provides an editor for and interface to various sequence alignment tools
-//
-// The MIT License (MIT)
-//
 // Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,47 +21,33 @@
 //
 
 
-#include "SequenceSelection.h"
+#include "Operation.h"
+#include "Sequence.h"
 
-//
-// 	Public members
-//
 
-SequenceSelection::SequenceSelection()
-{
+Operation::Operation(int eMode,int startR,int stopR,int startC,int stopC,Q3StrList t){
+
+	mode = eMode;
+	startRow = startR;
+	stopRow = stopR;
+	startCol = startC;
+	stopCol= stopC;
+	editText = t;
 }
 
-SequenceSelection::~SequenceSelection()
+Operation::Operation(int eMode,QList <Sequence *> s)
 {
-}
-
-void SequenceSelection::set(Sequence *s)
-{
-	sel_.clear();
-	sel_.append(s);
-	emit changed();
-}
-
-void SequenceSelection::toggle(Sequence *s)
-{
-	// If it's there, remove it
-	if (sel_.contains(s)){
-		sel_.removeOne(s);
-	}
-	// else add it
-	else
-		sel_.append(s);
-	emit changed();
-}
-
-void SequenceSelection::clear()
-{
-	sel_.clear();
-	emit changed();
-}
-
-bool SequenceSelection::contains(Sequence *s)
-{
-	return sel_.contains(s);
-}
+	// Constructor to store contents of the sequence editor
 	
+	mode=eMode;
+	for ( int i=0;i<s.count();i++)
+		seq.append(new Sequence(s.at(i)->label,s.at(i)->residues)); // CHECKME
+}
+
+Operation::~Operation()
+{
+	//editText.~QStrList(); // Check THIS
+	//if (!seq.isEmpty()) seq.~QList(); // CHECK
+}
+
+

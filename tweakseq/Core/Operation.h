@@ -24,48 +24,31 @@
 // THE SOFTWARE.
 //
 
+#ifndef __OPERATION_H_
+#define __OPERATION_H_
 
-#include "SequenceSelection.h"
+#include <Q3StrList>
+#include <QList>
 
-//
-// 	Public members
-//
+// Keeps information about an edit operation on sequences
+// so that it can be undone
 
-SequenceSelection::SequenceSelection()
+class Sequence;
+
+class Operation
 {
-}
-
-SequenceSelection::~SequenceSelection()
-{
-}
-
-void SequenceSelection::set(Sequence *s)
-{
-	sel_.clear();
-	sel_.append(s);
-	emit changed();
-}
-
-void SequenceSelection::toggle(Sequence *s)
-{
-	// If it's there, remove it
-	if (sel_.contains(s)){
-		sel_.removeOne(s);
-	}
-	// else add it
-	else
-		sel_.append(s);
-	emit changed();
-}
-
-void SequenceSelection::clear()
-{
-	sel_.clear();
-	emit changed();
-}
-
-bool SequenceSelection::contains(Sequence *s)
-{
-	return sel_.contains(s);
-}
+	public:
 	
+		Operation(int,int,int,int,int,Q3StrList);
+		Operation(int,QList <Sequence *>);
+		~Operation();
+	
+		enum Ops {Deletion,Insertion,Mark,Move,Alignment,Lock};
+		
+		int mode;
+		int startRow,stopRow,startCol,stopCol;
+		Q3StrList editText;
+		QList <Sequence *> seq;
+};
+
+#endif

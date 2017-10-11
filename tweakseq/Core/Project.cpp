@@ -24,11 +24,17 @@
 // THE SOFTWARE.
 //
 
+#include <QtDebug>
+#include "DebuggingInfo.h"
+
 #include <QDomDocument>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QTextStream>
 
+#include "Operation.h"
 #include "Project.h"
+#include "Sequence.h"
 #include "SequenceSelection.h"
 #include "SeqEditMainWin.h"
 
@@ -59,6 +65,318 @@ void Project::setName(QString &n)
 	name_=n;
 }
 
+QString Project::getSequence(int i,int maskFlags)
+{
+	
+	// First sequence has id 0
+	// REMOVE_FLAGS in this context means return only those
+	// residues which are not to be excluded from the alignment
+	
+	// It is intended that this function be mainly used to construct
+	// a string suitable for use by an external alignment program
+	
+	QString r;
+	int j,k=0;
+	
+	qDebug() << trace.header() << "Project::getSequence()" << i << " " << maskFlags;
+	// Return NULL if the index is out of range
+	if ( i > sequences.count()-1)
+		return NULL;
+	else{
+		r=sequences.at(i)->residues;
+		switch (maskFlags)
+		{
+			case KEEP_FLAGS:
+				break;
+			case REMOVE_FLAGS:
+			  // Excluded residues are removed from the returned sequence
+				for (j=0;j<r.length();j++)
+				  if (!(r[j].unicode() & EXCLUDE_CELL))
+					{
+						r[k]=r[j];
+						k++;
+					}
+				// Chop off any remaining residues
+				// 09052007 BUG FIXED - was removing the last residue
+				r.truncate(k);
+				//if (k!=0)
+				//	r.truncate(k-1);
+				//else
+				//	r.truncate(0);
+					
+				break;
+		}
+		return r;
+	}
+}
+
+
+QString Project::getSequence(QString l)
+{
+	// Returns the (masked) sequence with label l
+	// Mainly for use by other programs
+	// Returns NULL if nothing matching is found
+	qDebug() << trace.header() << "Project::getSequence() " << l;
+	
+	int i;
+	if ((i=getSeqIndex(l)) == -1)
+		return NULL;
+	else
+		return sequences.at(i)->residues;
+}
+
+QString Project::getLabelAt(int i)
+{
+	qDebug() << trace.header() << "Project::getLabel() " << i;
+	// Return NULL if the index is out of range
+	if (i<0 || i > sequences.size()-1)
+		return NULL;
+	else
+		// strip white space from the end of the string
+		return (sequences.at(i)->label).stripWhiteSpace(); 
+}
+
+void Project::clearSequences()
+{
+	// TO DO - more stuff ? Difference between clearing and a new project ?
+
+	qDebug() << trace.header() << "Project::clearSequences()";
+	sequences.clear();
+	emit sequencesChanged(0,sequences.size());
+}
+
+void Project::addSequence( QString l,QString s,QString c )
+{
+	
+	int rowNum,rowLength;
+
+	qDebug() << trace.header() << "Project::addSequence()\n" << l << " " << s;
+	Sequence * newSeq = new Sequence(l,s,c);
+	sequences.append(newSeq);
+	
+	// Stop setNumRows() from forcing a repaint
+	// FIXME setAutoUpdate(FALSE);
+	
+// 	rowNum = numRows();
+// 	setNumRows(rowNum+1);
+// 	rowLength = FLAGSWIDTH + LABELWIDTH + strlen(s);
+// 	
+// 	qDebug() << trace.header() << "Project::addSequence() row length=" << rowLength << " numCols=" << numCols();
+// 	// numCols() is initialized to zero so the following will
+// 	// set numCols when the editor is empty too
+// 	if (numCols()<rowLength) setNumCols(rowLength);
+// 	
+// 	//FIXME setAutoUpdate(TRUE);
+// 	
+// 	// Now we update the new cells
+// 	// repainting only this line
+// 	
+// 	for (unsigned int i=0;i<FLAGSWIDTH;i++)
+// 		updateCell(rowNum,i);
+// 	
+// 	for (unsigned int i=0;i<LABELWIDTH;i++)
+// 		updateCell(rowNum,i+FLAGSWIDTH);
+// 		
+// 	for (unsigned int i=0;i<strlen(s);i++)
+// 		updateCell(rowNum,i+LABELWIDTH+FLAGSWIDTH);
+// 		
+// 	update();
+	 emit sequenceAdded(newSeq);
+}
+
+
+int Project::deleteSequence(QString l){
+	// TODO
+	// Deletes the sequence with identifier id
+	// Returns position of the deleted sequence, -1 if id was not found
+	qWarning() << warning.header() << "Project::deleteSequence() NOT IMPLEMENTED!";
+	int i;
+	if ((i=getSeqIndex(l))>=0){ // found it
+	}
+	return i;
+}
+
+void Project::insertSequence(QString ,QString ,int )
+{
+	qWarning() << warning.header() << "Project::insertSequence() NOT IMPLEMENTED!";
+}
+
+int Project::replaceSequence(QString l,QString newLabel,QString newRes){
+	// Replace sequencewith identifier id
+	// Returns position of the replace sequence, -1 if id was not found
+	qDebug() << trace.header() << "Project::replaceSequence()";
+	int i;
+	if ((i=getSeqIndex(l))>=0){ // found it
+		deleteSequence(l);
+		insertSequence(newLabel,newRes,i);
+	}
+	return  i;
+	
+}
+
+void Project::moveSequence(int i,int j)
+{
+	// Moves the sequence at position i to position j
+	qDebug() << trace.header() << "Project::moveSequence() from " << i << " " << j;
+	//Sequence *pSeq=sequences.take(i);
+	//sequences.insert(j,pSeq);
+	if (i<0 || j <0 || i >= sequences.size() || j >= sequences.size()){
+		return;
+	}
+	sequences.move(i,j);
+	emit sequencesChanged(sequences.size(),sequences.size());
+}
+
+void Project::changeResidues(QString r,int pos)
+{
+	qDebug() << trace.header() << "Project::changeResidues()  " << r << " " << pos;
+	sequences.at(pos)->residues=r;
+	emit sequencesChanged(sequences.size(),sequences.size());
+}
+
+
+void Project::newAlignment(QList <Sequence *> s)
+{
+	// Called after making an alignment
+	qDebug() << trace.header() << "Project::newAlignment()";
+	undoStack.push(new Operation(Operation::Alignment,sequences));
+	sequences.clear();
+	for (int i=0;i<s.count();i++){
+		sequences.append(new Sequence(s.at(i)->label,s.at(i)->residues));
+		//int rowLength = LABELWIDTH+FLAGSWIDTH+ s.at(i)->residues.length();
+		//if (numCols()<rowLength) setNumCols(rowLength);
+	}	
+	nAlignments++;
+	emit sequencesChanged(sequences.size(),0);
+}
+
+void Project::setAlignment(QList <Sequence *> s){
+
+	sequences.clear();
+	for (unsigned int i=0;i<s.count();i++)
+		sequences.append(new Sequence(s.at(i)->label,s.at(i)->residues));	
+	emit sequencesChanged(sequences.size(),0);
+}
+
+//
+//
+//
+
+bool Project::groupSelectedSequences(){
+	// Require two or more sequences in the selection
+	if (sequenceSelection->size() < 2)
+		return false;
+	// The selection can't overlap any other groups
+	
+	return true;
+}
+//
+//
+//
+
+void Project::logOperation(Operation *op)
+{
+	undoStack.push(op);
+}
+
+void Project::undo()
+{
+	// Undo last editing command
+// 	qDebug() << trace.header() << "SeqEdit::undoEdit()";
+// 	int startRow,stopRow,startCol,stopCol,row,firstRow;
+// 	int col;
+// 	Operation *op;
+// 	
+// 	if (!undoStack.isEmpty()){
+// 	
+// 		op = undoStack.top(); // FIXME ported but not tested
+// 		startRow=op->startRow;
+// 		stopRow =op->stopRow;
+// 		startCol=op->startCol;
+// 		stopCol=op->stopCol;
+// 		
+// 		switch (op->mode){
+// 		
+//    		case Operation::Insertion:
+//      		for (row=startRow;row<=stopRow;row++){
+//       		deleteCells(row,startCol,stopCol);
+// 					checkLength();
+//       		// Update past the deletion point only FIXME
+//       		//for (col=startCol;col<numCols();col++)
+//         	//	updateCell(row,col);
+//     	 	}
+//     		
+//      		break;
+// 				
+//    		case Operation::Deletion:
+//     		
+//     		for (row=startRow;row<=stopRow;row++){
+//      			insertCells((op->editText).at(row-startRow),
+//          		row,startCol-1); // subtract 1 because we get a post-insertion
+// 					checkLength();
+//        		for (col=startCol;col< numCols();col++)
+//        			updateCell(row,col);
+//     		}
+//     		
+//      		break;
+// 				
+// 			case Operation::Mark:
+//     		for (row=startRow;row<=stopRow;row++)
+//       		for (col=startCol;col<=stopCol;col++){
+//         		setCellMark(row,col,FALSE);
+//         		updateCell(row,col);
+//       		}
+// 				break;
+// 			case Operation::Move:
+// 				moveSequence(stopRow,startRow);
+// 				//firstRow=stopRow; ?? FIXME
+// 				//if (startRow<stopRow) firstRow=startRow;
+// 				//for (row=firstRow;row<seq.count();row++)
+// 				//	for (col=0;col<seq.at(row)->residues.length()+LABELWIDTH+FLAGSWIDTH;col++)
+// 				//		updateCell(row,col); 
+//     		break;
+// 			case Operation::Alignment:
+// 				setAlignment(op->seq);
+// 				nAlignments--; // changeAlignment increments so decrement by 2
+// 				break;
+// 		} // end of case
+//  		Operation * op = undoStack.pop(); delete op; // FIXME ported but not tested
+// 		emit sequencesChanged();
+// 	} // end of if
+// 	else{
+// 		// Make a rude sound
+// 		printf("\a");
+// 	}
+}
+
+void Project::redo()
+{
+	// TO DO
+}
+
+void Project::undoLastAlignment()
+{
+	// This is a special undo operation because it junks everything 
+	qDebug() << trace.header() << "SeqEdit::undoLastAlignment";
+	Operation *op;
+	
+	if (nAlignments > 0){
+		// Find the most recent alignment on the undo stack
+		// removing all other edit records
+		// TO DO the redo stack
+		op=undoStack.top();
+		while (op->mode != Operation::Alignment){ // FIXME ported but not checked yet
+			undoStack.pop();
+			delete op;
+			op = undoStack.top();
+		}
+		int oldSize = sequences.size();
+		setAlignment(op->seq);
+		nAlignments--;
+		emit sequencesChanged(sequences.size(),oldSize);
+	}
+}
+
 //
 //	Public slots:
 //
@@ -77,6 +395,15 @@ void Project::save()
 {
 	QString tmp;
 	
+	if (!saved_){ // nver saved so need a get a project name and path
+		QString fileName = QFileDialog::getSaveFileName(mainWindow_, tr("Save Project"));
+		if (fileName.isNull()) return;
+		QFileInfo fi(fileName);
+		path_=fi.path();
+		name_=fi.fileName();
+		saved_=true;
+	}
+	
 	QDomDocument saveDoc;
 	QDomElement root = saveDoc.createElement("tweakseq");
 	saveDoc.appendChild(root);
@@ -93,6 +420,7 @@ void Project::save()
 
 void Project::read(QString &)
 {
+	saved_=true; // clearly it has been saved !
 }
 
 void Project::closeIt()
@@ -127,5 +455,19 @@ void Project::mainWindowClosed()
 void Project::init()
 {
 	sequenceSelection = new SequenceSelection();
-	path_=QDir("./");
+	saved_=false;
+	name_="unnamed.tsq";
+}
+
+int Project::getSeqIndex(QString l)
+{
+	// Get the index of the sequence with label l
+	// Returns -1 if no match
+	int i=0;
+	QString t=l.stripWhiteSpace();// TO DO why is this here ?
+	while ((i<sequences.count()) && (getLabelAt(i) != t)) i++;
+	if (i==sequences.count())
+		return -1;
+	else
+		return i;
 }

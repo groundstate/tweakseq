@@ -78,7 +78,8 @@ const char *lockText = "Click this button to add and edit a new"
 SeqEditMainWin::SeqEditMainWin(Project *project)
 	:QMainWindow()
 {
-	setWindowTitle("Sequence Editor");
+	
+	setWindowTitle("tweakseq - " + project->name());
 	setGeometry(0,0,640,400);
 	setWindowIcon(QIcon(seqedit_xpm));
 	
@@ -132,10 +133,13 @@ void SeqEditMainWin::fileNewProject()
 
 void SeqEditMainWin::fileSaveProject()
 {
+	project_->save();
+	setWindowTitle("tweakseq - " + project_->name());
 }
 
 void SeqEditMainWin::fileSaveProjectAs()
 {
+	setWindowTitle("tweakseq - " + project_->name());
 }
 	
 void SeqEditMainWin::fileImport(){
@@ -152,7 +156,7 @@ void SeqEditMainWin::fileImport(){
 	QStringList seqnames,seqs,comments;
 	if (cf.read(seqnames,seqs,comments)){
 		for (int i=0;i<seqnames.size();i++){
-			se->addSequence(seqnames.at(i),seqs.at(i),comments.at(i));
+			project_->addSequence(seqnames.at(i),seqs.at(i),comments.at(i));
 		}
 		lastImportedFile=fname;
 	}
@@ -221,7 +225,7 @@ void SeqEditMainWin::filePrint(){
 		
 		int blockHeight = 
 			fm.height()+counterSpc+
-			se->numSequences()*fm.height()+(se->numSequences()-1)*lineSpc ;
+			project_->numSequences()*fm.height()+(project_->numSequences()-1)*lineSpc ;
 		
 		// There could of course be so many sequences that they won't
 		// even fit on one line
@@ -256,14 +260,14 @@ void SeqEditMainWin::filePrint(){
 		// How many pages ?
 		// Need to find the longest sequence 
 		
-		if (se->numSequences()==0)
+		if (project_->numSequences()==0)
 			numPages=1;
 		else{
 			// Find the longest sequence
-			maxLength=se->getSequence(0,KEEP_FLAGS).length();
-			for (i=0;i<se->numSequences();i++)
-				if (se->getSequence(i,KEEP_FLAGS).length()>maxLength)
-					maxLength=se->getSequence(i,KEEP_FLAGS).length();
+			maxLength=project_->getSequence(0,KEEP_FLAGS).length();
+			for (i=0;i<project_->numSequences();i++)
+				if (project_->getSequence(i,KEEP_FLAGS).length()>maxLength)
+					maxLength=project_->getSequence(i,KEEP_FLAGS).length();
 			if (blocksPerPage==0)
 				numPages=99; // TO DO
 			else{
@@ -352,13 +356,13 @@ void SeqEditMainWin::filePrint(){
 					p.drawText(x,yt,tmp,-1);
 				}
 				p.setFont(mainFont);	
-				for (j=0;j<se->numSequences();j++){
+				for (j=0;j<project_->numSequences();j++){
 					// Print the sequence name
 					x=seqNameX0;
 					yt+=fm.height();
-					p.drawText(x,yt,se->getLabel(j),-1); // TO DO bounding rect
+					p.drawText(x,yt,project_->getLabelAt(j),-1); // TO DO bounding rect
 					// Print the residues
-					tmp=se->getSequence(j,KEEP_FLAGS);
+					tmp=project_->getSequence(j,KEEP_FLAGS);
 					x=resX0;
 					for (k=resCnt;k<resCnt+wrap && k < tmp.length();k++){
 						printRes(&p,QChar(tmp[k-resCnt]),x,yt);
@@ -394,12 +398,12 @@ void SeqEditMainWin::setupEditMenu()
 
 void SeqEditMainWin::editUndo()
 {
-	se->undoEdit();
+	project_->undo();
 }
 
 void SeqEditMainWin::editRedo()
 {
-	se->redoEdit();
+	project_->redo();
 }
 
 void SeqEditMainWin::editCut()
@@ -409,6 +413,10 @@ void SeqEditMainWin::editCut()
 
 void SeqEditMainWin::editGroupSequences()
 {
+	statusBar()->clearMessage();
+	// Groups the current selection of sequences
+	if (!project_->groupSelectedSequences())
+		statusBar()->showMessage("Grouping unsuccessful");
 }
 
 void SeqEditMainWin::editUngroupSequences()
@@ -433,7 +441,7 @@ void SeqEditMainWin::editUnlock(){
 
 void SeqEditMainWin::setupAlignmentMenu()
 {
-	goAction->setEnabled(se->numSequences() >= 2);
+	goAction->setEnabled(project_->numSequences() >= 2);
 }
 
 void SeqEditMainWin::alignmentGo()
@@ -499,7 +507,7 @@ void SeqEditMainWin::alignmentUndo()
 	// Check whether there are still any alignments left to undo
 	// and update menu items
 	if (nAlignments > 0){
-		se->undoLastAlignment();
+		project_->undoLastAlignment();
 		nAlignments--;
 		undoLastAction->setEnabled(nAlignments==0);
 	}
@@ -726,11 +734,11 @@ void SeqEditMainWin::writeAlignment(int fileFormat,QString fname)
 	
 	switch (fileFormat){
 		case FASTA:
-		  for (j=0;j<se->numSequences();j++){
+		  for (j=0;j<project_->numSequences();j++){
 				// Write identifier
-				ts << ">" << se->getLabel(j) << "\n";
+				ts << ">" << project_->getLabelAt(j) << "\n";
 				// Write sequence in 50 residue chunks
-				s=se->getSequence(j,REMOVE_FLAGS);
+				s=project_->getSequence(j,REMOVE_FLAGS);
 				for (i=0;i<s.length();i+=50)
 					ts << s.mid(i, 50 )<< "\n"; // QT truncates the last substring
 		  }

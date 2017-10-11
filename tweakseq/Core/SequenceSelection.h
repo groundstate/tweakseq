@@ -43,9 +43,10 @@ class SequenceSelection:public QObject
 		void set(Sequence *);
 		void toggle(Sequence *);
 		void clear();
-		bool selected(Sequence *);
-	
+		bool contains(Sequence *);
+		
 		bool empty(){return sel_.size() == 0;}
+		int  size(){return sel_.size();}
 		
 	signals:
 		

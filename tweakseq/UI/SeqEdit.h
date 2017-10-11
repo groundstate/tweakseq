@@ -38,37 +38,8 @@ class QPixmap;
 class QDragEnterEvent;
 class QDropEvent;
 
-#define Edit_Deletion	0
-#define Edit_Insertion	1
-#define Edit_Mark 2
-#define Edit_Move 3
-#define Edit_Alignment 4
-#define Edit_Lock 5
-
-#define KEEP_FLAGS 0XFFFF // TO DO change all this to allow higher order bits
-#define REMOVE_FLAGS	0X007F	
-
-#define EXCLUDE_CELL 0x0080
-#define LOCK_CELL	0x0100
-
-enum alignmentFormats {FASTA,CLUSTALW};
-
 class Project;
 class Sequence;
-
-// Keeps information about an edit operation
-// so that it can be undone
-class TEditRec
-{
-public:
-	TEditRec(int,int,int,int,int,Q3StrList);
-	TEditRec(int,QList <Sequence *>);
-	~TEditRec();
-	int editMode;
-	int startRow,stopRow,startCol,stopCol;
-	Q3StrList editText;
-	QList <Sequence *> seq;
-};
 
 class SeqEdit:public Q3GridView
 {
@@ -78,22 +49,8 @@ Q_OBJECT
 public:
 	SeqEdit(Project *,QWidget *parent);
 	~SeqEdit();
-	
-	QString getSequence(int,int);
-	QString getSequence(QString);
-	QString getLabel(int);
-	int numSequences();
 
 	QChar cellContent(int,int,int );
-	
-	void clearSequences();
-	void addSequence(QString ,QString,QString );
-	int  deleteSequence(QString);
-	void insertSequence(QString,QString,int);
-	int  replaceSequence(QString,QString,QString);
-	void moveSequence(int,int);
-	void changeResidues(QString ,int pos);
-	void newAlignment(QList <Sequence *>);
 	
 	void undoEdit();
 	void redoEdit();
@@ -103,8 +60,6 @@ public:
 	void removeExcludeSelection();
 	void lockSelection();
 	void unlockSelection();
-	
-	void undoLastAlignment();
 
 public slots:
 
@@ -119,12 +74,11 @@ protected:
 	void keyPressEvent( QKeyEvent* );
 	void focusInEvent( QFocusEvent* );
 	void focusOutEvent( QFocusEvent* );
-	virtual void dragEnterEvent(QDragEnterEvent *);
-	virtual void dropEvent(QDropEvent *);
-	
-signals:
 
-	void alignmentChanged();
+private slots:
+	
+	void sequenceAdded(Sequence *);
+	//void sequencesRemoved(int,int);
 	
 private:
 	
@@ -133,20 +87,18 @@ private:
 	void deleteCells(int r,int start,int stop);
 	void setCellMark(int row,int col,int on);
 	void lockCell(int row,int col);
-	void setAlignment(QList <Sequence *>);
+
 	void checkLength();
-	int  getSeqIndex(QString);
+	
 	
 	Project *project_;
 	
-	QList <Sequence *> seq;
 	int isSelected;
 	int selAnchorRow,selAnchorCol,selDragRow,selDragCol;
 	int insertionPoint,draggingSequence,draggedRowNum;
 	Sequence *draggedSeq;
 	int leftDown,lockModeOn;
 	QFont currFont;	
-	QStack <TEditRec *> undoStack;
 	int nAlignments;
 	QString numStr;
 	

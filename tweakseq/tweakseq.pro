@@ -10,6 +10,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/DebuggingInfo.h \
 								 include/FASTAFile.h \
 								 include/MessageWin.h \
+								 include/Operation.h \
 								 include/Project.h \
 								 include/SeqEdit.h \
 								 include/SeqEditMainWin.h \
@@ -22,6 +23,7 @@ SOURCES				 =  Core/Application.cpp \
 									Core/ClustalFile.cpp \
 									Core/FASTAFile.cpp \
 									Core/Main.cpp \
+									Core/Operation.cpp \
 									Core/Project.cpp \
 									Core/Sequence.cpp \
 									Core/SequenceFile.cpp\
