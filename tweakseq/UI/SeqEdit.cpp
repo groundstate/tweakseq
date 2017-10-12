@@ -448,7 +448,10 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	}
 	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH){ 
 		// Set colour of text
-		txtColor.setRgb(255,255,255);
+		if (currSeq->group > 0)
+			txtColor.setRgb(255,255,0);
+		else
+			txtColor.setRgb(255,255,255);
 	}
 	else{
 
@@ -802,7 +805,7 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	for (unsigned int i=0;i<LABELWIDTH;i++)
 		updateCell(rowNum,i+FLAGSWIDTH);
 		
-	for (unsigned int i=0;i<sequenceLength;i++)
+	for (int i=0;i<sequenceLength;i++)
 		updateCell(rowNum,i+LABELWIDTH+FLAGSWIDTH);
 	
 	this->viewport()->repaint();

@@ -38,8 +38,20 @@ Sequence::Sequence(QString l,QString r,QString c){
 		label.append(" ");
 	residues = r;
 	comment=c;
+	group=-1;
 	//cerr << "Residues " << r.latin1() << endl;
 }
 
-Sequence::~Sequence(){
+Sequence::~Sequence()
+{
+}
+
+QString Sequence::noFlags()
+{
+	QString r;
+	for (int i=0;i<residues.size();i++){
+		QChar qch=residues[i];
+		r[i] = qch.unicode() & 0x7F; // FIXME
+	}
+	return r;
 }

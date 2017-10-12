@@ -135,7 +135,7 @@ bool FASTAFile::write(QStringList &l,QStringList &s,QStringList &c)
 		int nlines = rint(s.at(i).size()/80);
 		if (nlines*80 < s.at(i).size()) nlines++;
 		for (int j=0;j<nlines;j++){
-			ts << c.at(i).mid(j*80,80) << endl; // ok, mid() will return last bit of the string
+			ts << s.at(i).mid(j*80,80) << endl; // ok, mid() will return last bit of the string
 		}
 	}
 	f.close();

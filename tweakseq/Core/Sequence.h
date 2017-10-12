@@ -38,6 +38,10 @@ class Sequence
 		~Sequence();
 		// comment is for a longer comment
 		QString label,residues,comment;
+		
+		QString noFlags();
+		
+		int group;// group will be >= 1 so we can use it for logical tests
 };
 
 #endif

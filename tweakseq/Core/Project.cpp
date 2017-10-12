@@ -32,9 +32,11 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+#include "FASTAFile.h"
 #include "Operation.h"
 #include "Project.h"
 #include "Sequence.h"
+#include "SequenceGroup.h"
 #include "SequenceSelection.h"
 #include "SeqEditMainWin.h"
 
@@ -147,41 +149,10 @@ void Project::clearSequences()
 
 void Project::addSequence( QString l,QString s,QString c )
 {
-	
-	int rowNum,rowLength;
-
 	qDebug() << trace.header() << "Project::addSequence()\n" << l << " " << s;
 	Sequence * newSeq = new Sequence(l,s,c);
 	sequences.append(newSeq);
-	
-	// Stop setNumRows() from forcing a repaint
-	// FIXME setAutoUpdate(FALSE);
-	
-// 	rowNum = numRows();
-// 	setNumRows(rowNum+1);
-// 	rowLength = FLAGSWIDTH + LABELWIDTH + strlen(s);
-// 	
-// 	qDebug() << trace.header() << "Project::addSequence() row length=" << rowLength << " numCols=" << numCols();
-// 	// numCols() is initialized to zero so the following will
-// 	// set numCols when the editor is empty too
-// 	if (numCols()<rowLength) setNumCols(rowLength);
-// 	
-// 	//FIXME setAutoUpdate(TRUE);
-// 	
-// 	// Now we update the new cells
-// 	// repainting only this line
-// 	
-// 	for (unsigned int i=0;i<FLAGSWIDTH;i++)
-// 		updateCell(rowNum,i);
-// 	
-// 	for (unsigned int i=0;i<LABELWIDTH;i++)
-// 		updateCell(rowNum,i+FLAGSWIDTH);
-// 		
-// 	for (unsigned int i=0;i<strlen(s);i++)
-// 		updateCell(rowNum,i+LABELWIDTH+FLAGSWIDTH);
-// 		
-// 	update();
-	 emit sequenceAdded(newSeq);
+	emit sequenceAdded(newSeq);
 }
 
 
@@ -253,7 +224,7 @@ void Project::newAlignment(QList <Sequence *> s)
 void Project::setAlignment(QList <Sequence *> s){
 
 	sequences.clear();
-	for (unsigned int i=0;i<s.count();i++)
+	for (int i=0;i<s.count();i++)
 		sequences.append(new Sequence(s.at(i)->label,s.at(i)->residues));	
 	emit sequencesChanged(sequences.size(),0);
 }
@@ -267,7 +238,23 @@ bool Project::groupSelectedSequences(){
 	if (sequenceSelection->size() < 2)
 		return false;
 	// The selection can't overlap any other groups
-	
+	for (int g=0;g<groups_.size();g++){
+		for( int s=0;s<sequenceSelection->size();s++){
+			if (groups_.at(g)->contains(sequenceSelection->itemAt(s))){
+				qDebug() << trace.header() << "Project::groupSelectedSequences() failed";
+				return false;
+			}
+		}
+	}
+	SequenceGroup *sg = new SequenceGroup();
+	groups_.append(sg);
+	currGroupID++;
+	for ( int s=0;s<sequenceSelection->size();s++){
+		Sequence *seq = sequenceSelection->itemAt(s);
+		seq->group = currGroupID;
+		sg->addSequence(seq);
+	}
+	qDebug() << trace.header() << "Project::groupSelectedSequences() new group " << currGroupID;
 	return true;
 }
 //
@@ -423,6 +410,18 @@ void Project::read(QString &)
 	saved_=true; // clearly it has been saved !
 }
 
+void Project::exportFASTA(QString fname)
+{
+	FASTAFile ff(fname);
+	QStringList l,seqs,c;
+	for (int s=0;s<sequences.size();s++){
+		l.append(sequences.at(s)->label);
+		seqs.append(sequences.at(s)->noFlags());
+		c.append(sequences.at(s)->comment);
+	}
+	ff.write(l,seqs,c);
+}
+
 void Project::closeIt()
 {
 	static bool closing = false;
@@ -457,6 +456,7 @@ void Project::init()
 	sequenceSelection = new SequenceSelection();
 	saved_=false;
 	name_="unnamed.tsq";
+	currGroupID=0;
 }
 
 int Project::getSeqIndex(QString l)

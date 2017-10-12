@@ -47,6 +47,7 @@ class SequenceSelection:public QObject
 		
 		bool empty(){return sel_.size() == 0;}
 		int  size(){return sel_.size();}
+		Sequence * itemAt(int);
 		
 	signals:
 		

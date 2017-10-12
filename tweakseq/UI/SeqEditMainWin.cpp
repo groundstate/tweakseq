@@ -165,9 +165,9 @@ void SeqEditMainWin::fileImport(){
 }
 
 void SeqEditMainWin::fileExportFASTA(){
-	
-	FASTAFile cf("/home/michael/src/seqme/seqme/test/out.fasta");
-	//cf.write();
+	QString fname = QFileDialog::getSaveFileName(this,tr("Export as FASTA"));
+	if (fname.isNull()) return;
+	project_->exportFASTA(fname);
 }
 
 void SeqEditMainWin::filePrint(){
@@ -417,6 +417,7 @@ void SeqEditMainWin::editGroupSequences()
 	// Groups the current selection of sequences
 	if (!project_->groupSelectedSequences())
 		statusBar()->showMessage("Grouping unsuccessful");
+	se->viewport()->repaint();
 }
 
 void SeqEditMainWin::editUngroupSequences()
@@ -524,6 +525,12 @@ void SeqEditMainWin::sequenceSelectionChanged()
 {
 	cutAction->setEnabled(!(project_->sequenceSelection->empty()));
 	groupSequencesAction->setEnabled(!(project_->sequenceSelection->empty()));
+	// If the selection contains any grouped sequences then we can ungroup
+	ungroupSequencesAction->setEnabled(false);
+	for (int s=0;s<project_->sequenceSelection->size();s++){
+		if (project_->sequenceSelection->itemAt(s)->group>0)
+			ungroupSequencesAction->setEnabled(true);
+	}
 }
 
 void SeqEditMainWin::residueSelectionChanged()

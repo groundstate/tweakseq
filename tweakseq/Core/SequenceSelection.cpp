@@ -68,4 +68,12 @@ bool SequenceSelection::contains(Sequence *s)
 {
 	return sel_.contains(s);
 }
+
+Sequence * SequenceSelection::itemAt(int i)
+{
+	if (i <0 || i >= sel_.size())
+		return NULL;
 	
+	return sel_.at(i);
+	
+}

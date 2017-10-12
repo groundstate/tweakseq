@@ -41,8 +41,11 @@ class SequenceGroup
 		void addSequence(Sequence *);
 		void removeSequence(Sequence *);
 		bool contains(Sequence *);
+		int size(){return seqs_.size();}
+		Sequence * itemAt(int);
 		
 		bool locked(){return locked_;}
+		void lock(bool l){locked_=l;}
 		
 	private:
 		

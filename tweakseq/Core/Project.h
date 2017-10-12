@@ -45,6 +45,7 @@ enum alignmentFormats {FASTA,CLUSTALW};
 class Operation;
 class Sequence;
 class SequenceSelection;
+class SequenceGroup;
 class SeqEditMainWin;
 
 class Project:public QObject
@@ -87,6 +88,8 @@ class Project:public QObject
 		void redo();
 		void undoLastAlignment();
 		
+		void exportFASTA(QString);
+		
 	signals:
 		
 		void sequencesChanged(int,int);
@@ -120,6 +123,10 @@ class Project:public QObject
 		int nAlignments;
 		
 		QStack<Operation *> undoStack;
+		
+		QList<SequenceGroup *> groups_;
+		
+		int currGroupID; // used to generate new group IDs
 };
 
 #endif

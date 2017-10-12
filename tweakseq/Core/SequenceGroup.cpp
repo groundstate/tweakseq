@@ -56,6 +56,14 @@ bool SequenceGroup::contains(Sequence *s)
 		return seqs_.contains(s);
 }
 
+Sequence * SequenceGroup::itemAt(int i)
+{
+	if (i <0 || i >= seqs_.size())
+		return NULL;
+	
+	return seqs_.at(i);
+	
+}
 
 		
 	
