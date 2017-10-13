@@ -170,6 +170,13 @@ void SeqEditMainWin::fileExportFASTA(){
 	project_->exportFASTA(fname);
 }
 
+void SeqEditMainWin::fileExportClustalW()
+{
+	QString fname = QFileDialog::getSaveFileName(this,tr("Export as FASTA"));
+	if (fname.isNull()) return;
+	project_->exportClustalW(fname);
+}
+
 void SeqEditMainWin::filePrint(){
 	
 	int pg,numPages;
@@ -422,6 +429,11 @@ void SeqEditMainWin::editGroupSequences()
 
 void SeqEditMainWin::editUngroupSequences()
 {
+	statusBar()->clearMessage();
+	// Groups the current selection of sequences
+	if (!project_->ungroupSelectedSequences())
+		statusBar()->showMessage("Ungrouping unsuccessful");
+	se->viewport()->repaint();
 }
 
 void SeqEditMainWin::editExclude(){
@@ -578,6 +590,11 @@ void SeqEditMainWin::createActions()
 	addAction(exportFASTAAction);
 	connect(exportFASTAAction, SIGNAL(triggered()), this, SLOT(fileExportFASTA()));
 	
+	exportClustalWAction = new QAction( tr("&Export as ClustalW"), this);
+	exportClustalWAction->setStatusTip(tr("Export all project sequences in ClustalW format"));
+	addAction(exportClustalWAction);
+	connect(exportClustalWAction, SIGNAL(triggered()), this, SLOT(fileExportClustalW()));
+	
 	printAction = new QAction( tr("&Print"), this);
 	printAction->setStatusTip(tr("Print current "));
 	addAction(printAction);
@@ -678,6 +695,7 @@ void SeqEditMainWin::createMenus()
 	fileMenu->addAction(importAction);
 	fileMenu->addSeparator();
 	fileMenu->addAction(exportFASTAAction);
+	fileMenu->addAction(exportClustalWAction);
 	fileMenu->addSeparator();
 	fileMenu->addAction(printAction);
 	fileMenu->addSeparator();

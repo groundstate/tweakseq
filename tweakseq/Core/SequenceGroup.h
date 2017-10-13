@@ -35,7 +35,7 @@ class SequenceGroup
 {
 	public:
 		
-		SequenceGroup();
+		SequenceGroup(int);
 		~SequenceGroup();
 		
 		void addSequence(Sequence *);
@@ -47,10 +47,13 @@ class SequenceGroup
 		bool locked(){return locked_;}
 		void lock(bool l){locked_=l;}
 		
+		int id(){return id_;}
+		
 	private:
 		
 		bool locked_;
 		QList<Sequence *> seqs_;
+		int id_;
 		
 };
 

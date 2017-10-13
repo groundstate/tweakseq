@@ -82,6 +82,9 @@ class Project:public QObject
 		void setAlignment(QList <Sequence *> );
 		
 		bool groupSelectedSequences();
+		bool ungroupSelectedSequences();
+		
+		void addGroupToSelection(int);
 		
 		void logOperation(Operation *);
 		void undo();
@@ -89,6 +92,7 @@ class Project:public QObject
 		void undoLastAlignment();
 		
 		void exportFASTA(QString);
+		void exportClustalW(QString);
 		
 	signals:
 		

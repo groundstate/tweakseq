@@ -28,19 +28,23 @@
 #include "Sequence.h"
 #include "SequenceGroup.h"
 
-SequenceGroup::SequenceGroup()
+SequenceGroup::SequenceGroup(int i)
 {
 	locked_=false;
+	id_=i;
 }
 
 SequenceGroup::~SequenceGroup()
 {
+	for (int s=0;s<seqs_.size();s++)
+		seqs_.at(s)->group=-1;
 }
 
 void SequenceGroup::addSequence(Sequence *s)
 {
 	if (seqs_.contains(s))
 		return;
+	s->group=id_;
 	seqs_.append(s);
 }
 
@@ -48,6 +52,7 @@ void SequenceGroup::removeSequence(Sequence *s)
 {
 	if (!(seqs_.contains(s)))
 		return;
+	s->group = -1; // out of the club :-)
 	seqs_.removeAll(s);
 }
 

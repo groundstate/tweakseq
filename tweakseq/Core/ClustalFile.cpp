@@ -27,6 +27,8 @@
 #include <QtDebug>
 #include "DebuggingInfo.h"
 
+#include <cmath>
+
 #include <QFile>
 #include <QStringList>
 
@@ -46,7 +48,7 @@ ClustalFile::~ClustalFile()
 {
 }
 
-bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comments)
+bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &)
 {
 	QString s;
 	
@@ -120,7 +122,56 @@ bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &com
 	return true;
 }
 
-bool ClustalFile::write(QStringList &,QStringList &,QStringList &)
+bool ClustalFile::write(QStringList &l,QStringList &s,QStringList &)
 {
+	
+	setError("");
+	
+	QFile f(name());
+	if (!f.open(QIODevice::WriteOnly | QIODevice::Text)){
+		qDebug() << trace.header() << "ClustalFile::write() couldn't open file";
+		setError("Couldn't open file");
+		return false;
+	}
+	
+	// Prettify - find the longest label so that this field can be made a constant width
+	int maxlablen =0;
+	for (int li=0;li<l.size();li++){
+		if (l.at(li).size() > maxlablen)
+			maxlablen = l.at(li).size();
+	}
+	maxlablen += 3;
+	
+	// Determine the number of output blocks from the longest sequence
+	int maxseqlen=0;
+	for (int si=0;si<s.size();si++){
+		if (s.at(si).size() > maxseqlen)
+			maxseqlen = s.at(si).size();
+	}
+	
+	int nblks = rint(maxseqlen/60);
+	if (nblks*60 < maxseqlen) nblks++;
+		
+	QTextStream ts (&f);
+	
+	ts << "CLUSTALW created by tweakseq" << endl;
+	ts << endl;
+	ts << endl;
+	
+	for (int b=1;b<=nblks;b++){
+		QString conservationDegree = QString(60,'*');
+		for (int si=0;si<s.size();si++){
+			ts.setFieldAlignment(QTextStream::AlignLeft);
+			ts << qSetFieldWidth(maxlablen) << l.at(si);
+			ts.reset();
+			ts << s.at(si).mid((b-1)*60,60) << endl;
+		}
+		QString p = QString(maxlablen,' ');
+		ts << p << conservationDegree << endl;
+		ts << endl;
+	}
+	
+	f.close();
+	
 	return true;
 }

@@ -698,6 +698,39 @@ void SeqEdit::mouseMoveEvent( QMouseEvent* e ){
 	}	
 }
 
+void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
+	// Double clicking on a group member selects the whole group
+	QList<Sequence *> &seq = project_->sequences;
+	
+	if (seq.count() == 0) return;
+	
+	QPoint clickedPos;
+	int clickedRow,clickedCol;
+	
+	clickedPos = e->pos();		
+	clickedRow=rowAt( clickedPos.y() + contentsY());
+	clickedCol=columnAt( clickedPos.x() +contentsX());
+	
+	// If we clicked outside the editing area ... well ... do nothing
+	if ((clickedRow < 0) || (clickedRow > seq.count() -1) || (clickedCol <0 )){
+		switch (e->button()){
+			case Qt::LeftButton:
+				break;
+			default:break;
+		} // end switch (e->button
+		return;
+	}
+	
+	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH)){
+		Sequence *selseq = project_->sequences.at(clickedRow);
+		if (selseq->group){
+			project_->sequenceSelection->clear();
+			project_->addGroupToSelection(selseq->group);
+		}
+	}
+}
+
+
 void SeqEdit::keyPressEvent( QKeyEvent* e )
 {
 	// Handles key press events for the SeqEdit widget.

@@ -71,6 +71,8 @@ protected:
 	void mousePressEvent( QMouseEvent* );
 	void mouseReleaseEvent( QMouseEvent* );
 	void mouseMoveEvent( QMouseEvent* );
+	void mouseDoubleClickEvent(QMouseEvent *);
+	
 	void keyPressEvent( QKeyEvent* );
 	void focusInEvent( QFocusEvent* );
 	void focusOutEvent( QFocusEvent* );

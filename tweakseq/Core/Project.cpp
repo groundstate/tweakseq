@@ -32,6 +32,7 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+#include "ClustalFile.h"
 #include "FASTAFile.h"
 #include "Operation.h"
 #include "Project.h"
@@ -237,26 +238,80 @@ bool Project::groupSelectedSequences(){
 	// Require two or more sequences in the selection
 	if (sequenceSelection->size() < 2)
 		return false;
-	// The selection can't overlap any other groups
+	
+	// If the selection wholly contains one or more existing groups, then
+	// the selection is merged into a single group
+	QList<SequenceGroup *> selgroups;
 	for (int g=0;g<groups_.size();g++){
-		for( int s=0;s<sequenceSelection->size();s++){
-			if (groups_.at(g)->contains(sequenceSelection->itemAt(s))){
-				qDebug() << trace.header() << "Project::groupSelectedSequences() failed";
-				return false;
+		SequenceGroup *sg = groups_.at(g);
+		bool contained = true;
+		int selcnt=0;
+		for (int s=0;s<sg->size();s++){
+			if (!sequenceSelection->contains(sg->itemAt(s))){
+				contained=false;
+				// don't break because we need to test the others for overlap
 			}
+			else
+				selcnt++;
+		}
+		// If only part of a group is selected then this is bad
+		if (selcnt > 0 && selcnt != sg->size()){
+			qDebug() << trace.header() << "Project::groupSelectedSequences() failed";
+			return false;
+		}
+		
+		if (contained){
+			selgroups.append(sg);
+			qDebug() << trace.header() << "Project::groupSelectedSequences() group selected for merging";  
 		}
 	}
-	SequenceGroup *sg = new SequenceGroup();
-	groups_.append(sg);
+	
+	for (int g=0;g<selgroups.size();g++){
+		SequenceGroup *sg = selgroups.at(g);
+		groups_.removeOne(sg);
+		delete sg;
+	}
+	
+	// All sorted, so create the group
 	currGroupID++;
+	SequenceGroup *sg = new SequenceGroup(currGroupID);
+	groups_.append(sg);
 	for ( int s=0;s<sequenceSelection->size();s++){
 		Sequence *seq = sequenceSelection->itemAt(s);
-		seq->group = currGroupID;
 		sg->addSequence(seq);
 	}
 	qDebug() << trace.header() << "Project::groupSelectedSequences() new group " << currGroupID;
 	return true;
 }
+
+bool Project::ungroupSelectedSequences()
+{
+	// Any grouped sequence that is in the selection is removed from its group
+	// If this leaves only one sequence in the group, this is OK
+	for ( int s=0;s<sequenceSelection->size();s++){
+		Sequence *seq = sequenceSelection->itemAt(s);
+		if (seq->group){
+			for (int g=0;g<groups_.size();g++){
+				groups_.at(g)->removeSequence(seq); // this also removes the parent group form the sequence
+			}
+		}
+	}
+	return true;
+}
+
+void Project::addGroupToSelection(int gid)
+{
+	qDebug() << trace.header() << "Project::addGroupToSelection " << gid;
+	for (int g=0;g<groups_.size();g++){
+		SequenceGroup *sg = groups_.at(g);
+		if (gid==sg->id()){
+			for (int s=0;s<sg->size();s++)
+				sequenceSelection->toggle(sg->itemAt(s));
+			break;
+		}
+	}
+}
+
 //
 //
 //
@@ -421,6 +476,19 @@ void Project::exportFASTA(QString fname)
 	}
 	ff.write(l,seqs,c);
 }
+
+void Project::exportClustalW(QString fname)
+{
+	ClustalFile cf(fname);
+	QStringList l,seqs,c;
+	for (int s=0;s<sequences.size();s++){
+		l.append(sequences.at(s)->label);
+		seqs.append(sequences.at(s)->noFlags());
+		c.append(sequences.at(s)->comment);
+	}
+	cf.write(l,seqs,c);
+}
+
 
 void Project::closeIt()
 {

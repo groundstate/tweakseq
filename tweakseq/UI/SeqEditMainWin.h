@@ -57,6 +57,7 @@ private slots:
 	void fileSaveProjectAs();
 	void fileImport();
 	void fileExportFASTA();
+	void fileExportClustalW();
 	
 	void setupEditMenu();
 	void editUndo();
@@ -96,7 +97,7 @@ private:
 	
 	QMenu    *fileMenu,*alignmentMenu,*editMenu,*helpMenu;
 	QAction  *newProjectAction,*saveProjectAction,*saveProjectAsAction;
-	QAction  *importAction, *exportFASTAAction,*printAction, *quitAction;
+	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *quitAction;
 	QAction * goAction,*undoLastAction;
 	QAction * undoAction,*redoAction,*cutAction,*excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
 	QAction * groupSequencesAction,*ungroupSequencesAction;
