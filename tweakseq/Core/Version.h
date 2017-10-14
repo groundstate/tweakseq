@@ -24,63 +24,9 @@
 // THE SOFTWARE.
 //
 
+#ifndef __VERSION_H_
+#define _VERSION_H_
 
-#ifndef __APPLICATION_H_
-#define __APPLICATION_H_
-
-#include <QApplication>
-#include <QStringList>
-//#include "Settings.h"
-
-#include "Version.h"
-
-class AboutDialog;
-class Project;
-
-class Application : public QApplication
-{
-	Q_OBJECT
-	
-	public:
-	
-		Application(int &argc, char **argv);
-		
-		Project * createProject();
-		
-		void setup();
-		
-		void showAboutDialog(QWidget *);
-		void showHelp(const char *);
-	
-		//Settings defaultSettings;
-		
-		QString ClustalWPath();
-		
-		QStringList previousProjects;
-		
-		QString version(){return APP_VERSION;}
-		
-	public slots:
-	
-		void saveDefaultSettings();
-		
-	private slots:
-	
-		void helpClosed();
-		void cleanup();
-		
-		void projectClosed(Project *);
-		
-	private:
-		
-		void init();
-		
-		QString appDirPath_;
-		QList<Project *> openProjects_;
-		
-		AboutDialog *aboutDlg;
-};
-
-extern Application *app;
+#define APP_VERSION "0.1"
 
 #endif

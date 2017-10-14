@@ -24,6 +24,9 @@
 // THE SOFTWARE.
 //
 
+#include <QtDebug>
+#include "DebuggingInfo.h"
+
 #include <iostream>
 
 #include <QDir>
@@ -31,15 +34,12 @@
 
 #include "AboutDialog.h"
 #include "Application.h"
+#include "Project.h"
 
 Application::Application(int &argc, char **argv):QApplication(argc,argv)
 {
 	app = this;
 	init();
-	
-	// Testing purposes only
-	previousProjects.append("/home/mjw/da/src/untitled.da");
-	previousProjects.append("/home/mjw/da/src/test.da");
 	
 	connect(this,SIGNAL(lastWindowClosed()),this,SLOT(quit())); // FIXME mainwindows are parent to project so this may not work
 	connect(this,SIGNAL(aboutToQuit()),this,SLOT(cleanup()));
@@ -48,6 +48,13 @@ Application::Application(int &argc, char **argv):QApplication(argc,argv)
 void Application::setup()
 {
 	// FIXME this does first time setup of the application
+}
+
+Project * Application::createProject()
+{
+	Project *p = new Project();
+	openProjects_.append(p);
+	return p;
 }
 
 void Application::saveDefaultSettings()
@@ -94,6 +101,17 @@ void Application::helpClosed()
 void Application::cleanup()
 {
 	saveDefaultSettings();
+}
+
+void Application::projectClosed(Project *p)
+{
+	qDebug() << trace.header() << "Application::projectClosed()";
+	// Remove from the list
+	openProjects_.removeOne(p);
+	// FIXME If all projects closed then byebye
+	if (openProjects_.isEmpty()){
+		qDebug() << trace.header() << "Application::projectClosed() all closed";
+	}
 }
 
 //		

@@ -47,6 +47,7 @@ class SeqEdit:public Q3GridView
 Q_OBJECT
 
 public:
+	
 	SeqEdit(Project *,QWidget *parent);
 	~SeqEdit();
 
@@ -61,6 +62,8 @@ public:
 	void lockSelection();
 	void unlockSelection();
 
+	QColor getSequenceGroupColour();
+	
 public slots:
 
 	void lockMode(bool);
@@ -106,6 +109,7 @@ private:
 	
 	int cellWidth_,cellHeight_;
 	
+	int currGroupColour_;
 };
 
 

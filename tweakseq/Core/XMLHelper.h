@@ -24,63 +24,44 @@
 // THE SOFTWARE.
 //
 
+#ifndef __XML_HELPER_H_
+#define __XML_HELPER_H_
 
-#ifndef __APPLICATION_H_
-#define __APPLICATION_H_
+class QDomElement;
+class QDomDocument;
+class QString;
+class QStringList;
 
-#include <QApplication>
-#include <QStringList>
-//#include "Settings.h"
-
-#include "Version.h"
-
-class AboutDialog;
-class Project;
-
-class Application : public QApplication
+class XMLHelper
 {
-	Q_OBJECT
-	
 	public:
-	
-		Application(int &argc, char **argv);
+
+		static QString boolToString(bool);
+		static bool stringToBool(QString);
+
+		static QDomElement addElement(QDomDocument &,QDomElement &,
+			QString ,QString );
+		static QDomElement addElement(QDomDocument &,QDomElement &,
+			QString ,QString ,QStringList ,QStringList );
+
+		static QDomElement childElementByTagName(QDomElement &,QString);
+
+		static bool intList(QDomElement &,QList<int> &);
+
+		static bool stringAttribute(QDomElement &,QString,QString *);
+		static bool	intAttribute(QDomElement &,QString,int *);
+		static bool	doubleAttribute(QDomElement &,QString,double *);
+		static bool	boolAttribute(QDomElement &,QString,bool *);
+
+		static bool stringProperty(QDomElement &,QString,QString *,QDomElement *theElem=NULL);
+		static bool	intProperty(QDomElement &,QString,int *);
+		static bool	doubleProperty(QDomElement &,QString,double *);
+		static bool	doubleListProperty(QDomElement &,QString,std::vector<double> &);
+		static bool	intListProperty(QDomElement &,QString,std::vector<int> &);
 		
-		Project * createProject();
+		static bool boolProperty(QDomElement &,QString,bool *);
 		
-		void setup();
-		
-		void showAboutDialog(QWidget *);
-		void showHelp(const char *);
-	
-		//Settings defaultSettings;
-		
-		QString ClustalWPath();
-		
-		QStringList previousProjects;
-		
-		QString version(){return APP_VERSION;}
-		
-	public slots:
-	
-		void saveDefaultSettings();
-		
-	private slots:
-	
-		void helpClosed();
-		void cleanup();
-		
-		void projectClosed(Project *);
-		
-	private:
-		
-		void init();
-		
-		QString appDirPath_;
-		QList<Project *> openProjects_;
-		
-		AboutDialog *aboutDlg;
 };
 
-extern Application *app;
-
 #endif
+

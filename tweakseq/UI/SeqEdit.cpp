@@ -69,6 +69,7 @@
 #include "Project.h"
 #include "SeqEdit.h"
 #include "Sequence.h"
+#include "SequenceGroup.h"
 #include "SequenceSelection.h"
 
 
@@ -81,6 +82,7 @@ using namespace std;
 #define HPADDING 0.9
 #define VPADDING 0.9
 
+#define N_GROUP_COLOURS 10
 //
 // Main widget for the sequence editor
 //
@@ -89,7 +91,20 @@ static void swap_int(int *a,int *b);
 static int find_smallest_int(int a,int b,int c);
 static int find_largest_int(int a,int b,int c);
 
-
+// Colours chose for maximum  contrast for Kenneth Kelly's sequence
+static int groupColours[N_GROUP_COLOURS][3]
+{
+	{241,191,21}, // 82,  yellow
+	{247,118,11}, // 48,  orange
+	{153,198,249}, // 180, light blue
+	{200,177,139}, // 90,  buff
+	{35,234,165}, // 139, green
+	{244,131,205}, // 247, purplish pink
+	{245,144,128}, // 26,  yellowish pink
+	{255,190,80}, // 67,  orange yellow (should be 66
+	{235,221,33}, // 97   greenish yellow
+	{167,220,38} // 115  yellow green
+};
 
 // -----------------------------------------------------------------------------
 //
@@ -113,7 +128,9 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	draggingSequence = FALSE;
 	selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
 	leftDown=FALSE;
-	                     
+	
+	currGroupColour_=0;
+	
 	setFocusPolicy( Qt::StrongFocus );              // we accept keyboard focus
 	setBackgroundRole( QPalette::Base ); 
 	//QPalette pal = palette();
@@ -365,6 +382,12 @@ void SeqEdit::unlockSelection()
 }
 
 
+QColor SeqEdit::getSequenceGroupColour(){
+	currGroupColour_++;
+	if (currGroupColour_ == N_GROUP_COLOURS+1)
+		currGroupColour_=1;
+	return QColor(groupColours[currGroupColour_-1][0],groupColours[currGroupColour_-1][1],groupColours[currGroupColour_-1][2]);
+}
 
 
 //
@@ -448,8 +471,8 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	}
 	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH){ 
 		// Set colour of text
-		if (currSeq->group > 0)
-			txtColor.setRgb(255,255,0);
+		if (currSeq->group != NULL)
+			txtColor=currSeq->group->textColour();
 		else
 			txtColor.setRgb(255,255,255);
 	}
@@ -565,6 +588,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 	// label field then start a drag
 	
 	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH) && !lockModeOn){
+		project_->sequenceSelection->clear();
 		// Get  the label
 		draggedRowNum=clickedRow;
 		QString l = (seq.at(clickedRow)->label).stripWhiteSpace();

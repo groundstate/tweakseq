@@ -28,7 +28,9 @@
 #ifndef __PROJECT_H_
 #define __PROJECT_H_
 
+#include <QColor>
 #include <QDir>
+#include <QDomDocument>
 #include <QList>
 #include <QObject>
 #include <QStack>
@@ -55,12 +57,12 @@ class Project:public QObject
 	public:
 		
 		Project();
-		Project(QString &);
-		
 		~Project();
 	
 		QString name(){return name_;}
 		void setName(QString &);
+		
+		bool empty();
 		
 		QList<Sequence *>  sequences;
 		SequenceSelection *sequenceSelection;
@@ -72,7 +74,7 @@ class Project:public QObject
 		QString getLabelAt(int);
 	
 		void clearSequences();
-		void addSequence(QString ,QString,QString );
+		Sequence * addSequence(QString ,QString,QString,QString );
 		int  deleteSequence(QString);
 		void insertSequence(QString,QString,int);
 		int  replaceSequence(QString,QString,QString);
@@ -81,10 +83,10 @@ class Project:public QObject
 		void newAlignment(QList <Sequence *>);
 		void setAlignment(QList <Sequence *> );
 		
-		bool groupSelectedSequences();
+		bool groupSelectedSequences(QColor);
 		bool ungroupSelectedSequences();
 		
-		void addGroupToSelection(int);
+		void addGroupToSelection(SequenceGroup *);
 		
 		void logOperation(Operation *);
 		void undo();
@@ -105,22 +107,26 @@ class Project:public QObject
 		void newProject();
 		void openProject();
 		void save();
-		void read(QString &);
+		void load(QString &);
 		
 		void closeIt();
 		
 		void createMainWindow();
+	
 		void mainWindowClosed();
 		
 	private:
 		
 		void init();
 		int  getSeqIndex(QString);
-		
+		QString getText(QDomElement);
+		QDomElement getChildElement(QDomNode,QString);
 		// Widgets we keep track of
 		SeqEditMainWin *mainWindow_;
 		
-		bool saved_;
+		bool empty_;
+		bool named_;
+		bool dirty_;
 		QString name_;
 		QDir path_;
 		
@@ -129,8 +135,7 @@ class Project:public QObject
 		QStack<Operation *> undoStack;
 		
 		QList<SequenceGroup *> groups_;
-		
-		int currGroupID; // used to generate new group IDs
+	
 };
 
 #endif

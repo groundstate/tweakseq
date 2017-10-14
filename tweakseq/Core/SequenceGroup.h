@@ -27,6 +27,7 @@
 #ifndef __SEQUENCE_GROUP_H_
 #define __SEQUENCE_GROUP_H_
 
+#include <QColor>
 #include <QList>
 
 class Sequence;
@@ -35,7 +36,7 @@ class SequenceGroup
 {
 	public:
 		
-		SequenceGroup(int);
+		SequenceGroup();
 		~SequenceGroup();
 		
 		void addSequence(Sequence *);
@@ -46,15 +47,19 @@ class SequenceGroup
 		
 		bool locked(){return locked_;}
 		void lock(bool l){locked_=l;}
+
 		
-		int id(){return id_;}
+		// UI stuff
+		QColor & textColour(){return textColour_;}
+		void setTextColour(QColor c){textColour_=c;}
 		
 	private:
 		
 		bool locked_;
 		QList<Sequence *> seqs_;
-		int id_;
 		
+		// UI stuff
+		QColor textColour_;
 };
 
 #endif

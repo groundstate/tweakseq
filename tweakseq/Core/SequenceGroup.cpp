@@ -28,23 +28,23 @@
 #include "Sequence.h"
 #include "SequenceGroup.h"
 
-SequenceGroup::SequenceGroup(int i)
+SequenceGroup::SequenceGroup()
 {
 	locked_=false;
-	id_=i;
+	textColour_ = QColor("white");
 }
 
 SequenceGroup::~SequenceGroup()
 {
 	for (int s=0;s<seqs_.size();s++)
-		seqs_.at(s)->group=-1;
+		seqs_.at(s)->group=NULL;
 }
 
 void SequenceGroup::addSequence(Sequence *s)
 {
 	if (seqs_.contains(s))
 		return;
-	s->group=id_;
+	s->group=this;
 	seqs_.append(s);
 }
 
@@ -52,7 +52,7 @@ void SequenceGroup::removeSequence(Sequence *s)
 {
 	if (!(seqs_.contains(s)))
 		return;
-	s->group = -1; // out of the club :-)
+	s->group = NULL; // out of the club :-)
 	seqs_.removeAll(s);
 }
 

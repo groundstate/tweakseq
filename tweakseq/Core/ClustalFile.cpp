@@ -32,7 +32,10 @@
 #include <QFile>
 #include <QStringList>
 
+#include "Application.h"
 #include "ClustalFile.h"
+
+extern Application *app;
 
 // Base class for supported sequence alignment formats
 
@@ -154,7 +157,7 @@ bool ClustalFile::write(QStringList &l,QStringList &s,QStringList &)
 		
 	QTextStream ts (&f);
 	
-	ts << "CLUSTALW created by tweakseq" << endl;
+	ts << "CLUSTALW created by tweakseq " << app->version() << endl;
 	ts << endl;
 	ts << endl;
 	

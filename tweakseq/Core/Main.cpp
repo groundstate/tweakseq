@@ -89,6 +89,7 @@ int main(int argc, char **argv){
 	QStringList args = a.arguments(); // FIXME unparsed
 	
 	a.setup(); // FIXME placeholder
-	Project *p = new Project();
+	Project *prj = a.createProject();
+	prj->createMainWindow();
 	return a.exec();
 }

@@ -37,6 +37,7 @@
 
 #include <Q3PaintDeviceMetrics> // FIXME
 
+#include <QColor>
 #include <QFile>
 #include <QFileDialog>
 #include <QTextStream>
@@ -129,6 +130,21 @@ void SeqEditMainWin::doAlignment(){
 
 void SeqEditMainWin::fileNewProject()
 {
+	Project *proj = app->createProject();
+	proj->createMainWindow();
+	
+}
+
+void SeqEditMainWin::fileOpenProject()
+{
+	QString fname = QFileDialog::getOpenFileName(this,
+    tr("Open Project"), "./", tr("Project Files (*.tsq)"));
+	if (fname.isNull()) return;
+	
+	// If this project is empty then replace it
+	Project *proj = app->createProject();
+	proj->createMainWindow();
+	proj->load(fname);
 }
 
 void SeqEditMainWin::fileSaveProject()
@@ -156,7 +172,7 @@ void SeqEditMainWin::fileImport(){
 	QStringList seqnames,seqs,comments;
 	if (cf.read(seqnames,seqs,comments)){
 		for (int i=0;i<seqnames.size();i++){
-			project_->addSequence(seqnames.at(i),seqs.at(i),comments.at(i));
+			project_->addSequence(seqnames.at(i),seqs.at(i),comments.at(i),fname);
 		}
 		lastImportedFile=fname;
 	}
@@ -397,6 +413,8 @@ void SeqEditMainWin::filePrint(){
 		statusBar()->message("Printing cancelled",2000);
 }
 
+void SeqEditMainWin::fileClose(){
+}
 
 // Edit menu slots
 void SeqEditMainWin::setupEditMenu()
@@ -422,8 +440,9 @@ void SeqEditMainWin::editGroupSequences()
 {
 	statusBar()->clearMessage();
 	// Groups the current selection of sequences
-	if (!project_->groupSelectedSequences())
+	if (!project_->groupSelectedSequences(se->getSequenceGroupColour())){
 		statusBar()->showMessage("Grouping unsuccessful");
+	}
 	se->viewport()->repaint();
 }
 
@@ -540,7 +559,7 @@ void SeqEditMainWin::sequenceSelectionChanged()
 	// If the selection contains any grouped sequences then we can ungroup
 	ungroupSequencesAction->setEnabled(false);
 	for (int s=0;s<project_->sequenceSelection->size();s++){
-		if (project_->sequenceSelection->itemAt(s)->group>0)
+		if (project_->sequenceSelection->itemAt(s)->group != NULL)
 			ungroupSequencesAction->setEnabled(true);
 	}
 }
@@ -568,7 +587,12 @@ void SeqEditMainWin::createActions()
 	newProjectAction->setStatusTip(tr("Open a new project"));
 	addAction(newProjectAction);
 	connect(newProjectAction, SIGNAL(triggered()), this, SLOT(fileNewProject()));
-	newProjectAction->setEnabled(false); // FIXME disabled for now
+	
+	openProjectAction = new QAction( tr("&Open project"), this);
+	openProjectAction->setStatusTip(tr("Open an existing project"));
+	addAction(openProjectAction);
+	connect(openProjectAction, SIGNAL(triggered()), this, SLOT(fileOpenProject()));
+	openProjectAction->setEnabled(true);
 	
 	saveProjectAction = new QAction( tr("&Save project"), this);
 	saveProjectAction->setStatusTip(tr("Save the project"));
@@ -599,6 +623,11 @@ void SeqEditMainWin::createActions()
 	printAction->setStatusTip(tr("Print current "));
 	addAction(printAction);
 	connect(printAction, SIGNAL(triggered()), this, SLOT(filePrint()));
+	
+	closeAction = new QAction( tr("Close"), this);
+	closeAction->setStatusTip(tr("Close the project "));
+	addAction(closeAction);
+	connect(closeAction, SIGNAL(triggered()), this, SLOT(fileClose()));
 	
 	quitAction = new QAction( tr("&Quit"), this);
 	quitAction->setStatusTip(tr("Quit"));
@@ -689,6 +718,7 @@ void SeqEditMainWin::createMenus()
 {
 	fileMenu = menuBar()->addMenu(tr("&File"));
 	fileMenu->addAction(newProjectAction);
+	fileMenu->addAction(openProjectAction);
 	fileMenu->addAction(saveProjectAction);
 	fileMenu->addAction(saveProjectAsAction);
 	fileMenu->addSeparator();
@@ -699,6 +729,7 @@ void SeqEditMainWin::createMenus()
 	fileMenu->addSeparator();
 	fileMenu->addAction(printAction);
 	fileMenu->addSeparator();
+	fileMenu->addAction(closeAction);
 	fileMenu->addAction(quitAction);
 	
 	editMenu = menuBar()->addMenu(tr("&Edit"));

@@ -25,6 +25,7 @@
 //
 
 #include "Sequence.h"
+#include "SequenceGroup.h"
 
 #define LABELWIDTH 10 // FIXME
 
@@ -32,13 +33,14 @@ Sequence::Sequence()
 {
 }
 
-Sequence::Sequence(QString l,QString r,QString c){
+Sequence::Sequence(QString l,QString r,QString c,QString f){
 	label = l;
 	while (label.length()<LABELWIDTH) // FIXME this should be done elsewhere
 		label.append(" ");
 	residues = r;
 	comment=c;
-	group=-1;
+	group=NULL;
+	source=f;
 	//cerr << "Residues " << r.latin1() << endl;
 }
 

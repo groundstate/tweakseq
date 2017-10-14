@@ -30,18 +30,22 @@
 
 #include <QString>
 
+class SequenceGroup;
+
 class Sequence
 {
 	public:
 		Sequence();
-		Sequence(QString,QString,QString c=QString());
+		Sequence(QString,QString,QString c=QString(),QString f=QString());
 		~Sequence();
 		// comment is for a longer comment
 		QString label,residues,comment;
 		
 		QString noFlags();
 		
-		int group;// group will be >= 1 so we can use it for logical tests
+		SequenceGroup *group;
+		
+		QString source; // file sequence was originally sourced from
 };
 
 #endif

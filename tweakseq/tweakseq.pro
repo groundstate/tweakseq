@@ -17,7 +17,9 @@ HEADERS       =  include/AboutDialog.h \
 								 include/Sequence.h \
 								 include/SequenceFile.h \
 								 include/SequenceGroup.h \
-								 include/SequenceSelection.h
+								 include/SequenceSelection.h \
+								 include/Version.h \
+								 include/XMLHelper.h
 								 
 SOURCES				 =  Core/Application.cpp \
 									Core/ClustalFile.cpp \
@@ -28,7 +30,8 @@ SOURCES				 =  Core/Application.cpp \
 									Core/Sequence.cpp \
 									Core/SequenceFile.cpp\
 									Core/SequenceGroup.cpp\
-									Core/SequenceSelection.cpp
+									Core/SequenceSelection.cpp \
+									Core/XMLHelper.cpp
 									
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/MessageWin.cpp \

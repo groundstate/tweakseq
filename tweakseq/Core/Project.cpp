@@ -32,6 +32,7 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+#include "Application.h"
 #include "ClustalFile.h"
 #include "FASTAFile.h"
 #include "Operation.h"
@@ -40,6 +41,9 @@
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
 #include "SeqEditMainWin.h"
+#include "XMLHelper.h"
+
+extern Application *app;
 
 //
 // Public members
@@ -48,19 +52,14 @@
 Project::Project()
 {
 	init();
-	createMainWindow();
 }
 
-Project::Project(QString &f)
-{
-	init();
-	read(f);
-}
 
 		
 Project::~Project()
 {
 	delete sequenceSelection;
+	// FIXME and the rest ..
 }
 
 void Project::setName(QString &n)
@@ -146,14 +145,18 @@ void Project::clearSequences()
 	qDebug() << trace.header() << "Project::clearSequences()";
 	sequences.clear();
 	emit sequencesChanged(0,sequences.size());
+	dirty_=true;
 }
 
-void Project::addSequence( QString l,QString s,QString c )
+Sequence * Project::addSequence( QString l,QString s,QString c,QString f)
 {
 	qDebug() << trace.header() << "Project::addSequence()\n" << l << " " << s;
-	Sequence * newSeq = new Sequence(l,s,c);
+	empty_=false;
+	Sequence * newSeq = new Sequence(l,s,c,f);
 	sequences.append(newSeq);
 	emit sequenceAdded(newSeq);
+	dirty_=true;
+	return newSeq;
 }
 
 
@@ -165,12 +168,14 @@ int Project::deleteSequence(QString l){
 	int i;
 	if ((i=getSeqIndex(l))>=0){ // found it
 	}
+	dirty_=true;
 	return i;
 }
 
 void Project::insertSequence(QString ,QString ,int )
 {
 	qWarning() << warning.header() << "Project::insertSequence() NOT IMPLEMENTED!";
+	dirty_=true;
 }
 
 int Project::replaceSequence(QString l,QString newLabel,QString newRes){
@@ -182,6 +187,8 @@ int Project::replaceSequence(QString l,QString newLabel,QString newRes){
 		deleteSequence(l);
 		insertSequence(newLabel,newRes,i);
 	}
+	
+	dirty_=true;
 	return  i;
 	
 }
@@ -196,6 +203,7 @@ void Project::moveSequence(int i,int j)
 		return;
 	}
 	sequences.move(i,j);
+	dirty_=true;
 	emit sequencesChanged(sequences.size(),sequences.size());
 }
 
@@ -203,6 +211,7 @@ void Project::changeResidues(QString r,int pos)
 {
 	qDebug() << trace.header() << "Project::changeResidues()  " << r << " " << pos;
 	sequences.at(pos)->residues=r;
+	dirty_=true;
 	emit sequencesChanged(sequences.size(),sequences.size());
 }
 
@@ -211,6 +220,7 @@ void Project::newAlignment(QList <Sequence *> s)
 {
 	// Called after making an alignment
 	qDebug() << trace.header() << "Project::newAlignment()";
+	empty_=false;
 	undoStack.push(new Operation(Operation::Alignment,sequences));
 	sequences.clear();
 	for (int i=0;i<s.count();i++){
@@ -219,14 +229,17 @@ void Project::newAlignment(QList <Sequence *> s)
 		//if (numCols()<rowLength) setNumCols(rowLength);
 	}	
 	nAlignments++;
+	dirty_=true;
 	emit sequencesChanged(sequences.size(),0);
 }
 
 void Project::setAlignment(QList <Sequence *> s){
 
 	sequences.clear();
+	empty_=false;
 	for (int i=0;i<s.count();i++)
-		sequences.append(new Sequence(s.at(i)->label,s.at(i)->residues));	
+		sequences.append(new Sequence(s.at(i)->label,s.at(i)->residues));
+	dirty_=true;
 	emit sequencesChanged(sequences.size(),0);
 }
 
@@ -234,7 +247,7 @@ void Project::setAlignment(QList <Sequence *> s){
 //
 //
 
-bool Project::groupSelectedSequences(){
+bool Project::groupSelectedSequences(QColor gcol){
 	// Require two or more sequences in the selection
 	if (sequenceSelection->size() < 2)
 		return false;
@@ -273,14 +286,16 @@ bool Project::groupSelectedSequences(){
 	}
 	
 	// All sorted, so create the group
-	currGroupID++;
-	SequenceGroup *sg = new SequenceGroup(currGroupID);
+
+	SequenceGroup *sg = new SequenceGroup();
+	sg->setTextColour(gcol);
 	groups_.append(sg);
 	for ( int s=0;s<sequenceSelection->size();s++){
 		Sequence *seq = sequenceSelection->itemAt(s);
 		sg->addSequence(seq);
 	}
-	qDebug() << trace.header() << "Project::groupSelectedSequences() new group " << currGroupID;
+	qDebug() << trace.header() << "Project::groupSelectedSequences() new group ";
+	dirty_=true;
 	return true;
 }
 
@@ -296,20 +311,22 @@ bool Project::ungroupSelectedSequences()
 			}
 		}
 	}
+	dirty_=true;
 	return true;
 }
 
-void Project::addGroupToSelection(int gid)
+void Project::addGroupToSelection(SequenceGroup *selg)
 {
-	qDebug() << trace.header() << "Project::addGroupToSelection " << gid;
+	qDebug() << trace.header() << "Project::addGroupToSelection ";
 	for (int g=0;g<groups_.size();g++){
 		SequenceGroup *sg = groups_.at(g);
-		if (gid==sg->id()){
+		if (selg==sg){
 			for (int s=0;s<sg->size();s++)
 				sequenceSelection->toggle(sg->itemAt(s));
 			break;
 		}
 	}
+	dirty_=true;
 }
 
 //
@@ -417,6 +434,7 @@ void Project::undoLastAlignment()
 		nAlignments--;
 		emit sequencesChanged(sequences.size(),oldSize);
 	}
+	dirty_=true;
 }
 
 //
@@ -437,13 +455,13 @@ void Project::save()
 {
 	QString tmp;
 	
-	if (!saved_){ // nver saved so need a get a project name and path
+	if (!named_){ // never saved so need a get a project name and path
 		QString fileName = QFileDialog::getSaveFileName(mainWindow_, tr("Save Project"));
 		if (fileName.isNull()) return;
 		QFileInfo fi(fileName);
 		path_=fi.path();
 		name_=fi.fileName();
-		saved_=true;
+		named_=true;
 	}
 	
 	QDomDocument saveDoc;
@@ -455,14 +473,105 @@ void Project::save()
 	f.open(IO_WriteOnly);
 	QTextStream ts(&f);
 	
+	QDomElement el = saveDoc.createElement("version");
+	root.appendChild(el);
+	QDomText te = saveDoc.createTextNode(app->version());
+	el.appendChild(te);
+		
+	for (int s=0;s<sequences.size();s++){
+		Sequence *seq = sequences.at(s);
+		
+		QDomElement ae = saveDoc.createElement("sequence");
+		root.appendChild(ae);
+		
+		XMLHelper::addElement(saveDoc,ae,"name",seq->label);
+		XMLHelper::addElement(saveDoc,ae,"comment",seq->comment);		
+		XMLHelper::addElement(saveDoc,ae,"residues",seq->noFlags());
+		XMLHelper::addElement(saveDoc,ae,"source",seq->source);
+		XMLHelper::addElement(saveDoc,ae,"exclusions","unimplemented");
+		
+		
+		if (seq->group){
+			QDomElement gel = saveDoc.createElement("group");
+			ae.appendChild(gel);
+			
+			XMLHelper::addElement(saveDoc,gel,"id",QString::number(long (seq->group)));
+			XMLHelper::addElement(saveDoc,gel,"locked",(seq->group->locked()?"yes":"no"));
+			QColor col = seq->group->textColour();
+			QString str =  QString::number(col.red()) + QString(",") + QString::number(col.green()) + QString(",")+ QString::number(col.blue());
+			XMLHelper::addElement(saveDoc,gel,"colour",str);
+		
+		}
+		
+	}
+	
 	saveDoc.save(ts,2);
 	f.close();
 	
+	dirty_=false;
+	
 }
 
-void Project::read(QString &)
+void Project::load(QString &fname)
 {
-	saved_=true; // clearly it has been saved !
+	qDebug() << trace.header() << "Project::load()" << fname;
+	named_=true; 
+	dirty_=false;
+	empty_=false;
+	QDomDocument doc;
+	
+	QFile file(fname);
+	if ( !file.open( IO_ReadOnly ) )
+		return ;
+	QString err; int errlineno,errcolno;
+	if ( !doc.setContent( &file,true,&err,&errlineno,&errcolno ) )
+	{	
+		qDebug() << trace.header() << "Project::load() error at line " << errlineno;
+		file.close();
+		return ;
+	}
+	QList<long> gids;
+	
+	// Get all the sequences
+	QDomNodeList nl = doc.elementsByTagName("sequence");
+	for (int i=0;i<nl.count();i++){
+		qDebug() << trace.header() << "Project::load() sequence";
+		QDomNode sNode = nl.item(i);
+		QString sname = getText(getChildElement(sNode,"name"));
+		
+		QString scomment = getText(getChildElement(sNode,"comment"));
+		
+		QString sres = getText(getChildElement(sNode,"residues"));
+		
+	  QString ssrc = getText(getChildElement(sNode,"source"));
+		
+		// Got enough to create it now
+		Sequence *seq = addSequence(sname,sres,scomment,ssrc);
+		
+		QString tmp = getText(getChildElement(sNode,"exclusions"));
+		
+		QDomElement gel = getChildElement(sNode,"group");
+		if (!(gel.isNull())){
+			QString gid = getText(getChildElement(gel,"id"));
+			qDebug() << trace.header() << "gel";
+			
+		}
+// 		tmp = getText(getChildElement(sNode,"group"));
+// 		if (!(tmp.isNull())){
+// 			long gid = tmp.toLong();
+// 			// build a list of unique group IDs so that they can be created post-load
+// 			if (!(gids.contains(gid))){
+// 				gids.append(gid);
+// 			}
+// 		}
+		
+	}	
+	
+	for (int gi =0;gi< gids.size(); gi++){
+		SequenceGroup *sg = new SequenceGroup();
+	}
+	
+	file.close();
 }
 
 void Project::exportFASTA(QString fname)
@@ -488,7 +597,6 @@ void Project::exportClustalW(QString fname)
 	}
 	cf.write(l,seqs,c);
 }
-
 
 void Project::closeIt()
 {
@@ -522,9 +630,10 @@ void Project::mainWindowClosed()
 void Project::init()
 {
 	sequenceSelection = new SequenceSelection();
-	saved_=false;
+	named_=false;
+	dirty_=false;
 	name_="unnamed.tsq";
-	currGroupID=0;
+	empty_=true;
 }
 
 int Project::getSeqIndex(QString l)
@@ -538,4 +647,29 @@ int Project::getSeqIndex(QString l)
 		return -1;
 	else
 		return i;
+}
+
+QString Project::getText(QDomElement elem)
+{
+	QString res;
+	if (!elem.isNull()){
+		QDomText t = elem.firstChild().toText();
+		if (!t.isNull()){
+			return t.data();
+		}
+	}
+	return res;
+}
+
+QDomElement Project::getChildElement(QDomNode node,QString tag)
+{
+	QDomElement parentElem = node.toElement();
+	if (!parentElem.isNull()){ // they all are nodes anyway
+		QDomNodeList ch =  parentElem.elementsByTagName(tag);
+		if (ch.count()==1){
+			QDomElement chElem = ch.item(0).toElement();
+			return chElem;
+		}
+	}
+	return QDomElement();	
 }

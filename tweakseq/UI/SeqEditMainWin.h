@@ -53,11 +53,13 @@ private slots:
 
 	void filePrint();
 	void fileNewProject();
+	void fileOpenProject();
 	void fileSaveProject();
 	void fileSaveProjectAs();
 	void fileImport();
 	void fileExportFASTA();
 	void fileExportClustalW();
+	void fileClose();
 	
 	void setupEditMenu();
 	void editUndo();
@@ -96,8 +98,8 @@ private:
 	void printRes( QPainter*,QChar,int,int );
 	
 	QMenu    *fileMenu,*alignmentMenu,*editMenu,*helpMenu;
-	QAction  *newProjectAction,*saveProjectAction,*saveProjectAsAction;
-	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *quitAction;
+	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
+	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
 	QAction * goAction,*undoLastAction;
 	QAction * undoAction,*redoAction,*cutAction,*excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
 	QAction * groupSequencesAction,*ungroupSequencesAction;
