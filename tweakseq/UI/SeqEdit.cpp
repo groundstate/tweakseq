@@ -345,43 +345,6 @@ void SeqEdit::setCellMark(int row,int col,int on)
 			seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)].unicode() & (~EXCLUDE_CELL);
 }
 
-void SeqEdit::lockSelection()
-{
-	// TO DO - lots
-	qDebug() << trace.header() << "SeqEdit::lockSelection";
-	
-	int startRow=selAnchorRow,stopRow=selDragRow,
-			startCol=selAnchorCol,stopCol=selDragCol,row,col;
-			
-	if (isSelected){ 
-		isSelected=FALSE;
-		// Order start and stop so they can be used in loops
-		if (startRow > stopRow) swap_int(&startRow,&stopRow);
-		if (startCol > stopCol) swap_int(&startCol,&stopCol);
-		
-		// TO DO Create a new undo record
-		//undoStack.push( new TEditRec(Edit_Mark,startRow,stopRow,
-		//	startCol,stopCol,1));
-		
-		// Mark the residues
-		for (row=startRow;row<=stopRow;row++)
-			// Update past the deletion point only
-			for (col=startCol;col<=stopCol;col++){
-				lockCell(row,col);
-				updateCell(row,col);
-			}
-	}
-	update();
-}
-
-
-void SeqEdit::unlockSelection()
-{
-	//TO DO
-	qWarning() << warning.header() << "SeqEdit::unlockSelection() NOT IMPLEMENTED !!!";
-}
-
-
 QColor SeqEdit::getSequenceGroupColour(){
 	currGroupColour_++;
 	if (currGroupColour_ == N_GROUP_COLOURS+1)
@@ -412,17 +375,25 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	int cellSelected=FALSE;
 	
 	QList<Sequence *> &seq=project_->sequences;
+	Sequence *currSeq = seq.at(row);
+	QRect r=cellGeometry(row,col);
+	int w = r.width();
+	int h = r.height();
+	
+	if (col==0){
+		if (currSeq->group != NULL){
+			if (currSeq->group->locked()){
+				txtColor.setRgb(255,0,0);
+				p->setPen(txtColor);
+				p->drawText( 0, 0, w, h, Qt::AlignCenter, "L");
+				return;
+			}
+		}
+	}
 	
 	c=cellContent(row,col,REMOVE_FLAGS);
 	if (c.unicode()==0) return;
 	cwflags=cellContent(row,col,KEEP_FLAGS);
-	
-	// Handles cell painting for the SeqEdit widget.
-	//int w = cellWidth( col );                   // width of cell in pixels
-	//int h = cellHeight( row );                  // height of cell in pixels
-	QRect r=cellGeometry(row,col);
-	int w = r.width();
-	int h = r.height();
 	
 	// If the cell is highlighted then do it
 	
@@ -465,10 +436,11 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	
 	//  Draw cell content (text)
 	
-	Sequence *currSeq = seq.at(row);
+	
 	if (project_->sequenceSelection->contains(currSeq)){
 		p->fillRect(0,0,w,h,QColor(128,128,128));
 	}
+	
 	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH){ 
 		// Set colour of text
 		if (currSeq->group != NULL)
@@ -893,14 +865,6 @@ void SeqEdit::deleteCells(int row,int start,int stop){
 	(seq.at(row)->residues).remove(start-(LABELWIDTH+FLAGSWIDTH),stop-start+1);
 	update();
 }
-
-void SeqEdit::lockCell(int row,int col){
-	QList<Sequence *> &seq = project_->sequences;
-	if (col>=LABELWIDTH+FLAGSWIDTH)
-		seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)] = 
-			seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)].unicode() ^ LOCK_CELL;
-}
-
 
 void SeqEdit::checkLength(){
 	// The size of the region displayed needs to be checked after some

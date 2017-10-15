@@ -315,6 +315,37 @@ bool Project::ungroupSelectedSequences()
 	return true;
 }
 
+void Project::lockSelectedGroups(bool lock){
+	// The selection must contain all the sequences in one or more groups
+	
+	// First, check for an ungrouped sequence because this is fatal
+	for (int s=0;s<sequenceSelection->size();s++){
+		if (sequenceSelection->itemAt(s)->group == NULL){
+			qDebug() << trace.header() << "Project::lockSelectedGroups() ungrouped sequence in the selcetion";
+			return;
+		}
+	}
+	QList<SequenceGroup *> selgroups;
+	for (int g=0;g<groups_.size();g++){
+		SequenceGroup *sg = groups_.at(g);
+		bool contained=true;
+		for (int s=0;s<sg->size();s++){
+			if (!sequenceSelection->contains(sg->itemAt(s))){
+				contained=false;
+				break;
+			}
+		}
+		if (contained){
+			selgroups.append(sg);
+			qDebug() << trace.header() << "Project::lockSelectedGroups() group in selection"; 
+		}	
+	}
+	
+	for (int sg=0;sg<selgroups.size();sg++){
+		selgroups.at(sg)->lock(lock);
+	}
+}
+
 void Project::addGroupToSelection(SequenceGroup *selg)
 {
 	qDebug() << trace.header() << "Project::addGroupToSelection ";
@@ -451,13 +482,13 @@ void Project::openProject()
 {
 }
 
-void Project::save()
+bool Project::save()
 {
 	QString tmp;
 	
 	if (!named_){ // never saved so need a get a project name and path
 		QString fileName = QFileDialog::getSaveFileName(mainWindow_, tr("Save Project"));
-		if (fileName.isNull()) return;
+		if (fileName.isNull()) return false;
 		QFileInfo fi(fileName);
 		path_=fi.path();
 		name_=fi.fileName();
@@ -481,28 +512,33 @@ void Project::save()
 	for (int s=0;s<sequences.size();s++){
 		Sequence *seq = sequences.at(s);
 		
-		QDomElement ae = saveDoc.createElement("sequence");
-		root.appendChild(ae);
+		QDomElement se = saveDoc.createElement("sequence");
+		root.appendChild(se);
 		
-		XMLHelper::addElement(saveDoc,ae,"name",seq->label);
-		XMLHelper::addElement(saveDoc,ae,"comment",seq->comment);		
-		XMLHelper::addElement(saveDoc,ae,"residues",seq->noFlags());
-		XMLHelper::addElement(saveDoc,ae,"source",seq->source);
-		XMLHelper::addElement(saveDoc,ae,"exclusions","unimplemented");
+		XMLHelper::addElement(saveDoc,se,"name",seq->label);
+		XMLHelper::addElement(saveDoc,se,"comment",seq->comment);		
+		XMLHelper::addElement(saveDoc,se,"residues",seq->noFlags());
+		XMLHelper::addElement(saveDoc,se,"source",seq->source);
+		XMLHelper::addElement(saveDoc,se,"exclusions","unimplemented");
 		
+	}
+	
+	for (int g=0;g<groups_.size();g++){
+		SequenceGroup *sg = groups_.at(g);
+		QDomElement gel = saveDoc.createElement("group");
+		root.appendChild(gel);
+		XMLHelper::addElement(saveDoc,gel,"locked",(sg->locked()?"yes":"no"));
+		QColor col = sg->textColour();
+		QString str =  QString::number(col.red()) + QString(",") + QString::number(col.green()) + QString(",")+ QString::number(col.blue());
+		XMLHelper::addElement(saveDoc,gel,"colour",str);
 		
-		if (seq->group){
-			QDomElement gel = saveDoc.createElement("group");
-			ae.appendChild(gel);
-			
-			XMLHelper::addElement(saveDoc,gel,"id",QString::number(long (seq->group)));
-			XMLHelper::addElement(saveDoc,gel,"locked",(seq->group->locked()?"yes":"no"));
-			QColor col = seq->group->textColour();
-			QString str =  QString::number(col.red()) + QString(",") + QString::number(col.green()) + QString(",")+ QString::number(col.blue());
-			XMLHelper::addElement(saveDoc,gel,"colour",str);
-		
+		QString seqs = "";
+		for (int s=0;s<sg->size();s++){
+			Sequence *seq = sg->itemAt(s);
+			seqs += seq->label;
+			if (s < sg->size()-1) seqs += ",";
 		}
-		
+		XMLHelper::addElement(saveDoc,gel,"sequences",seqs);
 	}
 	
 	saveDoc.save(ts,2);
@@ -510,6 +546,7 @@ void Project::save()
 	
 	dirty_=false;
 	
+	return true;
 }
 
 void Project::load(QString &fname)
@@ -535,40 +572,60 @@ void Project::load(QString &fname)
 	// Get all the sequences
 	QDomNodeList nl = doc.elementsByTagName("sequence");
 	for (int i=0;i<nl.count();i++){
-		qDebug() << trace.header() << "Project::load() sequence";
 		QDomNode sNode = nl.item(i);
-		QString sname = getText(getChildElement(sNode,"name"));
 		
-		QString scomment = getText(getChildElement(sNode,"comment"));
+		QString sName,sComment,sResidues,sSrc;
 		
-		QString sres = getText(getChildElement(sNode,"residues"));
-		
-	  QString ssrc = getText(getChildElement(sNode,"source"));
-		
-		// Got enough to create it now
-		Sequence *seq = addSequence(sname,sres,scomment,ssrc);
-		
-		QString tmp = getText(getChildElement(sNode,"exclusions"));
-		
-		QDomElement gel = getChildElement(sNode,"group");
-		if (!(gel.isNull())){
-			QString gid = getText(getChildElement(gel,"id"));
-			qDebug() << trace.header() << "gel";
-			
+		QDomElement elem = sNode.firstChildElement();
+		while (!elem.isNull()){
+			if (elem.tagName() == "name")
+				sName = elem.text().trimmed();
+			else if (elem.tagName() == "comment")
+				sComment=elem.text().trimmed();
+			else if (elem.tagName() == "residues")
+				sResidues = elem.text().trimmed();
+			else if (elem.tagName() == "source")
+				sSrc = elem.text().trimmed();
+			else if (elem.tagName() == "exclusions"){
+			}
+			elem=elem.nextSiblingElement();
 		}
-// 		tmp = getText(getChildElement(sNode,"group"));
-// 		if (!(tmp.isNull())){
-// 			long gid = tmp.toLong();
-// 			// build a list of unique group IDs so that they can be created post-load
-// 			if (!(gids.contains(gid))){
-// 				gids.append(gid);
-// 			}
-// 		}
-		
+		addSequence(sName,sResidues,sComment,sSrc);
 	}	
 	
-	for (int gi =0;gi< gids.size(); gi++){
+	// Get all the groups
+	nl = doc.elementsByTagName("group");
+	for (int i=0;i<nl.count();i++){
+		QDomNode gNode = nl.item(i);
+		QDomElement elem = gNode.firstChildElement();
+		bool gLocked=false;
+		QColor gColor;
+		QStringList seqs;
+		while (!elem.isNull()){
+			if (elem.tagName() == "locked"){
+				gLocked=XMLHelper::stringToBool(elem.text().trimmed());
+			}
+			else if (elem.tagName() == "colour"){
+				QStringList tmp = elem.text().split(',');
+				gColor.setRgb(tmp.at(0).toInt(),tmp.at(1).toInt(),tmp.at(2).toInt());
+			}
+			else if (elem.tagName() == "sequences"){
+				seqs=elem.text().split(',');
+			}
+			elem=elem.nextSiblingElement();
+		}
 		SequenceGroup *sg = new SequenceGroup();
+		sg->setTextColour(gColor);
+		sg->lock(gLocked);
+		for (int s=0;s<seqs.size();s++){
+			for (int ss=0;ss<sequences.size();ss++){
+				if (seqs.at(s) == sequences.at(ss)->label){
+					sg->addSequence(sequences.at(ss));
+					break;
+				}
+			}
+		}
+		groups_.append(sg);
 	}
 	
 	file.close();
@@ -649,27 +706,4 @@ int Project::getSeqIndex(QString l)
 		return i;
 }
 
-QString Project::getText(QDomElement elem)
-{
-	QString res;
-	if (!elem.isNull()){
-		QDomText t = elem.firstChild().toText();
-		if (!t.isNull()){
-			return t.data();
-		}
-	}
-	return res;
-}
 
-QDomElement Project::getChildElement(QDomNode node,QString tag)
-{
-	QDomElement parentElem = node.toElement();
-	if (!parentElem.isNull()){ // they all are nodes anyway
-		QDomNodeList ch =  parentElem.elementsByTagName(tag);
-		if (ch.count()==1){
-			QDomElement chElem = ch.item(0).toElement();
-			return chElem;
-		}
-	}
-	return QDomElement();	
-}

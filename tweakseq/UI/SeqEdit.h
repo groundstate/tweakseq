@@ -59,8 +59,6 @@ public:
 	
 	void excludeSelection();
 	void removeExcludeSelection();
-	void lockSelection();
-	void unlockSelection();
 
 	QColor getSequenceGroupColour();
 	
@@ -91,7 +89,6 @@ private:
 	void insertCells(QString,int row,int col);
 	void deleteCells(int r,int start,int stop);
 	void setCellMark(int row,int col,int on);
-	void lockCell(int row,int col);
 
 	void checkLength();
 	

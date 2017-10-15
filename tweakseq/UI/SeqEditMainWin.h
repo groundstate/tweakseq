@@ -49,6 +49,10 @@ public:
 	
 	SeqEdit *se; 
 
+protected:
+	
+	virtual void closeEvent(QCloseEvent *);
+	
 private slots:
 
 	void filePrint();
@@ -96,6 +100,8 @@ private:
 	void writeAlignment(int,QString);	
 	void readAlignment(int,QString);
 	void printRes( QPainter*,QChar,int,int );
+	
+	bool maybeSave();
 	
 	QMenu    *fileMenu,*alignmentMenu,*editMenu,*helpMenu;
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;

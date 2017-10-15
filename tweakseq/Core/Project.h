@@ -59,10 +59,16 @@ class Project:public QObject
 		Project();
 		~Project();
 	
+		void newProject();
+		void openProject();
+		bool save();
+		void load(QString &);
+		
 		QString name(){return name_;}
 		void setName(QString &);
 		
 		bool empty();
+		bool isModified(){return dirty_;}
 		
 		QList<Sequence *>  sequences;
 		SequenceSelection *sequenceSelection;
@@ -87,7 +93,8 @@ class Project:public QObject
 		bool ungroupSelectedSequences();
 		
 		void addGroupToSelection(SequenceGroup *);
-		
+		void lockSelectedGroups(bool);
+	
 		void logOperation(Operation *);
 		void undo();
 		void redo();
@@ -104,10 +111,6 @@ class Project:public QObject
 		
 	public slots:
 	
-		void newProject();
-		void openProject();
-		void save();
-		void load(QString &);
 		
 		void closeIt();
 		
@@ -119,8 +122,7 @@ class Project:public QObject
 		
 		void init();
 		int  getSeqIndex(QString);
-		QString getText(QDomElement);
-		QDomElement getChildElement(QDomNode,QString);
+		
 		// Widgets we keep track of
 		SeqEditMainWin *mainWindow_;
 		

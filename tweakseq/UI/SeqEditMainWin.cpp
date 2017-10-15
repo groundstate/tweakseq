@@ -81,7 +81,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 {
 	
 	setWindowTitle("tweakseq - " + project->name());
-	setGeometry(0,0,640,400);
+	setGeometry(0,0,800,600);
 	setWindowIcon(QIcon(seqedit_xpm));
 	
 	project_=project;
@@ -104,10 +104,12 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	se = new SeqEdit(project_,split);
 	
 	mw = new MessageWin(split);
-	
+
+	QList<int> wsizes;
+	wsizes.append(600);wsizes.append(200);
+	split->setSizes(wsizes);
 	setCentralWidget(split);
 		
-
 	printer = new QPrinter();
 	printer->setFullPage(TRUE);
 	
@@ -120,6 +122,16 @@ SeqEditMainWin::~SeqEditMainWin(){
 }
 
 void SeqEditMainWin::doAlignment(){
+}
+
+void SeqEditMainWin::closeEvent(QCloseEvent *ev)
+{
+	if (maybeSave()) {
+		// FIXME do some more stuff ?
+		ev->accept();
+	} else {
+		ev->ignore();
+	}
 }
 
 //
@@ -414,6 +426,7 @@ void SeqEditMainWin::filePrint(){
 }
 
 void SeqEditMainWin::fileClose(){
+	close();
 }
 
 // Edit menu slots
@@ -455,6 +468,16 @@ void SeqEditMainWin::editUngroupSequences()
 	se->viewport()->repaint();
 }
 
+void SeqEditMainWin::editLock(){
+	project_->lockSelectedGroups(true);
+	se->viewport()->repaint();
+}
+
+void SeqEditMainWin::editUnlock(){
+	project_->lockSelectedGroups(false);
+	se->viewport()->repaint();
+}
+
 void SeqEditMainWin::editExclude(){
 	se->excludeSelection();
 }
@@ -463,14 +486,6 @@ void SeqEditMainWin::editRemoveExclude(){
 	se->removeExcludeSelection();
 }
 	
-void SeqEditMainWin::editLock(){
-	se->lockSelection();
-}
-
-void SeqEditMainWin::editUnlock(){
-	se->unlockSelection();
-}
-
 void SeqEditMainWin::setupAlignmentMenu()
 {
 	goAction->setEnabled(project_->numSequences() >= 2);
@@ -674,6 +689,17 @@ void SeqEditMainWin::createActions()
 	connect(ungroupSequencesAction, SIGNAL(triggered()), this, SLOT(editUngroupSequences()));
 	ungroupSequencesAction->setEnabled(false);
 	
+	lockAction = new QAction( tr("Lock groups(s)"), this);
+	lockAction->setStatusTip(tr("Lock selected group(s)"));
+	//lockAction->setIcon(QIcon(lock_xpm));
+	addAction(lockAction);
+	connect(lockAction, SIGNAL(triggered()), this, SLOT(editLock()));
+	
+	unlockAction = new QAction( tr("Unlock groups(s)"), this);
+	unlockAction->setStatusTip(tr("Unlock selected group(s)"));
+	addAction(unlockAction);
+	connect(unlockAction, SIGNAL(triggered()), this, SLOT(editUnlock()));
+	
 	excludeAction = new QAction( tr("Exclude residues"), this);
 	excludeAction->setStatusTip(tr("Exclude residues"));
 	addAction(excludeAction);
@@ -683,17 +709,6 @@ void SeqEditMainWin::createActions()
 	removeExcludeAction->setStatusTip(tr("Remove exclusion"));
 	addAction(removeExcludeAction);
 	connect(removeExcludeAction, SIGNAL(triggered()), this, SLOT(editRemoveExclude()));
-	
-	lockAction = new QAction( tr("Lock residues"), this);
-	lockAction->setStatusTip(tr("Lock residues"));
-	lockAction->setIcon(QIcon(lock_xpm));
-	addAction(lockAction);
-	connect(lockAction, SIGNAL(triggered()), this, SLOT(editLock()));
-	
-	unlockAction = new QAction( tr("Unlock residues"), this);
-	unlockAction->setStatusTip(tr("Unlock residues"));
-	addAction(unlockAction);
-	connect(unlockAction, SIGNAL(triggered()), this, SLOT(editUnlock()));
 	
 	// Alignment actions
 	goAction = new QAction( tr("&Go"), this);
@@ -744,14 +759,12 @@ void SeqEditMainWin::createMenus()
 	
 	editMenu->addAction(groupSequencesAction);
 	editMenu->addAction(ungroupSequencesAction);
-	editMenu->addSeparator();
-	
-	editMenu->addAction(excludeAction);
-	editMenu->addAction(removeExcludeAction);
-	editMenu->addSeparator();
-	
 	editMenu->addAction(lockAction);
 	editMenu->addAction(unlockAction);
+	editMenu->addSeparator();
+
+	editMenu->addAction(excludeAction);
+	editMenu->addAction(removeExcludeAction);
 	
 	alignmentMenu = menuBar()->addMenu(tr("Alignment"));
 	connect(alignmentMenu,SIGNAL(aboutToShow()),this,SLOT(setupAlignmentMenu()));
@@ -941,3 +954,20 @@ void SeqEditMainWin::printRes( QPainter* p,QChar r,int x,int y)
 	
 	p->setPen(oldPen);
 }
+
+bool SeqEditMainWin::maybeSave()
+{
+	if (project_->isModified()) {
+		QMessageBox::StandardButton ret;
+		ret = QMessageBox::warning(this, tr("tweakseq"),
+			tr("The project has been modified.\n"
+					"Do you want to save your changes?"),
+			QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+		if (ret == QMessageBox::Save)
+			return project_->save();
+		else if (ret == QMessageBox::Cancel)
+			return false;
+	}
+	return true;
+}
+ 
