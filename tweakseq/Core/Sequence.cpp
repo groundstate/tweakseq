@@ -28,6 +28,7 @@
 #include "SequenceGroup.h"
 
 #define LABELWIDTH 10 // FIXME
+#define EXCLUDE_CELL 0x0080 // FIXME
 
 Sequence::Sequence()
 {
@@ -56,4 +57,33 @@ QString Sequence::noFlags()
 		r[i] = qch.unicode() & 0x7F; // FIXME
 	}
 	return r;
+}
+
+// Returned as a flat list of [start,end] pairs
+QList<int> Sequence::exclusions()
+{
+	QList<int> x;
+	int xstart,xstop,i,j;
+	for (i=0;i<residues.size();i++){
+		QChar qch=residues[i];
+		if (qch.unicode() & EXCLUDE_CELL){ // start of an excluded block
+			xstart = i;xstop=i;
+			for (j=i+1;j<residues.size();j++){
+				qch=residues[j];
+				if (!(qch.unicode() & EXCLUDE_CELL)){ // end of excluded block
+					xstop=j-1;
+					x.append(xstart);x.append(xstop);
+					break;
+				}
+			}
+			
+			if (j==residues.size()){ // catch an exclusion that runs to the end
+				xstop=j-1;
+				x.append(xstart);x.append(xstop);
+			}
+			
+			i=j;
+		}
+	}	
+	return x;
 }

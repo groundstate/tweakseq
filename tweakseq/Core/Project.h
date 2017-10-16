@@ -40,7 +40,6 @@
 #define REMOVE_FLAGS	0X007F	
 
 #define EXCLUDE_CELL 0x0080
-#define LOCK_CELL	0x0100
 
 enum alignmentFormats {FASTA,CLUSTALW};
 

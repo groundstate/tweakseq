@@ -28,6 +28,7 @@
 #ifndef __SEQUENCE_H_
 #define __SEQUENCE_H_
 
+#include <QList>
 #include <QString>
 
 class SequenceGroup;
@@ -42,6 +43,7 @@ class Sequence
 		QString label,residues,comment;
 		
 		QString noFlags();
+		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
 		
 		SequenceGroup *group;
 		

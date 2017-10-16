@@ -40,6 +40,7 @@ class QDropEvent;
 
 class Project;
 class Sequence;
+class SequenceGroup;
 
 class SeqEdit:public Q3GridView
 {
@@ -61,11 +62,7 @@ public:
 	void removeExcludeSelection();
 
 	QColor getSequenceGroupColour();
-	
-public slots:
 
-	void lockMode(bool);
-			
 protected:
 
 	void paintCell( QPainter*, int row, int col );
@@ -92,6 +89,8 @@ private:
 
 	void checkLength();
 	
+	int indexFirstinGroup(SequenceGroup *);
+	int indexLastinGroup(SequenceGroup *);
 	
 	Project *project_;
 	
@@ -99,7 +98,7 @@ private:
 	int selAnchorRow,selAnchorCol,selDragRow,selDragCol;
 	int insertionPoint,draggingSequence,draggedRowNum;
 	Sequence *draggedSeq;
-	int leftDown,lockModeOn;
+	int leftDown;
 	QFont currFont;	
 	int nAlignments;
 	QString numStr;

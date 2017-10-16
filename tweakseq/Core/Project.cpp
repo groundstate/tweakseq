@@ -519,7 +519,13 @@ bool Project::save()
 		XMLHelper::addElement(saveDoc,se,"comment",seq->comment);		
 		XMLHelper::addElement(saveDoc,se,"residues",seq->noFlags());
 		XMLHelper::addElement(saveDoc,se,"source",seq->source);
-		XMLHelper::addElement(saveDoc,se,"exclusions","unimplemented");
+		QList<int> x = seq->exclusions();
+		QString xs="";
+		for (int xi=0;xi<x.size()-1;xi+=2){
+			xs=xs + QString::number(x.at(xi)) + "-" + QString::number(x.at(xi+1));
+			if (xi < x.size()-2) xs += ",";
+		}
+		XMLHelper::addElement(saveDoc,se,"exclusions",xs);
 		
 	}
 	

@@ -163,8 +163,7 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	setAcceptDrops(TRUE);
 	
 	nAlignments=0;
-	lockModeOn = FALSE;
-	
+
 	connect(project_,SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	
 }
@@ -357,12 +356,6 @@ QColor SeqEdit::getSequenceGroupColour(){
 // SeqEdit - public slots
 //
 
-void SeqEdit::lockMode(bool s)
-{
-	lockModeOn=s;
-	// TO DO a special cursor ?
-}
-
 
 //
 // SeqEdit - protected members
@@ -491,13 +484,6 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 		p->drawLine(w-2,2,2,h-2);
 	}
 	
-	// Draw lock marks
-	
-	if (!cellSelected && (cwflags.unicode() & LOCK_CELL)){
-		txtColor.setRgb(0,255,0); // TO DO colour setting
-		p->setPen(txtColor);
-		p->drawRect(2,2,w-2,h-2);
-	}
 }
 
 void SeqEdit::mousePressEvent( QMouseEvent* e )
@@ -556,35 +542,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 		return;
 	}
 	
-	// If we are in normal mode and we have clicked inside the sequence
-	// label field then start a drag
-	
-	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH) && !lockModeOn){
-		project_->sequenceSelection->clear();
-		// Get  the label
-		draggedRowNum=clickedRow;
-		QString l = (seq.at(clickedRow)->label).stripWhiteSpace();
-		QRect br = fontMetrics().boundingRect(l,-1);
-		//QPixmap pm(br.width(),br.height(),-1,QPixmap::DefaultOptim); // CHECK ME
-		QPixmap pm(br.width(),br.height());
-		QPainter p;
-		p.begin(&pm);
-			p.fillRect(0,0,br.width(),br.height(),QBrush(QColor(Qt::black)));
-			p.setPen(QColor(Qt::yellow));
-			p.setFont(currFont);
-			p.drawText(0,0,br.width(),br.height(),
-				Qt::AlignCenter,l);
-		p.end();
-		Q3DragObject *d = new Q3TextDrag(l,this);
-		d->setPixmap(pm,QPoint(-5,-7));
-		d->dragMove();
-		draggingSequence = FALSE;
-		leftDown=TRUE;
-		return;
-	}
-	 
-	// Must have clicked inside the sequence area so we start
-	// a selection	
+	// Must have clicked inside the sequence area so we start a selection	
 	switch (e->button()){
 		case Qt::LeftButton:
 			leftDown=TRUE;
@@ -729,66 +687,74 @@ void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
 
 void SeqEdit::keyPressEvent( QKeyEvent* e )
 {
-	// Handles key press events for the SeqEdit widget.
-	
+
 	QString l;
 	int startRow=selAnchorRow,stopRow=selDragRow,
 			startCol=selAnchorCol,stopCol=selDragCol,row,col;	
-	
-	if (lockModeOn){
-		// TO DO anything special ??
-	}
-	else{			
-  	switch (e->key()){
-			case Qt::Key_0:case Qt::Key_1:case Qt::Key_2:case Qt::Key_3:case Qt::Key_4:
-			case Qt::Key_5:case Qt::Key_6:case Qt::Key_7:case Qt::Key_8:case Qt::Key_9:
-				if (isSelected){
-					if (startCol != stopCol)
-						return;
-					else{
-						//build up a string
-						numStr.append(e->text());
-					}
+
+	switch (e->key()){
+		case Qt::Key_0:case Qt::Key_1:case Qt::Key_2:case Qt::Key_3:case Qt::Key_4:
+		case Qt::Key_5:case Qt::Key_6:case Qt::Key_7:case Qt::Key_8:case Qt::Key_9:
+			if (isSelected){
+				if (startCol != stopCol)
+					return;
+				else{
+					//build up a string
+					numStr.append(e->text());
 				}
-				break;
-			case Qt::Key_Space:
-				if (isSelected){
-				
-					// Check that selection is only one column wide - if not
-					// do nothing because the user probably hit the spacebar by mistake
-					if (startCol != stopCol)
-						return;
-					else{
-						if (startRow > stopRow) swap_int(&startRow,&stopRow);
+			}
+			break;
+		case Qt::Key_Space:
+			if (isSelected){
 			
-						// Is there a numeric argument to the insertion
-						if (!(numStr.isEmpty())){
-							stopCol=startCol+numStr.toInt()-1;
-							numStr=""; // reset for reuse ...
+				// Check that selection is only one column wide - if not
+				// do nothing because the user probably hit the spacebar by mistake
+				if (startCol != stopCol)
+					return;
+				else{
+					if (startRow > stopRow) swap_int(&startRow,&stopRow);
+					if (startRow == stopRow){ // only one cell is selected but if it's in a group select the whole group
+						Sequence *currSeq = project_->sequences.at(startRow);
+						if (currSeq->group != NULL){
+							if (currSeq->group->locked()){
+								int r;
+								if ((r = indexFirstinGroup(currSeq->group))>=0)
+									startRow=r;
+								if ((r = indexLastinGroup(currSeq->group))>=0)
+									stopRow=r;
+								qDebug() << trace.header() << "SeqEdit::keyPressEvent() group insert " << startRow << "->" << stopRow;
+							}
 						}
+					}
+					// Is there a numeric argument to the insertion
+					if (!(numStr.isEmpty())){
+						stopCol=startCol+numStr.toInt()-1;
+						numStr=""; // reset for reuse ...
+					}
 					else
-							stopCol=startCol;
-						// Add 1 to startCol,stopCol because  post insertion is
-						// used and undo deletes [startCol,stopCol]
-						project_->logOperation( new Operation(Operation::Insertion,startRow,stopRow,
-								startCol+1,stopCol+1,Q3StrList()));
+						stopCol=startCol;
 					
-						// Insertions across multiple rows are allowed
-						// Increase the size of the displayed area 
-						setNumCols(numCols()+stopCol-startCol+1);
-						l.fill(QChar('-'),stopCol-startCol+1);
-						for (row=startRow;row<=stopRow;row++){
-							insertCells(l,row,startCol);
-							checkLength();
-							for (col=startCol;col< numCols();col++)
-								updateCell(row,col);
-						}	// end of for loop
-						//emit alignmentChanged();
-					} // end of if ... else
-				} // end of if
-				break;
-			} // end of switch()		
-	 }
+					// Add 1 to startCol,stopCol because  post insertion is
+					// used and undo deletes [startCol,stopCol]
+					project_->logOperation( new Operation(Operation::Insertion,startRow,stopRow,
+							startCol+1,stopCol+1,Q3StrList()));
+				
+					// Insertions across multiple rows are allowed
+					// Increase the size of the displayed area 
+					setNumCols(numCols()+stopCol-startCol+1);
+					l.fill(QChar('-'),stopCol-startCol+1);
+					for (row=startRow;row<=stopRow;row++){
+						insertCells(l,row,startCol);
+						checkLength();
+						for (col=startCol;col< numCols();col++)
+							updateCell(row,col);
+					}	// end of for loop
+				//emit alignmentChanged();
+				} // end of if ... else
+			} // end of if
+			break;
+	} // end of switch()		
+	 
 }
 
 void SeqEdit::focusInEvent( QFocusEvent* )
@@ -891,6 +857,24 @@ void SeqEdit::checkLength(){
   
 }
 
+int SeqEdit::indexFirstinGroup(SequenceGroup *sg)
+{
+	for (int s=0;s<project_->sequences.size();s++){
+		if (sg==project_->sequences.at(s)->group)
+			return s;
+	}
+	return -1;
+}
+
+int SeqEdit::indexLastinGroup(SequenceGroup *sg)
+{
+	for (int s=project_->sequences.size()-1;s>=0;s--){
+		if (sg==project_->sequences.at(s)->group)
+			return s;
+	}
+	return -1;
+}
+							
 
 //
 //
