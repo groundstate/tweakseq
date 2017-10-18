@@ -63,14 +63,19 @@ public:
 
 	QColor getSequenceGroupColour();
 
+signals:
+	
+	void info(const QString &);
+	
 protected:
 
 	void paintCell( QPainter*, int row, int col );
 	void mousePressEvent( QMouseEvent* );
 	void mouseReleaseEvent( QMouseEvent* );
-	void mouseMoveEvent( QMouseEvent* );
+	void contentsMouseMoveEvent(QMouseEvent *);
 	void mouseDoubleClickEvent(QMouseEvent *);
 	
+
 	void keyPressEvent( QKeyEvent* );
 	void focusInEvent( QFocusEvent* );
 	void focusOutEvent( QFocusEvent* );
@@ -106,6 +111,9 @@ private:
 	int cellWidth_,cellHeight_;
 	
 	int currGroupColour_;
+	
+	QString lastInfo;
+	
 };
 
 

@@ -67,6 +67,11 @@ void Project::setName(QString &n)
 	name_=n;
 }
 
+bool Project::named()
+{
+	return named_;
+}
+
 QString Project::getSequence(int i,int maskFlags)
 {
 	
@@ -482,14 +487,12 @@ void Project::openProject()
 {
 }
 
-bool Project::save()
+bool Project::save(QString &fpathname)
 {
 	QString tmp;
 	
-	if (!named_){ // never saved so need a get a project name and path
-		QString fileName = QFileDialog::getSaveFileName(mainWindow_, tr("Save Project"));
-		if (fileName.isNull()) return false;
-		QFileInfo fi(fileName);
+	if(!fpathname.isNull()){
+		QFileInfo fi(fpathname);
 		path_=fi.path();
 		name_=fi.fileName();
 		named_=true;
@@ -517,7 +520,7 @@ bool Project::save()
 		
 		XMLHelper::addElement(saveDoc,se,"name",seq->label);
 		XMLHelper::addElement(saveDoc,se,"comment",seq->comment);		
-		XMLHelper::addElement(saveDoc,se,"residues",seq->noFlags());
+		XMLHelper::addElement(saveDoc,se,"residues",seq->filter());
 		XMLHelper::addElement(saveDoc,se,"source",seq->source);
 		QList<int> x = seq->exclusions();
 		QString xs="";
@@ -551,7 +554,7 @@ bool Project::save()
 	f.close();
 	
 	dirty_=false;
-	
+
 	return true;
 }
 
@@ -583,6 +586,7 @@ void Project::load(QString &fname)
 		QString sName,sComment,sResidues,sSrc;
 		
 		QDomElement elem = sNode.firstChildElement();
+		QList<int> exclusions;
 		while (!elem.isNull()){
 			if (elem.tagName() == "name")
 				sName = elem.text().trimmed();
@@ -593,10 +597,23 @@ void Project::load(QString &fname)
 			else if (elem.tagName() == "source")
 				sSrc = elem.text().trimmed();
 			else if (elem.tagName() == "exclusions"){
+				QStringList sl = elem.text().trimmed().split(',');
+				for (int sli=0;sli<sl.size();sli++){
+					QStringList spair = sl.at(sli).split('-');
+					if (spair.size() == 2){ // this catches empty exclusion lists
+						int start = spair.at(0).toInt();
+						int stop  = spair.at(1).toInt();
+						qDebug() << trace.header() << start << " " << stop;
+						exclusions.append(start);exclusions.append(stop);
+					}
+				}
 			}
 			elem=elem.nextSiblingElement();
 		}
-		addSequence(sName,sResidues,sComment,sSrc);
+		Sequence *seq = addSequence(sName,sResidues,sComment,sSrc);
+		for (int x=0;x<exclusions.size()-1;x+=2)
+			seq->exclude(exclusions.at(x),exclusions.at(x+1));
+				 
 	}	
 	
 	// Get all the groups
@@ -637,25 +654,26 @@ void Project::load(QString &fname)
 	file.close();
 }
 
-void Project::exportFASTA(QString fname)
+void Project::exportFASTA(QString fname,bool removeExclusions)
 {
+
 	FASTAFile ff(fname);
 	QStringList l,seqs,c;
 	for (int s=0;s<sequences.size();s++){
 		l.append(sequences.at(s)->label);
-		seqs.append(sequences.at(s)->noFlags());
+		seqs.append(sequences.at(s)->filter(removeExclusions));
 		c.append(sequences.at(s)->comment);
 	}
 	ff.write(l,seqs,c);
 }
 
-void Project::exportClustalW(QString fname)
+void Project::exportClustalW(QString fname,bool removeExclusions)
 {
 	ClustalFile cf(fname);
 	QStringList l,seqs,c;
 	for (int s=0;s<sequences.size();s++){
 		l.append(sequences.at(s)->label);
-		seqs.append(sequences.at(s)->noFlags());
+		seqs.append(sequences.at(s)->filter(removeExclusions));
 		c.append(sequences.at(s)->comment);
 	}
 	cf.write(l,seqs,c);

@@ -128,11 +128,12 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	draggingSequence = FALSE;
 	selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
 	leftDown=FALSE;
-	
+	lastInfo="";
 	currGroupColour_=0;
 	
 	setFocusPolicy( Qt::StrongFocus );              // we accept keyboard focus
 	setBackgroundRole( QPalette::Base ); 
+	viewport()->setMouseTracking(true);
 	//QPalette pal = palette();
 	//pal.setColor(QPalette::Background, Qt::black);
 	//setAutoFillBackground(true);
@@ -160,7 +161,7 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	//seq.setAutoDelete(TRUE);	// FIXME need to manage memory cleanup
 	//undoStack.setAutoDelete(TRUE); // FIXME need to manage memory cleanup
 	
-	setAcceptDrops(TRUE);
+	
 	
 	nAlignments=0;
 
@@ -353,7 +354,7 @@ QColor SeqEdit::getSequenceGroupColour(){
 
 
 //
-// SeqEdit - public slots
+// 
 //
 
 
@@ -542,7 +543,9 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 		return;
 	}
 	
-	// Must have clicked inside the sequence area so we start a selection	
+	// Must have clicked inside the sequence area so we start selecting residues
+	project_->sequenceSelection->clear(); // clear any other selections
+	
 	switch (e->button()){
 		case Qt::LeftButton:
 			leftDown=TRUE;
@@ -585,7 +588,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 			break;
 		default:break;
 	}
-	
+	this->viewport()->repaint();
 }
 
 void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
@@ -604,16 +607,36 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 	}
 }
 
-void SeqEdit::mouseMoveEvent( QMouseEvent* e ){
+
+void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
+{
 	QPoint clickedPos;
 	int col,row,currRow,currCol;
 	int startRow,stopRow,startCol,stopCol;
 	int clickedRow,clickedCol;
 	
-	if (leftDown){
-		clickedPos = e->pos();              		
-		clickedRow=rowAt( clickedPos.y() +contentsY());
-		clickedCol=columnAt( clickedPos.x() + contentsX());
+	if (numRows() == 0) return;
+	
+	clickedPos = ev->pos();              		
+	clickedRow=rowAt( clickedPos.y());
+	clickedCol=columnAt( clickedPos.x());
+	
+	if (clickedRow < 0){
+		if (clickedPos.y() >=0) // clamp to bottom
+			clickedRow = numRows() -1;
+		else // clamp to top
+			clickedRow = 0;
+	}
+	
+	if (clickedRow >= numRows())
+		clickedRow = numRows() -1;
+	
+	if (project_->sequences.at(clickedRow)->label != lastInfo){
+		lastInfo = project_->sequences.at(clickedRow)->label;
+		emit info(lastInfo);
+	}
+	
+	if (leftDown){ // FIXME in event?
 		
 		// Must be moving the highlight box around in the sequence field
 		if (clickedCol < LABELWIDTH+FLAGSWIDTH && clickedCol >= FLAGSWIDTH)
@@ -623,13 +646,6 @@ void SeqEdit::mouseMoveEvent( QMouseEvent* e ){
 				clickedCol = numCols() -1;
 			else
 				clickedCol = LABELWIDTH+FLAGSWIDTH;
-		}
-		
-		if (clickedRow < 0){
-			if (clickedPos.y() >=0) // clamp to bottom
-				clickedRow = numRows() -1;
-			else // clamp to top
-				clickedRow = 0;
 		}
 		
 		currRow = clickedRow;    // map to row; set current cell
@@ -649,7 +665,7 @@ void SeqEdit::mouseMoveEvent( QMouseEvent* e ){
 		for (row=startRow;row<=stopRow;row++)
 			for (col=startCol;col<=stopCol;col++)
 				updateCell(row,col);
-	}	
+	}
 }
 
 void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){

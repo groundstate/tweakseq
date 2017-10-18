@@ -41,6 +41,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QTextStream>
+#include <QLabel>
 #include <QMenuBar>
 #include <QPixmap>
 #include <QToolBar>
@@ -90,9 +91,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	
 	createActions();
 	createMenus();
-	//createToolBars();
-	createStatusBar();
-
+	createToolBars();
 	
 	// Hmm what to do about number of columns
 	// TO DO This needs to be resizeable
@@ -100,16 +99,20 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	// of lack of memory
 	
 	QSplitter *split = new QSplitter(Qt::Vertical,this,"sew_split");
-	
+	split->setMouseTracking(true);
 	se = new SeqEdit(project_,split);
 	
 	mw = new MessageWin(split);
-
+	
+	createStatusBar(); // need to connect to ther widgets so do this here
+	
 	QList<int> wsizes;
 	wsizes.append(600);wsizes.append(200);
 	split->setSizes(wsizes);
+	
 	setCentralWidget(split);
-		
+	centralWidget()->setMouseTracking(true);
+	
 	printer = new QPrinter();
 	printer->setFullPage(TRUE);
 	
@@ -161,12 +164,21 @@ void SeqEditMainWin::fileOpenProject()
 
 void SeqEditMainWin::fileSaveProject()
 {
-	project_->save();
+	QString fpathname;
+	if (!project_->named()){ // never saved so need a get a project name and path
+		 fpathname = QFileDialog::getSaveFileName(this, tr("Save project"));
+		if (fpathname.isNull()) return;
+	}
+	
+	project_->save(fpathname);
 	setWindowTitle("tweakseq - " + project_->name());
 }
 
 void SeqEditMainWin::fileSaveProjectAs()
 {
+	QString fpathname = QFileDialog::getSaveFileName(this, tr("Save project as"));
+	if (fpathname.isNull()) return;
+	project_->save(fpathname);
 	setWindowTitle("tweakseq - " + project_->name());
 }
 	
@@ -195,14 +207,14 @@ void SeqEditMainWin::fileImport(){
 void SeqEditMainWin::fileExportFASTA(){
 	QString fname = QFileDialog::getSaveFileName(this,tr("Export as FASTA"));
 	if (fname.isNull()) return;
-	project_->exportFASTA(fname);
+	project_->exportFASTA(fname,true); // FIXME hardcoded
 }
 
 void SeqEditMainWin::fileExportClustalW()
 {
 	QString fname = QFileDialog::getSaveFileName(this,tr("Export as FASTA"));
 	if (fname.isNull()) return;
-	project_->exportClustalW(fname);
+	project_->exportClustalW(fname,true); // FIXME hardcoded
 }
 
 void SeqEditMainWin::filePrint(){
@@ -782,13 +794,20 @@ void SeqEditMainWin::createMenus()
 void SeqEditMainWin::createToolBars()
 {
 	seqEditTB =addToolBar("Sequence editor tools");
-	seqEditTB->addAction(lockAction);
+	//seqEditTB->addAction(lockAction);
 	//tb->setToggleButton(true);
 	//connect(tb,SIGNAL(toggled(bool)),se,SLOT(lockMode(bool)));
+	
+	
 }
 
 void SeqEditMainWin::createStatusBar()
 {
+	QLabel *info = new QLabel(this);
+	info->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+ 	info->setLineWidth(1);
+	statusBar()->addPermanentWidget(info);
+	connect(se,SIGNAL(info(const QString &)),info,SLOT(setText(const QString &)));
 }
 	
 void SeqEditMainWin::writeAlignment(int fileFormat,QString fname)
@@ -963,8 +982,14 @@ bool SeqEditMainWin::maybeSave()
 			tr("The project has been modified.\n"
 					"Do you want to save your changes?"),
 			QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-		if (ret == QMessageBox::Save)
-			return project_->save();
+		if (ret == QMessageBox::Save){
+			QString fpathname;
+			if (!project_->named()){ // never saved so need a get a project name and path
+				fpathname = QFileDialog::getSaveFileName(this, tr("Save project"));
+				if (fpathname.isNull()) return false;
+			}
+			return project_->save(fpathname);
+		}
 		else if (ret == QMessageBox::Cancel)
 			return false;
 	}

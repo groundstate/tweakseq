@@ -60,11 +60,12 @@ class Project:public QObject
 	
 		void newProject();
 		void openProject();
-		bool save();
+		bool save(QString &);
 		void load(QString &);
 		
 		QString name(){return name_;}
 		void setName(QString &);
+		bool named();
 		
 		bool empty();
 		bool isModified(){return dirty_;}
@@ -99,8 +100,8 @@ class Project:public QObject
 		void redo();
 		void undoLastAlignment();
 		
-		void exportFASTA(QString);
-		void exportClustalW(QString);
+		void exportFASTA(QString,bool);
+		void exportClustalW(QString,bool);
 		
 	signals:
 		
@@ -126,8 +127,8 @@ class Project:public QObject
 		SeqEditMainWin *mainWindow_;
 		
 		bool empty_;
-		bool named_;
 		bool dirty_;
+		bool named_;
 		QString name_;
 		QDir path_;
 		

@@ -42,7 +42,8 @@ class Sequence
 		// comment is for a longer comment
 		QString label,residues,comment;
 		
-		QString noFlags();
+		QString filter(bool applyExclusions=false);
+		void exclude(int,int);
 		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
 		
 		SequenceGroup *group;

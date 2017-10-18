@@ -49,14 +49,26 @@ Sequence::~Sequence()
 {
 }
 
-QString Sequence::noFlags()
+QString Sequence::filter(bool applyExclusions)
 {
 	QString r;
+	int rescnt=0;
 	for (int i=0;i<residues.size();i++){
 		QChar qch=residues[i];
-		r[i] = qch.unicode() & 0x7F; // FIXME
+		if ((qch.unicode() & EXCLUDE_CELL) && applyExclusions)
+			continue;
+		r[rescnt] = qch.unicode() & 0x7F; // FIXME
+		rescnt++;
 	}
 	return r;
+}
+
+void Sequence::exclude(int start,int stop)
+{
+	if (start <0 || stop >= residues.size()) return;
+			
+	for (int i=start;i<=stop;i++)
+		residues[i] = residues[i].unicode() | EXCLUDE_CELL;
 }
 
 // Returned as a flat list of [start,end] pairs
