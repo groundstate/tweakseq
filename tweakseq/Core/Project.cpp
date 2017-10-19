@@ -62,6 +62,13 @@ Project::~Project()
 	// FIXME and the rest ..
 }
 
+void Project::setMainWindow(SeqEditMainWin *mainwin)
+{
+	mainWindow_=mainwin;
+	connect(mainWindow_, SIGNAL(byebye()), this,SLOT(mainWindowClosed()));
+	connect(sequenceSelection,SIGNAL(changed()),mainWindow_,SLOT(sequenceSelectionChanged()));
+}
+
 void Project::setName(QString &n)
 {
 	name_=n;
@@ -70,6 +77,10 @@ void Project::setName(QString &n)
 bool Project::named()
 {
 	return named_;
+}
+
+bool Project::empty(){
+	return sequences.empty();
 }
 
 QString Project::getSequence(int i,int maskFlags)
@@ -478,15 +489,6 @@ void Project::undoLastAlignment()
 //
 
 
-void Project::newProject()
-{
-	new Project();
-}
-
-void Project::openProject()
-{
-}
-
 bool Project::save(QString &fpathname)
 {
 	QString tmp;
@@ -561,6 +563,9 @@ bool Project::save(QString &fpathname)
 void Project::load(QString &fname)
 {
 	qDebug() << trace.header() << "Project::load()" << fname;
+	QFileInfo fi(fname);
+	path_=fi.path();
+	name_=fi.fileName();
 	named_=true; 
 	dirty_=false;
 	empty_=false;
@@ -652,6 +657,7 @@ void Project::load(QString &fname)
 	}
 	
 	file.close();
+
 }
 
 void Project::exportFASTA(QString fname,bool removeExclusions)

@@ -51,7 +51,8 @@ public:
 	
 	SeqEdit(Project *,QWidget *parent);
 	~SeqEdit();
-
+	void setProject(Project *);
+	
 	QChar cellContent(int,int,int );
 	
 	void undoEdit();
@@ -62,6 +63,10 @@ public:
 	void removeExcludeSelection();
 
 	QColor getSequenceGroupColour();
+
+public slots:
+	
+	void postLoadTidy();
 
 signals:
 	
@@ -86,6 +91,8 @@ private slots:
 	//void sequencesRemoved(int,int);
 	
 private:
+	
+	void init();
 	
 	void insertCell(char c,int row,int col);
 	void insertCells(QString,int row,int col);

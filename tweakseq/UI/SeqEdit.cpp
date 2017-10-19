@@ -119,17 +119,10 @@ static int groupColours[N_GROUP_COLOURS][3]
 SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	:Q3GridView(parent)
 {
-	
-	QColor bcolour;
 
+
+	init();
 	project_=project;
-	
-	isSelected = FALSE;
-	draggingSequence = FALSE;
-	selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
-	leftDown=FALSE;
-	lastInfo="";
-	currGroupColour_=0;
 	
 	setFocusPolicy( Qt::StrongFocus );              // we accept keyboard focus
 	setBackgroundRole( QPalette::Base ); 
@@ -138,6 +131,7 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	//pal.setColor(QPalette::Background, Qt::black);
 	//setAutoFillBackground(true);
 	//setPalette(pal);
+	QColor bcolour;
 	bcolour.setRgb(0,0,0);
 	setPaletteBackgroundColor(bcolour); // FIXME         
 	setNumCols(0);                      
@@ -174,6 +168,25 @@ SeqEdit::~SeqEdit()
 	//seq.~QList();
 	//undoStack.~QStack();
 }
+
+void SeqEdit::setProject(Project *newProject)
+{
+	init(); // make sure we are in a clean state
+	disconnect(project_,SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	project_=newProject;
+	connect(project_,SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	draggedSeq=NULL;
+	// Now we need to resize the widget
+	int maxlen=0;
+	for (int s=0;s<project_->sequences.size();s++){
+		int seqlen = project_->sequences.at(s)->residues.length();
+		if (seqlen > maxlen)
+			maxlen = seqlen;
+	}
+	setNumRows(project_->sequences.size());
+	setNumCols( FLAGSWIDTH + LABELWIDTH + maxlen);
+}
+
 
 QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 {
@@ -353,10 +366,35 @@ QColor SeqEdit::getSequenceGroupColour(){
 }
 
 
+
 //
-// 
+// Public slots
 //
 
+// Do any cleanup needed after loading a project
+void SeqEdit::postLoadTidy(){
+	
+	qDebug() << trace.header() << "SeqEdit::postLoadTidy()";
+	// Determine the last group colour used so that currGroupColour_ can be set correctly
+	int maxCol =0;
+	for (int s=0;s<project_->sequences.size();s++){
+		Sequence *seq = project_->sequences.at(s);
+		if (seq->group != NULL){
+			QColor gcol = seq->group->textColour();
+			
+			for (int c=0;c<N_GROUP_COLOURS;c++){
+				if (gcol.red() == groupColours[c][0] && gcol.green() == groupColours[c][1] && gcol.blue() == groupColours[c][2]){
+					if (c>maxCol){
+						maxCol=c;
+						break;
+					}
+				}
+			}
+		}
+	}
+	currGroupColour_=maxCol+1;
+
+}
 
 //
 // SeqEdit - protected members
@@ -428,12 +466,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	}
 	
 	
-	//  Draw cell content (text)
-	
-	
-	if (project_->sequenceSelection->contains(currSeq)){
-		p->fillRect(0,0,w,h,QColor(128,128,128));
-	}
+	//  Draw cell content (text
 	
 	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH){ 
 		// Set colour of text
@@ -441,6 +474,8 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 			txtColor=currSeq->group->textColour();
 		else
 			txtColor.setRgb(255,255,255);
+		if (project_->sequenceSelection->contains(currSeq))
+			p->fillRect(0,0,w,h,QColor(128,128,128));
 	}
 	else{
 
@@ -471,6 +506,19 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 				txtColor.setRgb(0,255,0);
 				break;
 		};
+		
+		if (currSeq->group != NULL){
+			int start = indexFirstinGroup(currSeq->group);
+			int stop  = indexLastinGroup(currSeq->group);
+			if (row==start){
+				p->setPen(currSeq->group->textColour());
+				p->drawLine(0,2,w-1,2);
+			}
+			if (row==stop){
+				p->setPen(currSeq->group->textColour());
+				p->drawLine(0,h-2,w-1,h-2);
+			}
+		}
 	}
 	
 	p->setPen(txtColor);
@@ -479,7 +527,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	if ((!cellSelected) && (cwflags.unicode() & EXCLUDE_CELL) ){
 		//txtColor.setRgb(128,128,128);
 		//p->fillRect(0,0,w,h,txtColor);
-		txtColor.setRgb(255,0,0);
+		txtColor.setRgb(255,255,255);
 		p->setPen(txtColor);
 		p->drawLine(2,2,w-2,h-2); // X marks the spot ...
 		p->drawLine(w-2,2,2,h-2);
@@ -698,6 +746,7 @@ void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
 			project_->addGroupToSelection(selseq->group);
 		}
 	}
+	this->viewport()->repaint();
 }
 
 
@@ -826,6 +875,18 @@ void SeqEdit::sequenceAdded(Sequence *s)
 //
 // SeqEdit - private members
 //
+
+void SeqEdit::init()
+{
+	project_=NULL;
+	isSelected = FALSE;
+	draggingSequence = FALSE;
+	draggedSeq=NULL;
+	selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
+	leftDown=FALSE;
+	lastInfo="";
+	currGroupColour_=0;
+}
 
 void SeqEdit::insertCell(char c,int row,int col){
 	// TO DO - not actually using this function ...

@@ -80,14 +80,12 @@ const char *lockText = "Click this button to add and edit a new"
 SeqEditMainWin::SeqEditMainWin(Project *project)
 	:QMainWindow()
 {
+	init();
+	project_=project;
 	
 	setWindowTitle("tweakseq - " + project->name());
 	setGeometry(0,0,800,600);
 	setWindowIcon(QIcon(seqedit_xpm));
-	
-	project_=project;
-	
-	init();
 	
 	createActions();
 	createMenus();
@@ -117,7 +115,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	printer->setFullPage(TRUE);
 	
 	statusBar()->message("Ready");
-	
+
 }
 
 SeqEditMainWin::~SeqEditMainWin(){
@@ -127,6 +125,15 @@ SeqEditMainWin::~SeqEditMainWin(){
 void SeqEditMainWin::doAlignment(){
 }
 
+//
+// Public slots
+//	
+
+
+//
+// protected
+//
+	
 void SeqEditMainWin::closeEvent(QCloseEvent *ev)
 {
 	if (maybeSave()) {
@@ -152,14 +159,24 @@ void SeqEditMainWin::fileNewProject()
 
 void SeqEditMainWin::fileOpenProject()
 {
+	if (!project_->empty()){
+	}
+		
 	QString fname = QFileDialog::getOpenFileName(this,
     tr("Open Project"), "./", tr("Project Files (*.tsq)"));
 	if (fname.isNull()) return;
 	
-	// If this project is empty then replace it
-	Project *proj = app->createProject();
-	proj->createMainWindow();
-	proj->load(fname);
+	// Replace the existing project
+	Project *oldProject = project_;
+	
+	init(); // start in a clean state
+	project_=app->createProject();
+	project_->setMainWindow(this);
+	se->setProject(project_);
+	delete oldProject;
+	project_->load(fname);
+	se->postLoadTidy();
+	setWindowTitle("tweakseq - " + project_->name());
 }
 
 void SeqEditMainWin::fileSaveProject()

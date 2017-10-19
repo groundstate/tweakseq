@@ -57,9 +57,8 @@ class Project:public QObject
 		
 		Project();
 		~Project();
-	
-		void newProject();
-		void openProject();
+		void setMainWindow(SeqEditMainWin *);
+		
 		bool save(QString &);
 		void load(QString &);
 		

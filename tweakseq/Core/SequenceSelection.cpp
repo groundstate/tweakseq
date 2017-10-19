@@ -24,6 +24,8 @@
 // THE SOFTWARE.
 //
 
+#include <QtDebug>
+#include "DebuggingInfo.h"
 
 #include "SequenceSelection.h"
 
@@ -41,6 +43,7 @@ SequenceSelection::~SequenceSelection()
 
 void SequenceSelection::set(Sequence *s)
 {
+	qDebug() << trace.header() << "SequenceSelection::set";
 	sel_.clear();
 	sel_.append(s);
 	emit changed();
@@ -48,6 +51,7 @@ void SequenceSelection::set(Sequence *s)
 
 void SequenceSelection::toggle(Sequence *s)
 {
+	qDebug() << trace.header() << "SequenceSelection::toggle";
 	// If it's there, remove it
 	if (sel_.contains(s)){
 		sel_.removeOne(s);
@@ -55,11 +59,13 @@ void SequenceSelection::toggle(Sequence *s)
 	// else add it
 	else
 		sel_.append(s);
+	qDebug() << trace.header() << "SequenceSelection::toggle - size now " << sel_.size();;
 	emit changed();
 }
 
 void SequenceSelection::clear()
 {
+	qDebug() << trace.header() << "SequenceSelection::clear";
 	sel_.clear();
 	emit changed();
 }
