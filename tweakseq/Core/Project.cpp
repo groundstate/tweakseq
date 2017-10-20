@@ -34,6 +34,7 @@
 
 #include "Application.h"
 #include "ClustalFile.h"
+#include "ClustalO.h"
 #include "FASTAFile.h"
 #include "Operation.h"
 #include "Project.h"

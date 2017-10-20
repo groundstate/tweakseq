@@ -5,8 +5,10 @@ OBJECTS_DIR = obj
 INCLUDEPATH += include
 
 HEADERS       =  include/AboutDialog.h \
+								 include/AlignmentTool.h \
 								 include/Application.h \
 								 include/ClustalFile.h \
+								 include/ClustalO.h \
 								 include/DebuggingInfo.h \
 								 include/FASTAFile.h \
 								 include/MessageWin.h \
@@ -21,8 +23,10 @@ HEADERS       =  include/AboutDialog.h \
 								 include/Version.h \
 								 include/XMLHelper.h
 								 
-SOURCES				 =  Core/Application.cpp \
+SOURCES				 =  Core/AlignmentTool.cpp \
+									Core/Application.cpp \
 									Core/ClustalFile.cpp \
+									Core/ClustalO.cpp \
 									Core/FASTAFile.cpp \
 									Core/Main.cpp \
 									Core/Operation.cpp \

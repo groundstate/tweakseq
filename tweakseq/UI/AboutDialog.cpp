@@ -41,7 +41,7 @@ AboutDialog::AboutDialog(QWidget *parent,Qt::WindowFlags f):QDialog(parent,f)
 
 	QVBoxLayout *vb = new QVBoxLayout(this);
 
-	QLabel *l = new QLabel("seqME",this);
+	QLabel *l = new QLabel("tweakseq",this);
 	vb->addWidget(l,0);
 
 	QTabWidget  *tw = new QTabWidget(this);
