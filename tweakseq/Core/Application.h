@@ -50,11 +50,12 @@ class Application : public QApplication
 		void setup();
 		
 		void showAboutDialog(QWidget *);
-		void showHelp(const char *);
+		void showHelp(QString);
 	
 		//Settings defaultSettings;
 		
-		QString ClustalWPath();
+		QString applicationSettingsPath();
+		QString applicationTmpPath();
 		
 		QStringList previousProjects;
 		

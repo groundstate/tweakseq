@@ -38,7 +38,12 @@ MessageWin::~MessageWin(){
 	// Nothing to destroy
 }
 
-void MessageWin::addMessage(QString s){
+void MessageWin::addMessage(QString s,int msgType){
+	if (msgType == MessageWin::Information){
+		// keep defaults
+	}
+	else if (msgType == MessageWin::Error)
+		setTextColor(QColor(255,32,32));
 	append(s);
 	//setCursorPosition(numLines(),0,FALSE);
 }

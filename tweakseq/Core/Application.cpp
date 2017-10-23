@@ -39,8 +39,10 @@
 Application::Application(int &argc, char **argv):QApplication(argc,argv)
 {
 	app = this;
-	init();
 	
+	setup(); // run first time setup
+	
+	init();
 	connect(this,SIGNAL(lastWindowClosed()),this,SLOT(quit())); // FIXME mainwindows are parent to project so this may not work
 	connect(this,SIGNAL(aboutToQuit()),this,SLOT(cleanup()));
 }
@@ -48,6 +50,15 @@ Application::Application(int &argc, char **argv):QApplication(argc,argv)
 void Application::setup()
 {
 	// FIXME this does first time setup of the application
+	// create a directory for the app if it doesn't exist etc
+	QString path = QDir::home().absolutePath();
+	appDirPath_ = path + "/.tweakseq";
+	QDir appDir(appDirPath_);
+	if (!(appDir.exists())){
+		appDir.setPath(path);
+		appDir.mkdir(".tweakseq");
+	}
+	// Create default preferences file
 }
 
 Project * Application::createProject()
@@ -63,7 +74,7 @@ void Application::saveDefaultSettings()
 	//defaultSettings.saveIt(prefFile);
 }
 	
-void Application::showHelp(const char *)
+void Application::showHelp(QString)
 {
 }
 
@@ -77,21 +88,23 @@ void Application::showAboutDialog(QWidget *parent)
   aboutDlg->activateWindow();
 }
 
-QString Application::ClustalWPath()
+QString Application::applicationSettingsPath()
 {
-	QString path("./");
-	//defaultSettings.getString("settings/clustalw/path",path);
-	return path;
+	return appDirPath_;
+}
+
+QString Application::applicationTmpPath()
+{
+	return appDirPath_;
 }
 
 
-				
 //	
-//	public  slots
+//	Public  slots
 //
 
 //	
-//	private slots
+//	Private slots
 //	
 
 void Application::helpClosed()
@@ -115,32 +128,20 @@ void Application::projectClosed(Project *p)
 }
 
 //		
-//	private members
+//	Private members
 //
 	
 void Application::init()
 {
 	aboutDlg = NULL;
-	
-	// create a directory for the app if it doesn't exist etc
-	QString path = QDir::home().absolutePath();
-	appDirPath_ = path + "/.tweakseq";
-	QDir appDir(appDirPath_);
-	if (!(appDir.exists()))
-	{
-		appDir.setPath(path);
-		appDir.mkdir(".tweakseq");
-	}
-	
+
 	// load default settings 
-	path = appDirPath_+"/defaults.xml";
+	QString path = appDirPath_+"/defaults.xml";
 	QFile defs(path);
-	if (defs.exists())
-	{
+	if (defs.exists()){
 		//defaultSettings.load(path);
 	}
-	else // make a default settings document, save it and load it
-	{
+	else{ // make a default settings document, save it and load it
 		
 	}
 }

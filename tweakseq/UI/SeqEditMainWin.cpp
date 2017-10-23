@@ -38,20 +38,23 @@
 #include <Q3PaintDeviceMetrics> // FIXME
 
 #include <QColor>
+#include <QDateTime>
 #include <QFile>
 #include <QFileDialog>
-#include <QTextStream>
 #include <QLabel>
 #include <QMenuBar>
+#include <QMessageBox>
+#include <QPainter>
 #include <QPixmap>
+#include <QPrinter>
+#include <QProcess>
+#include <QStatusBar>
+#include <QSplitter>
+#include <QTemporaryFile>
+#include <QTextStream>
 #include <QToolBar>
 #include <QToolButton>
-#include <QPrinter>
-#include <QDateTime>
-#include <QStatusBar>
-#include <QMessageBox>
-#include <QSplitter>
-#include <QPainter>
+
 
 #include "Application.h"
 #include "ClustalFile.h"
@@ -120,6 +123,8 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 
 SeqEditMainWin::~SeqEditMainWin(){
 	delete printer;
+	if (alignmentFileIn_ != NULL) delete alignmentFileIn_;
+	if (alignmentFileOut_ != NULL) delete alignmentFileOut_;
 }
 
 void SeqEditMainWin::doAlignment(){
@@ -201,13 +206,13 @@ void SeqEditMainWin::fileSaveProjectAs()
 	
 void SeqEditMainWin::fileImport(){
 	
-	//QString fname = QFileDialog::getOpenFileName(this,
-  //   tr("Open Sequence"), "./", tr("Sequence Files (*.fasta *.aln *.clustal)"));
-	//if (fname.isNull()) return;
+	QString fname = QFileDialog::getOpenFileName(this,
+    tr("Open Sequence"), "./", tr("Sequence Files (*.fasta *.aln *.clustal *.fa)"));
+	if (fname.isNull()) return;
 	
 	//ClustalFile cf("/home/michael/src/da/src/alignmentin.aln");
 	// ClustalFile cf("/home/michael/src/seqme/seqme/test/Bcl2l15_12_10.clustal");
-	QString fname = "/home/michael/src/seqme/seqme/test/Bcl2l15_12_10.fasta";
+	//QString fname = "/home/michael/src/seqme/seqme/test/Bcl2l15_12_10.fasta";
 	
 	FASTAFile cf(fname);
 	QStringList seqnames,seqs,comments;
@@ -522,59 +527,77 @@ void SeqEditMainWin::setupAlignmentMenu()
 
 void SeqEditMainWin::alignmentGo()
 {
-
-	qDebug() << trace.header() << "SeqEditMainWin::alignmentGo()";
-	QString l;
-	FILE *fd;
-	char buf[120];
-	int cr;
 	
-	// TO DO this needs to be generalized with respect to the choice of
-	// alignment program
-	// FIXME scatrch space ...
-	
-	writeAlignment(FASTA,"alignmentin.fasta");
-	
-	// TO DO run clustalw in a separate thread ?
-	// FIXME use QProcess
-	
-	l=seqAlignmentCommand.copy();
-	l.append("  ");
-	// l.append(seqAlignmentFlags);
-	// Output of the alignment program is redirected to a file 
-	l.append(" alignmentin.fasta");
-	
-	// Open a pipe so that we can read back the output as it is produced
-	// Seg faults if I use a text stream - spose this can be fixed later ...
-	fd=popen((const char *) l,"r");
-	
-	while (!feof(fd)){	
-		if (NULL == fgets(buf,120,fd))
-			continue;
-		// Strip carriage returns
-		cr = strlen(buf);
-		buf[cr-1]='\0';
-		mw->addMessage(buf);
-		qApp->processEvents();
+	if (NULL != alignmentProc_){
+		qDebug() << alignmentProc_->state();
+		if (alignmentProc_->state() != QProcess::NotRunning)
+			alignmentProc_->close();
+		delete alignmentProc_;
 	}
 	
-	pclose(fd);
+	alignmentProc_ = new QProcess(this);
+	connect(alignmentProc_,SIGNAL(started()),this,SLOT(alignmentStarted()));
+	connect(alignmentProc_,SIGNAL(readyReadStandardOutput()),this,SLOT(alignmentReadyReadStdOut()));
+	connect(alignmentProc_,SIGNAL(readyReadStandardError()),this,SLOT(alignmentReadyReadStdErr()));
+	connect(alignmentProc_,SIGNAL(finished(int,QProcess::ExitStatus)),this,SLOT(alignmentFinished(int,QProcess::ExitStatus)));
 	
-	//QFile f("alignment.out");
-	//f.open(IO_ReadOnly);
-	//QTextStream ts(&f);
-	//while (!ts.eof()){
-	//	l=ts.readLine();
-	//	mw->addMessage(l);
-	//}
-	//f.close();
+	QString exec;
+	QStringList args;
 	
-	readAlignment(FASTA,"alignmentin.aln");
+	QFileInfo fiin(app->applicationTmpPath(),"tweakseq.in.XXXXXX.fa");
+	alignmentFileIn_ = new QTemporaryFile(fiin.absoluteFilePath());
+	alignmentFileIn_->open();
+	alignmentFileIn_->close();
 	
+	QFileInfo fiout(app->applicationTmpPath(),"tweakseq.out.XXXXXX.fa");
+	alignmentFileOut_ = new QTemporaryFile(fiout.absoluteFilePath());
+	alignmentFileOut_->open();
+	alignmentFileOut_->close();
+	
+	QString fin  = alignmentFileIn_->fileName();
+	QString fout = alignmentFileOut_->fileName();
+	project_->exportFASTA(fin,true);
+	
+	project_->alignmentTool()->makeCommand(fin,fout,exec,args);
+	qDebug() <<  trace.header() << exec << args;
+	alignmentProc_->start(exec,args);
 	nAlignments++;
-	
 	// Update menu items
 	undoLastAction->setEnabled(true);
+}
+
+void SeqEditMainWin::alignmentStarted()
+{
+	qDebug() << trace.header() << "seqEditMainWin::alignmentStarted()";
+	statusBar()->showMessage("Alignment running");
+}
+
+void SeqEditMainWin::alignmentReadyReadStdOut()
+{
+	//qDebug() << trace.header() << "SeqEditMainWin::alignmentReadyReadStdOut()";
+	QString msg  = QString(alignmentProc_->readAllStandardOutput());
+	mw->addMessage(msg);
+}
+
+void SeqEditMainWin::alignmentReadyReadStdErr()
+{
+	qDebug() << trace.header() << "SeqEditMainWin::alignmentReadyReadStdErr()";
+	QString msg  = QString(alignmentProc_->readAllStandardError());
+	mw->addMessage(msg,MessageWin::Error);
+}
+
+void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus exitStatus)
+{
+	qDebug() << trace.header() << "SeqEditMainWin::alignmentFinished()";
+	
+	QFile f(alignmentFileOut_->fileName());
+	if (alignmentProc_->state() == QProcess::NotRunning && f.exists()){
+		statusBar()->showMessage("Alignment finished");
+		// delete alignmentFileIn_; // FIXME reinstate
+		// alignmentFileIn_=NULL;
+		readNewAlignment();
+	}
+	
 }
 
 void SeqEditMainWin::alignmentUndo()
@@ -619,8 +642,9 @@ void SeqEditMainWin::residueSelectionChanged()
 void SeqEditMainWin::init()
 {
 	nAlignments=0;
-	seqAlignmentCommand=app->ClustalWPath();
 	lastImportedFile="";
+	alignmentProc_=NULL;
+	alignmentFileOut_=alignmentFileIn_=NULL;
 }
 			
 void SeqEditMainWin::createActions()
@@ -827,120 +851,29 @@ void SeqEditMainWin::createStatusBar()
 	connect(se,SIGNAL(info(const QString &)),info,SLOT(setText(const QString &)));
 }
 	
-void SeqEditMainWin::writeAlignment(int fileFormat,QString fname)
-{
-	qDebug() << trace.header() << "SeqEditMainWin::writeAlignment() " << fname;
-  int i,j;
-	QString s;
-	
-	QFile f(fname);
-	f.open(IO_WriteOnly);
-	QTextStream ts (&f);
-	
-	switch (fileFormat){
-		case FASTA:
-		  for (j=0;j<project_->numSequences();j++){
-				// Write identifier
-				ts << ">" << project_->getLabelAt(j) << "\n";
-				// Write sequence in 50 residue chunks
-				s=project_->getSequence(j,REMOVE_FLAGS);
-				for (i=0;i<s.length();i+=50)
-					ts << s.mid(i, 50 )<< "\n"; // QT truncates the last substring
-		  }
-			break;
-	} // end of switch(fileFormat)
-	
-	f.close();
-}
 
-void SeqEditMainWin::readAlignment(int fileFormat,QString fname)
+void SeqEditMainWin::readNewAlignment()
 {
+	FASTAFile fin(alignmentFileOut_->fileName());
+	QStringList newlabels,newseqs,newcomments;
+	fin.read(newlabels,newseqs,newcomments);
 	
+	qDebug() << trace.header() << newseqs.size() << " " << project_->sequences.size();
+
+	// Preserve tree-order
+	for (int snew=0;snew<newseqs.size();snew++){
+		int sold=0;
+		while ((sold < project_->sequences.size())){
+			if (newlabels.at(snew) == (project_->sequences.at(sold)->label.trimmed())) // remember, labels are padded
+				break;
+			sold++;
+		}
+		
+		if (sold == project_->sequences.size()){
+			qDebug() << trace.header() << "SeqEditMainWin::readNewAlignment() missed " << newlabels.at(snew); 
+		}
+	}
 	
-	
-	// The displayed sequence is updated according to the new alignment.
-	
-	// First the displayed sequences are reordered according to the order of the
-	// aligned sequences in the .aln file since we want to preserve this order
-	
-// 	for (j=0;j<se->numSequences();j++)
-// 	{
-// 		// Find the displayed sequence whose id matches the current aligned
-// 		// sequence
-// 		i=0;
-// 		while((ids[j] != se->getLabel(i)) && i<se->numSequences())
-// 			i++;
-// 		// Now shift the sequence
-// 		se->moveSequence(i,j);
-// 	}
-	
-	// Then we pass through the original sequences making the insertions given by
-	// the alignment. 
-	// This is simplified by removing all insertions from the displayed sequence
-	// prior to the matching process. 
-	
-	// The aligned sequence is searched for the an entry that is
-	// not an insertion. The original sequence is then searched for the
-	// corresponding entry exclusions. The number of insertions prior to
-	// the entry is counted for each sequence. If there
-	// are any new insertions prior to the entry in the aligned sequence,  these
-	// new insertions are transferred to the displayed sequence.
-	// The next entry in the aligned sequence is then found and the whole
-	// process repeated and so on until the end of the aligned sequence.
-	
-	// Prints out the number of insertions made in each sequence as a check.
-	
-	// TO DO post alignment, lock marks will be invalid so these must be removed
-	
-	// All undos will be invalid
-	
-// 	QString newseq,oldseq;
-// 	
-// 	for (k=0;k<se->numSequences();k++)
-// 	{
-// 		newseq = alignment[k];
-// 		oldseq = se->getSequence(k,KEEP_FLAGS);
-// 		
-// 		// Remove all insertions and exclusions from the old sequence
-// 		i=0;
-// 		while (i<oldseq.length())
-// 		{
-// 			if (oldseq[i] == '-' || (oldseq[i].unicode() & EXCLUDE_CELL))
-// 				oldseq.remove(i,1); // note - do not increment j !
-// 			else
-// 				i++;
-// 		}
-// 		i=j=0; // index to current position in the old and new sequence
-// 		
-// 		while (j<newseq.length())
-// 		{
-// 			if (newseq[j]=='-') // find insertions and add them to the old sequence
-// 			{
-// 				oldseq.insert(i,'-');
-// 				i++;
-// 				j++;
-// 			}
-// 			else
-// 			{
-// 				// Found the next residue in the aligned sequence
-// 				// so now we have to find the corresponding residue in the
-// 				// original sequence.
-// 				// Mainly, we have to skip the exclusions marked in the original sequence
-// 				while (i<oldseq.length() && ((oldseq[i].unicode() & REMOVE_FLAGS) != newseq[j].unicode()
-// 					|| (oldseq[i].unicode() & EXCLUDE_CELL)) )
-// 				{ 
-// 					i++;
-// 				}
-// 				i++; // i points at a match
-// 				j++;	
-// 				
-// 			}
-// 		}
-// 		seq.append(new Sequence(ids[k],oldseq));
-// 	}
-// 
-// 	// TO DO - bother to check for a change 
-// 	se->newAlignment(seq);
 }
 
 

@@ -36,6 +36,8 @@
 #include <QStack>
 #include <QString>
 
+#include "AlignmentTool.h"
+
 #define KEEP_FLAGS 0XFFFF // TO DO change all this to allow higher order bits
 #define REMOVE_FLAGS	0X007F	
 
@@ -43,11 +45,13 @@
 
 enum alignmentFormats {FASTA,CLUSTALW};
 
+class AlignmentTool;
 class Operation;
 class Sequence;
 class SequenceSelection;
 class SequenceGroup;
 class SeqEditMainWin;
+
 
 class Project:public QObject
 {
@@ -99,6 +103,8 @@ class Project:public QObject
 		void redo();
 		void undoLastAlignment();
 		
+		AlignmentTool*  alignmentTool(){return alignmentTool_;}
+		
 		void exportFASTA(QString,bool);
 		void exportClustalW(QString,bool);
 		
@@ -132,6 +138,7 @@ class Project:public QObject
 		QDir path_;
 		
 		int nAlignments;
+		AlignmentTool *alignmentTool_;
 		
 		QStack<Operation *> undoStack;
 		

@@ -27,7 +27,7 @@
 #include "Sequence.h"
 #include "SequenceGroup.h"
 
-#define LABELWIDTH 10 // FIXME
+#define LABELWIDTH 16 // FIXME
 #define EXCLUDE_CELL 0x0080 // FIXME
 
 Sequence::Sequence()

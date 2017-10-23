@@ -48,7 +48,7 @@ ClustalO::~ClustalO()
 void ClustalO::makeCommand(QString &fin, QString &fout, QString &exec, QStringList &arglist)
 {
 	exec = executable_;
-	arglist << "--outfmt=fa" << "-i" << fin << "-o" << fout;
+	arglist << "--force" << "-v" << "--outfmt=fa" << "--output-order=tree-order" << "-i" << fin << "-o" << fout;
 }
 
 //		

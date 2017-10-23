@@ -111,9 +111,9 @@ bool FASTAFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comme
 		
 	}
 
-	for (int i=0;i<seqnames.size();i++){
-		qDebug() << trace.header() << seqnames.at(i) << " " << seqs.at(i);
-	}
+	//for (int i=0;i<seqnames.size();i++){
+	//	qDebug() << trace.header() << seqnames.at(i) << " " << seqs.at(i);
+	//}
 		
 	return true;
 }
@@ -155,4 +155,5 @@ void FASTAFile::parseComment(QString &s,QString &l)
 		l = s.mid(1,-1); // use the lot
 	else
 		l = s.mid(1,index-1);
+	qDebug() << trace.header() << "FASTAFile::parseComment " << l;
 }

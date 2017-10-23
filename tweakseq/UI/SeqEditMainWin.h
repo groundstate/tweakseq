@@ -28,8 +28,10 @@
 #define __SEQEDIT_MAINWIN_H_
 
 #include <QMainWindow>
+#include <QProcess>
 
 class QPrinter;
+class QTemporaryFile;
 class QToolBar;
 
 class MessageWin;
@@ -81,6 +83,10 @@ private slots:
 	void setupAlignmentMenu();
 	void alignmentGo();
 	void alignmentUndo();
+	void alignmentStarted();
+	void alignmentReadyReadStdOut();
+	void alignmentReadyReadStdErr();
+	void alignmentFinished(int,QProcess::ExitStatus);
 	
 	void helpHelp();
 	void helpAbout();
@@ -97,8 +103,8 @@ private:
 	void createToolBars();
 	void createStatusBar();
 	
-	void writeAlignment(int,QString);	
-	void readAlignment(int,QString);
+	void readNewAlignment();
+	
 	void printRes( QPainter*,QChar,int,int );
 	
 	bool maybeSave();
@@ -111,12 +117,14 @@ private:
 	QAction * groupSequencesAction,*ungroupSequencesAction;
 	QAction * helpAction,*aboutAction;
 	
-	QString seqAlignmentCommand;
 	QToolBar *seqEditTB;
 	MessageWin *mw;
 	
 	QPrinter *printer;	
+	
+	QProcess *alignmentProc_;
 	int nAlignments;
+	QTemporaryFile *alignmentFileIn_,*alignmentFileOut_;
 	
 	QString lastImportedFile;
 	

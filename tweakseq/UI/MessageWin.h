@@ -36,10 +36,10 @@ class MessageWin: public QTextEdit{
 	Q_OBJECT
 	
 	public:
-	
+		enum MessageType {Information, Error};
 		MessageWin(QWidget *);
 		~MessageWin();
-		void addMessage(QString);
+		void addMessage(QString,int msgType=Information);
 		
 };
 

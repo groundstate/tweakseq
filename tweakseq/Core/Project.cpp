@@ -32,6 +32,7 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+#include "AlignmentTool.h"
 #include "Application.h"
 #include "ClustalFile.h"
 #include "ClustalO.h"
@@ -722,6 +723,7 @@ void Project::init()
 	dirty_=false;
 	name_="unnamed.tsq";
 	empty_=true;
+	alignmentTool_= new ClustalO();
 }
 
 int Project::getSeqIndex(QString l)
