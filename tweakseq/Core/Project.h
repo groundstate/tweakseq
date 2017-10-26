@@ -99,7 +99,8 @@ class Project:public QObject
 		
 		void addGroupToSelection(SequenceGroup *);
 		void lockSelectedGroups(bool);
-	
+		bool cutSelection();
+		
 		void logOperation(Operation *);
 		void undo();
 		void redo();

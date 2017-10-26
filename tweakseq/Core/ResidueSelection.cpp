@@ -63,3 +63,8 @@ bool ResidueSelection::isInsertionsOnly()
 	}
 	return true;
 }
+
+ResidueGroup * ResidueSelection::itemAt(int index)
+{
+	return sel_.at(index);
+}

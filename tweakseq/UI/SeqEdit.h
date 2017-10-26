@@ -30,7 +30,6 @@
 #include <Q3GridView> // FIXME
 #include <QList>
 #include <QStack>
-#include <Q3StrList> // FIXME
 
 class QString;
 class QFont;
@@ -57,7 +56,6 @@ public:
 	
 	void undoEdit();
 	void redoEdit();
-	void cutSelection();
 	
 	void excludeSelection();
 	void removeExcludeSelection();
@@ -89,6 +87,7 @@ private slots:
 	
 	void sequenceAdded(Sequence *);
 	//void sequencesRemoved(int,int);
+	void residueSelectionChanged();
 	
 private:
 	
@@ -96,7 +95,6 @@ private:
 	
 	void insertCell(char c,int row,int col);
 	void insertCells(QString,int row,int col);
-	void deleteCells(int r,int start,int stop);
 	void setCellMark(int row,int col,int on);
 
 	void checkLength();

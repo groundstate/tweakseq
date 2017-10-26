@@ -46,6 +46,9 @@ class Sequence
 		void exclude(int,int);
 		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
 		
+		void remove(int,int);
+		void insert(QString,int);
+		
 		SequenceGroup *group;
 		
 		QString source; // file sequence was originally sourced from

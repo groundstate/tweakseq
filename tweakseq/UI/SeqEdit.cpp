@@ -161,7 +161,7 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	nAlignments=0;
 
 	connect(project_,SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
-	
+	connect(project_->residueSelection,SIGNAL(changed()),this,SLOT(residueSelectionChanged() ) );
 }
 
 SeqEdit::~SeqEdit()
@@ -232,58 +232,6 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 
 }
 
-void SeqEdit::cutSelection()
-{
-	qDebug() << trace.header() << "SeqEdit::cutSelection()";
-	char *buf;
-	Q3StrList l;
-	
-	int startRow=selAnchorRow,stopRow=selDragRow,
-			startCol=selAnchorCol,stopCol=selDragCol,row,col;
-	
-	if (residuesSelected_){ 
-	
-		// Order start and stop so they can be used in loops
-		if (startRow > stopRow) swap_int(&startRow,&stopRow);
-		if (startCol > stopCol) swap_int(&startCol,&stopCol);
-		
-		// Check whether the selected region contains residues
-		// If it does, deletion is disallowed
-		for (row=startRow;row<=stopRow;row++)
-			for (col=startCol;col<=stopCol;col++)
-				if (cellContent(row,col,REMOVE_FLAGS) != '-'){
-					QMessageBox::information(this,"DeltaAlpha",
-						"Bummer. You are not allowed to delete\n"
-						"a block containing residues; only gaps can be deleted.");
-					return;
-				}
-			
-		residuesSelected_=FALSE; 		
-		// Create a deletion record
-		buf = new char[stopCol-startCol+2];
-		for (row=startRow;row<=stopRow;row++){
-			for (col=startCol;col<=stopCol;col++)
-				buf[col-startCol] = cellContent(row,col,KEEP_FLAGS).toAscii();
-			buf[stopCol-startCol+1]=NULLCHAR;
-			l.append(buf);
-		}
-		project_->logOperation( new Operation(Operation::Deletion,startRow,stopRow,
-			startCol,stopCol,l));
-		l.~Q3StrList();
-		delete[] buf;
-		
-		for (row=startRow;row<=stopRow;row++){
-			deleteCells(row,startCol,stopCol);
-			checkLength();
-			// Update past the deletion point only
-			for (col=startCol;col<=stopCol;col++)
-				updateCell(row,col);
-		}
-		update();
-		//emit alignmentChanged();
-	}	
-}
-
 void SeqEdit::excludeSelection()
 {
 	qDebug() << trace.header() << "SeqEdit::excludeSelection()";
@@ -342,8 +290,6 @@ void SeqEdit::removeExcludeSelection()
 	}	// of if (residuesSelected_)
 	
 }
-
-	
 
 void SeqEdit::setCellMark(int row,int col,int on)
 {
@@ -574,6 +520,8 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 		qDebug() << trace.header() << "Selected " << selSeq->label;
 		// Remove any residue selection
 		selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
+		residuesSelected_=false;
+		project_->residueSelection->clear();
 		// The usual logic:
 		// If no key pressed then clear the selection
 		
@@ -665,7 +613,7 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 				for (int r=startRow;r<=stopRow;r++){
 					resSel.append(new ResidueGroup(project_->sequences.at(r),startCol,stopCol));
 				}
-				
+				project_->residueSelection->set(resSel);
 				// DO NOT delete the selection
 			}
 			break;
@@ -824,8 +772,8 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 					
 					// Add 1 to startCol,stopCol because  post insertion is
 					// used and undo deletes [startCol,stopCol]
-					project_->logOperation( new Operation(Operation::Insertion,startRow,stopRow,
-							startCol+1,stopCol+1,Q3StrList()));
+					//project_->logOperation( new Operation(Operation::Insertion,startRow,stopRow,
+					//		startCol+1,stopCol+1,Q3StrList()));
 				
 					// Insertions across multiple rows are allowed
 					// Increase the size of the displayed area 
@@ -873,6 +821,8 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	// Stop setNumRows() from forcing a repaint
 	// FIXME setAutoUpdate(FALSE);
 	
+	qDebug() << trace.header() << "SeqEdit::sequenceAdded()";
+	
 	rowNum = numRows();
 	setNumRows(rowNum+1);
 	rowLength = FLAGSWIDTH + LABELWIDTH + sequenceLength;
@@ -896,6 +846,13 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	this->viewport()->repaint();
 }
 
+void SeqEdit::residueSelectionChanged()
+{
+	qDebug() << trace.header() << "SeqEdit::residueSelectionChanged()";
+	if (project_->residueSelection->empty()){
+		residuesSelected_=false;
+	}
+}
 
 //
 // SeqEdit - private members
@@ -928,11 +885,6 @@ void SeqEdit::insertCells(QString s,int row,int col){
 	update();
 }
 
-void SeqEdit::deleteCells(int row,int start,int stop){
-	QList<Sequence *> &seq = project_->sequences;
-	(seq.at(row)->residues).remove(start-(LABELWIDTH+FLAGSWIDTH),stop-start+1);
-	update();
-}
 
 void SeqEdit::checkLength(){
 	// The size of the region displayed needs to be checked after some

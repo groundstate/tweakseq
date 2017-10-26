@@ -23,6 +23,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include <QtDebug>
+#include "DebuggingInfo.h"
 
 #include "Sequence.h"
 #include "SequenceGroup.h"
@@ -99,3 +101,15 @@ QList<int> Sequence::exclusions()
 	}	
 	return x;
 }
+
+void Sequence::remove(int start,int n)
+{
+	qDebug() << trace.header() << "Sequence::remove";
+	residues.remove(start,n);
+}
+
+void Sequence::insert(QString,int)
+{
+}
+
+		

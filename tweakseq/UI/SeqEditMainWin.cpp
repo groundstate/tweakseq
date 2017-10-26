@@ -481,7 +481,9 @@ void SeqEditMainWin::editRedo()
 
 void SeqEditMainWin::editCut()
 {
-	se->cutSelection();
+	project_->cutSelection();
+	cutAction->setEnabled(false);
+	se->updateViewport();
 }
 
 void SeqEditMainWin::editGroupSequences()

@@ -62,6 +62,7 @@ Project::Project()
 Project::~Project()
 {
 	delete sequenceSelection;
+	delete residueSelection;
 	// FIXME and the rest ..
 }
 
@@ -378,6 +379,17 @@ void Project::addGroupToSelection(SequenceGroup *selg)
 		}
 	}
 	dirty_=true;
+}
+
+bool Project::cutSelection()
+{
+	// FIXME only works with a residue selection
+	for (int rg=0;rg<residueSelection->size();rg++){
+		ResidueGroup *resGroup = residueSelection->itemAt(rg);
+		resGroup->sequence->remove(resGroup->start,resGroup->stop-resGroup->start+1);
+	}
+	residueSelection->clear();
+	return true;
 }
 
 //
