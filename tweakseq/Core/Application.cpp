@@ -30,6 +30,7 @@
 #include <iostream>
 
 #include <QDir>
+#include <QMessageBox>
 #include <QStringList>
 
 #include "AboutDialog.h"
@@ -76,6 +77,9 @@ void Application::saveDefaultSettings()
 	
 void Application::showHelp(QString)
 {
+	QMessageBox msgBox;
+	msgBox.setText("Bwahahahaha\n\n\nNo.");
+	msgBox.exec();
 }
 
 void Application::showAboutDialog(QWidget *parent)

@@ -51,6 +51,11 @@ public:
 	
 	SeqEdit *se; 
 
+public slots:
+	
+	void sequenceSelectionChanged();
+	void residueSelectionChanged();
+	
 protected:
 	
 	virtual void closeEvent(QCloseEvent *);
@@ -90,9 +95,6 @@ private slots:
 	
 	void helpHelp();
 	void helpAbout();
-	
-	void sequenceSelectionChanged();
-	void residueSelectionChanged();
 	
 private:
 

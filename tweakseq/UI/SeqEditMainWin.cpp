@@ -61,6 +61,7 @@
 #include "FASTAFile.h"
 #include "MessageWin.h"
 #include "Project.h"
+#include "ResidueSelection.h"
 #include "SeqEdit.h"
 #include "SeqEditMainWin.h"
 #include "Sequence.h"
@@ -613,6 +614,7 @@ void SeqEditMainWin::alignmentUndo()
 }
 
 void SeqEditMainWin::helpHelp(){
+	app->showHelp("");
 }
 
 void SeqEditMainWin::helpAbout(){
@@ -621,7 +623,7 @@ void SeqEditMainWin::helpAbout(){
 
 void SeqEditMainWin::sequenceSelectionChanged()
 {
-	cutAction->setEnabled(!(project_->sequenceSelection->empty()));
+	// cutAction->setEnabled(!(project_->sequenceSelection->empty())); // FIXME disabled for the moment
 	groupSequencesAction->setEnabled(!(project_->sequenceSelection->empty()));
 	// If the selection contains any grouped sequences then we can ungroup
 	ungroupSequencesAction->setEnabled(false);
@@ -633,6 +635,10 @@ void SeqEditMainWin::sequenceSelectionChanged()
 
 void SeqEditMainWin::residueSelectionChanged()
 {
+	qDebug() << trace.header() << "SeqEditMainWin::residueSelectionChanged()";
+	// We can only cut insertions
+	// So check that the selection is insertions only
+	 cutAction->setEnabled(project_->residueSelection->isInsertionsOnly());
 }
 	
 //
@@ -860,20 +866,34 @@ void SeqEditMainWin::readNewAlignment()
 	
 	qDebug() << trace.header() << newseqs.size() << " " << project_->sequences.size();
 
+	// Groupings are preserved
+	
 	// Preserve tree-order
 	for (int snew=0;snew<newseqs.size();snew++){
 		int sold=0;
 		while ((sold < project_->sequences.size())){
-			if (newlabels.at(snew) == (project_->sequences.at(sold)->label.trimmed())) // remember, labels are padded
+			if (newlabels.at(snew) == (project_->sequences.at(sold)->label.trimmed())) // remember, labels are padded at the end with spaces
 				break;
 			sold++;
 		}
-		
-		if (sold == project_->sequences.size()){
+		if (sold < project_->sequences.size()){
+			project_->moveSequence(sold,snew);
+		}
+		else{
 			qDebug() << trace.header() << "SeqEditMainWin::readNewAlignment() missed " << newlabels.at(snew); 
 		}
 	}
 	
+	// Update each sequence
+	int snew =0;
+	int sold =0;
+	while (sold < project_->sequences.size() && snew<newseqs.size()){
+		project_->sequences.at(sold)->residues = newseqs.at(snew);
+		snew++;
+		sold++;
+	}
+	
+	se->updateViewport();
 }
 
 

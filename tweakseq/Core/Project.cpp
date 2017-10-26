@@ -39,6 +39,7 @@
 #include "FASTAFile.h"
 #include "Operation.h"
 #include "Project.h"
+#include "ResidueSelection.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
@@ -68,6 +69,7 @@ void Project::setMainWindow(SeqEditMainWin *mainwin)
 {
 	mainWindow_=mainwin;
 	connect(mainWindow_, SIGNAL(byebye()), this,SLOT(mainWindowClosed()));
+	connect(residueSelection,SIGNAL(changed()),mainWindow_,SLOT(residueSelectionChanged()));
 	connect(sequenceSelection,SIGNAL(changed()),mainWindow_,SLOT(sequenceSelectionChanged()));
 }
 
@@ -702,6 +704,7 @@ void Project::createMainWindow()
 {
 	mainWindow_ = new SeqEditMainWin(this);
 	connect(mainWindow_, SIGNAL(byebye()), this,SLOT(mainWindowClosed()));
+	connect(residueSelection,SIGNAL(changed()),mainWindow_,SLOT(residueSelectionChanged()));
 	connect(sequenceSelection,SIGNAL(changed()),mainWindow_,SLOT(sequenceSelectionChanged()));
 	mainWindow_->show();
 }
@@ -718,6 +721,7 @@ void Project::mainWindowClosed()
 
 void Project::init()
 {
+	residueSelection = new ResidueSelection();
 	sequenceSelection = new SequenceSelection();
 	named_=false;
 	dirty_=false;

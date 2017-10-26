@@ -14,6 +14,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/MessageWin.h \
 								 include/Operation.h \
 								 include/Project.h \
+								 include/ResidueSelection.h \
 								 include/SeqEdit.h \
 								 include/SeqEditMainWin.h \
 								 include/Sequence.h \
@@ -31,6 +32,7 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/Main.cpp \
 									Core/Operation.cpp \
 									Core/Project.cpp \
+									Core/ResidueSelection.cpp \
 									Core/Sequence.cpp \
 									Core/SequenceFile.cpp\
 									Core/SequenceGroup.cpp\

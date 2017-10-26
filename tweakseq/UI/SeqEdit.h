@@ -63,7 +63,8 @@ public:
 	void removeExcludeSelection();
 
 	QColor getSequenceGroupColour();
-
+	void updateViewport();
+	
 public slots:
 	
 	void postLoadTidy();
@@ -80,7 +81,6 @@ protected:
 	void contentsMouseMoveEvent(QMouseEvent *);
 	void mouseDoubleClickEvent(QMouseEvent *);
 	
-
 	void keyPressEvent( QKeyEvent* );
 	void focusInEvent( QFocusEvent* );
 	void focusOutEvent( QFocusEvent* );
@@ -106,7 +106,7 @@ private:
 	
 	Project *project_;
 	
-	int isSelected;
+	int residuesSelected_;
 	int selAnchorRow,selAnchorCol,selDragRow,selDragCol;
 	int insertionPoint,draggingSequence,draggedRowNum;
 	Sequence *draggedSeq;

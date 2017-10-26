@@ -47,6 +47,7 @@ enum alignmentFormats {FASTA,CLUSTALW};
 
 class AlignmentTool;
 class Operation;
+class ResidueSelection;
 class Sequence;
 class SequenceSelection;
 class SequenceGroup;
@@ -74,6 +75,7 @@ class Project:public QObject
 		bool isModified(){return dirty_;}
 		
 		QList<Sequence *>  sequences;
+		ResidueSelection * residueSelection;
 		SequenceSelection *sequenceSelection;
 		
 		int numSequences(){return sequences.size();}
