@@ -674,6 +674,7 @@ void Project::load(QString &fname)
 	
 	file.close();
 
+	mainWindow_->postLoadTidy();
 }
 
 void Project::exportFASTA(QString fname,bool removeExclusions)

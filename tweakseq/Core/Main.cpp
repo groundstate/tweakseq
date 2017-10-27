@@ -86,10 +86,12 @@ int main(int argc, char **argv){
 	qDebug() << trace.header()  << "Application starting ...";
 	
 	Application a(argc, argv);
-	QStringList args = a.arguments(); // FIXME unparsed
-	
 	a.setup(); // FIXME placeholder
 	Project *prj = a.createProject();
 	prj->createMainWindow();
+	if (optind == argc-1){
+		QString fname = argv[optind];
+		prj->load(fname);
+	}
 	return a.exec();
 }

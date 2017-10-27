@@ -153,15 +153,9 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
    //            Tbl_smoothScrolling);       
 	resize( 400, 200 );                         
 	
-	//seq.setAutoDelete(TRUE);	// FIXME need to manage memory cleanup
-	//undoStack.setAutoDelete(TRUE); // FIXME need to manage memory cleanup
-	
-	
-	
 	nAlignments=0;
-
 	connect(project_,SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
-	connect(project_->residueSelection,SIGNAL(changed()),this,SLOT(residueSelectionChanged() ) );
+
 }
 
 SeqEdit::~SeqEdit()
@@ -232,6 +226,15 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 
 }
 
+void SeqEdit::cutSelection()
+{
+	project_->cutSelection(); 
+	if (project_->residueSelection->empty()){ // FIXME residues only
+		selectingResidues_=false;
+	}
+	updateViewport();
+}
+
 void SeqEdit::excludeSelection()
 {
 	qDebug() << trace.header() << "SeqEdit::excludeSelection()";
@@ -239,8 +242,8 @@ void SeqEdit::excludeSelection()
 	int startRow=selAnchorRow,stopRow=selDragRow,
 			startCol=selAnchorCol,stopCol=selDragCol,row,col;
 			
-	if (residuesSelected_){ // flag selected residues as being excluded from the
-		residuesSelected_=FALSE; // alignment
+	if (selectingResidues_){ // flag selected residues as being excluded from the
+		selectingResidues_=false; // alignment
 		// Order start and stop so they can be used in loops
 		if (startRow > stopRow) swap_int(&startRow,&stopRow);
 		if (startCol > stopCol) swap_int(&startCol,&stopCol);
@@ -268,8 +271,8 @@ void SeqEdit::removeExcludeSelection()
 	int startRow=selAnchorRow,stopRow=selDragRow,
 			startCol=selAnchorCol,stopCol=selDragCol,row,col;
 			
-	if (residuesSelected_){ // flag selected residues as being excluded from the
-		residuesSelected_=FALSE; // alignment
+	if (selectingResidues_){ // flag selected residues as being excluded from the
+		selectingResidues_=false; // alignment
 		// Order start and stop so they can be used in loops
 		if (startRow > stopRow) swap_int(&startRow,&stopRow);
 		if (startCol > stopCol) swap_int(&startCol,&stopCol);
@@ -287,7 +290,7 @@ void SeqEdit::removeExcludeSelection()
 			}// of for (col=)
 		update();
 		
-	}	// of if (residuesSelected_)
+	}	// of if (selectingResidues_)
 	
 }
 
@@ -380,7 +383,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	
 	// If the cell is highlighted then do it
 	
-	if (residuesSelected_){
+	if (selectingResidues_){
 	txtColor.setRgb(255,255,255);
 		if (selAnchorRow <= selDragRow){ // dragging top to bottom
 			if (selAnchorCol <= selDragCol){ // left to right
@@ -427,6 +430,15 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 			txtColor.setRgb(255,255,255);
 		if (project_->sequenceSelection->contains(currSeq))
 			p->fillRect(0,0,w,h,QColor(128,128,128));
+		// The selection doesn't get filled until the mouse is released
+		// so whatever we are currently selecting has
+		if (selectingSequences_ && leftDown_){
+			int startRow = seqSelectionAnchor_;
+			int stopRow  = seqSelectionDrag_;
+			if (startRow > stopRow) swap_int(&startRow,&stopRow);
+			if (row >= startRow && row <=stopRow)
+				p->fillRect(0,0,w,h,QColor(128,128,128));
+		}
 	}
 	else{
 
@@ -514,49 +526,61 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 		return;
 	}
 	
+	// Clicked inside the "sequence label" area
 	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH))
 	{
 		Sequence *selSeq = seq.at(clickedRow);
 		qDebug() << trace.header() << "Selected " << selSeq->label;
 		// Remove any residue selection
 		selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
-		residuesSelected_=false;
+		selectingResidues_=false;
 		project_->residueSelection->clear();
-		// The usual logic:
-		// If no key pressed then clear the selection
-		
-		switch (e->modifiers())
-		{
-			case Qt::NoModifier:
-				project_->sequenceSelection->set(selSeq);
+			
+		switch (e->button()){
+			case Qt::LeftButton:
+			{
+				switch (e->modifiers()){
+					case Qt::NoModifier:
+						project_->sequenceSelection->clear();
+						seqSelectionAnchor_=seqSelectionDrag_=clickedRow;
+						selectingSequences_=true;
+						break;
+					case Qt::ShiftModifier:
+						if (project_->sequenceSelection->contains(selSeq))
+							project_->sequenceSelection->toggle(selSeq);
+						else{
+							project_->sequenceSelection->set(selSeq);
+						}
+						break;
+					case Qt::ControlModifier:
+						project_->sequenceSelection->toggle(selSeq);
+						break;
+					default:
+						break;
+					}
+				leftDown_=true; // not set in mouse move event
 				break;
-			case Qt::ShiftModifier:
-				if (project_->sequenceSelection->contains(selSeq))
-					project_->sequenceSelection->toggle(selSeq);
-				else{
-					project_->sequenceSelection->set(selSeq);
-				}
-				break;
-			case Qt::ControlModifier:
-				project_->sequenceSelection->toggle(selSeq);
-				break;
+				
+			}
 			default:
 				break;
 		}
+		
 		this->viewport()->repaint();
 		return;
+		
 	}
 	
-	// Must have clicked inside the sequence area so we start selecting residues
+	// Clicked inside the sequence area so we start selecting residues
 	project_->sequenceSelection->clear(); // clear any other selections
 	
 	switch (e->button()){
 		case Qt::LeftButton:
-			leftDown=TRUE;
-			if (residuesSelected_){
+			leftDown_=true;
+			if (selectingResidues_){
 				// If we have already selected a block of cells
 				// then we need to update these viz remove the highlight mark
-				residuesSelected_=FALSE; // this will block a redraw of the highlight
+				selectingResidues_=false; // this will block a redraw of the highlight
 				if (selAnchorRow > selDragRow){ 
 					startRow=selDragRow;
 					stopRow=selAnchorRow;
@@ -578,7 +602,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 						updateCell(row,col);
 			}
 			// A new selection has been made
-			residuesSelected_ = TRUE;
+			selectingResidues_ = true;
 			
 			selAnchorRow = clickedRow;   // map to row; set current cell
 			selAnchorCol = clickedCol;   // map to col; set current cell
@@ -602,8 +626,8 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 	switch (e->button()){
 		case Qt::LeftButton:
 		{
-			leftDown=FALSE; // have finished selection
-			if (residuesSelected_){
+			leftDown_=false; // have finished selection
+			if (selectingResidues_){
 				qDebug() << trace.header() << selAnchorRow << " " << selAnchorCol << " " << selDragRow << " " << selDragCol;
 				int startRow=selAnchorRow,stopRow=selDragRow,startCol=selAnchorCol-(FLAGSWIDTH+LABELWIDTH),stopCol=selDragCol-(FLAGSWIDTH+LABELWIDTH);
 				if (stopRow < startRow) swap_int(&startRow,&stopRow);
@@ -616,12 +640,16 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 				project_->residueSelection->set(resSel);
 				// DO NOT delete the selection
 			}
+			else if (selectingSequences_){
+				selectingSequences_=false;
+				int startRow = seqSelectionAnchor_,stopRow=seqSelectionDrag_;
+				if (stopRow < startRow) swap_int(&startRow,&stopRow);
+				for (int r=startRow;r<=stopRow;r++){
+					project_->sequenceSelection->toggle(project_->sequences.at(r));
+				}
+			}
 			break;
 		}
-		case Qt::MidButton:
-			break;
-		case Qt::RightButton:
-			break;
 		default:break;
 	}
 }
@@ -655,7 +683,17 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 		emit info(lastInfo);
 	}
 	
-	if (leftDown){ // FIXME in event?
+	if (selectingSequences_ && leftDown_){
+		if (seqSelectionDrag_ != clickedRow){
+			seqSelectionDrag_=clickedRow;
+			for (int col=FLAGSWIDTH; col < LABELWIDTH+FLAGSWIDTH; col ++)
+				updateCell(clickedRow,col);
+			qDebug() << trace.header() << seqSelectionAnchor_ << " " << seqSelectionDrag_ ;
+		}
+		return;
+	}
+	
+	if (leftDown_){ // FIXME in event?
 		
 		// Must be moving the highlight box around in the sequence field
 		if (clickedCol < LABELWIDTH+FLAGSWIDTH && clickedCol >= FLAGSWIDTH)
@@ -731,7 +769,7 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 	switch (e->key()){
 		case Qt::Key_0:case Qt::Key_1:case Qt::Key_2:case Qt::Key_3:case Qt::Key_4:
 		case Qt::Key_5:case Qt::Key_6:case Qt::Key_7:case Qt::Key_8:case Qt::Key_9:
-			if (residuesSelected_){
+			if (selectingResidues_){
 				if (startCol != stopCol)
 					return;
 				else{
@@ -741,7 +779,7 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 			}
 			break;
 		case Qt::Key_Space:
-			if (residuesSelected_){
+			if (selectingResidues_){
 			
 				// Check that selection is only one column wide - if not
 				// do nothing because the user probably hit the spacebar by mistake
@@ -846,14 +884,6 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	this->viewport()->repaint();
 }
 
-void SeqEdit::residueSelectionChanged()
-{
-	qDebug() << trace.header() << "SeqEdit::residueSelectionChanged()";
-	if (project_->residueSelection->empty()){
-		residuesSelected_=false;
-	}
-}
-
 //
 // SeqEdit - private members
 //
@@ -861,11 +891,16 @@ void SeqEdit::residueSelectionChanged()
 void SeqEdit::init()
 {
 	project_=NULL;
-	residuesSelected_ = FALSE;
+	
+	selectingResidues_ = false;
 	draggingSequence = FALSE;
 	draggedSeq=NULL;
 	selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
-	leftDown=FALSE;
+	
+	selectingSequences_ = false;
+	seqSelectionAnchor_=seqSelectionDrag_=-1;
+	
+	leftDown_=false;
 	lastInfo="";
 	currGroupColour_=0;
 }

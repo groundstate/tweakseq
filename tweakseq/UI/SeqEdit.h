@@ -57,6 +57,7 @@ public:
 	void undoEdit();
 	void redoEdit();
 	
+	void cutSelection();
 	void excludeSelection();
 	void removeExcludeSelection();
 
@@ -86,8 +87,6 @@ protected:
 private slots:
 	
 	void sequenceAdded(Sequence *);
-	//void sequencesRemoved(int,int);
-	void residueSelectionChanged();
 	
 private:
 	
@@ -104,11 +103,15 @@ private:
 	
 	Project *project_;
 	
-	int residuesSelected_;
+	bool selectingResidues_;
 	int selAnchorRow,selAnchorCol,selDragRow,selDragCol;
 	int insertionPoint,draggingSequence,draggedRowNum;
 	Sequence *draggedSeq;
-	int leftDown;
+	
+	bool selectingSequences_;
+	int  seqSelectionAnchor_,seqSelectionDrag_;
+	
+	bool leftDown_;
 	QFont currFont;	
 	int nAlignments;
 	QString numStr;

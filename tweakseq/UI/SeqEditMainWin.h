@@ -49,8 +49,10 @@ public:
 	
 	void doAlignment();
 	
-	SeqEdit *se; 
-
+	SeqEdit *se;
+	
+	void postLoadTidy();
+	
 public slots:
 	
 	void sequenceSelectionChanged();

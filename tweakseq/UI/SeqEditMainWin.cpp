@@ -131,6 +131,13 @@ SeqEditMainWin::~SeqEditMainWin(){
 void SeqEditMainWin::doAlignment(){
 }
 
+void SeqEditMainWin::postLoadTidy()
+{
+	se->postLoadTidy();
+	setWindowTitle("tweakseq - " + project_->name());
+}
+
+
 //
 // Public slots
 //	
@@ -181,8 +188,6 @@ void SeqEditMainWin::fileOpenProject()
 	se->setProject(project_);
 	delete oldProject;
 	project_->load(fname);
-	se->postLoadTidy();
-	setWindowTitle("tweakseq - " + project_->name());
 }
 
 void SeqEditMainWin::fileSaveProject()
@@ -481,9 +486,8 @@ void SeqEditMainWin::editRedo()
 
 void SeqEditMainWin::editCut()
 {
-	project_->cutSelection();
+	se->cutSelection();
 	cutAction->setEnabled(false);
-	se->updateViewport();
 }
 
 void SeqEditMainWin::editGroupSequences()
