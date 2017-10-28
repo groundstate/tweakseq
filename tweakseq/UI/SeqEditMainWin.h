@@ -37,6 +37,7 @@ class QToolBar;
 class MessageWin;
 class Project;
 class SeqEdit;
+class SequenceGroup;
 
 class SeqEditMainWin: public QMainWindow
 {
@@ -88,7 +89,8 @@ private slots:
 	void editUnlock();
 	
 	void setupAlignmentMenu();
-	void alignmentGo();
+	void alignmentAll();
+	void alignmentSelection();
 	void alignmentUndo();
 	void alignmentStarted();
 	void alignmentReadyReadStdOut();
@@ -113,13 +115,15 @@ private:
 	
 	bool maybeSave();
 	
+	int groupIndex(SequenceGroup *,const QList<SequenceGroup *> &);
+	
 	QMenu    *fileMenu,*alignmentMenu,*editMenu,*helpMenu;
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
-	QAction * goAction,*undoLastAction;
-	QAction * undoAction,*redoAction,*cutAction,*excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
-	QAction * groupSequencesAction,*ungroupSequencesAction;
-	QAction * helpAction,*aboutAction;
+	QAction  *alignAllAction,*alignSelectionAction,*undoLastAction;
+	QAction  *undoAction,*redoAction,*cutAction,*excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
+	QAction  *groupSequencesAction,*ungroupSequencesAction;
+	QAction  *helpAction,*aboutAction;
 	
 	QToolBar *seqEditTB;
 	MessageWin *mw;

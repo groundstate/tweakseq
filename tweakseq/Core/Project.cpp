@@ -236,32 +236,39 @@ void Project::changeResidues(QString r,int pos)
 	emit sequencesChanged(sequences.size(),sequences.size());
 }
 
-
-void Project::newAlignment(QList <Sequence *> s)
+void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<SequenceGroup *> &newGroups)
 {
-	// Called after making an alignment
-	qDebug() << trace.header() << "Project::newAlignment()";
-	empty_=false;
-	undoStack.push(new Operation(Operation::Alignment,sequences));
-	sequences.clear();
-	for (int i=0;i<s.count();i++){
-		sequences.append(new Sequence(s.at(i)->label,s.at(i)->residues));
-		//int rowLength = LABELWIDTH+FLAGSWIDTH+ s.at(i)->residues.length();
-		//if (numCols()<rowLength) setNumCols(rowLength);
-	}	
-	nAlignments++;
+	qDebug() << trace.header() << " Project::setAlignment";
+	// Clear the selections because they will be meaningless post alignment
+	residueSelection->clear();
+	sequenceSelection->clear();
+	
+	while (!sequences.isEmpty())
+		delete sequences.takeFirst();
+	while (!sequenceGroups.isEmpty())
+		delete sequenceGroups.takeFirst();
+	
+	for (int g=0;g<newGroups.size();g++){
+		SequenceGroup *sg = new SequenceGroup();
+		*sg = *(newGroups.at(g));
+		sg->clear();
+		sequenceGroups.append(sg);
+	}
+	
+	for (int s=0;s<newSequences.size();s++){
+		Sequence *seq = new Sequence();
+		*seq = *(newSequences.at(s));
+		sequences.append(seq);
+		if (newSequences.at(s)->group){
+			int gi;
+			for (gi=0;gi<newGroups.size();gi++){
+				if (newGroups.at(gi) == newSequences.at(s)->group) break;
+			}
+			sequenceGroups.at(gi)->addSequence(seq);
+		}
+	}
+	
 	dirty_=true;
-	emit sequencesChanged(sequences.size(),0);
-}
-
-void Project::setAlignment(QList <Sequence *> s){
-
-	sequences.clear();
-	empty_=false;
-	for (int i=0;i<s.count();i++)
-		sequences.append(new Sequence(s.at(i)->label,s.at(i)->residues));
-	dirty_=true;
-	emit sequencesChanged(sequences.size(),0);
 }
 
 //
@@ -276,8 +283,8 @@ bool Project::groupSelectedSequences(QColor gcol){
 	// If the selection wholly contains one or more existing groups, then
 	// the selection is merged into a single group
 	QList<SequenceGroup *> selgroups;
-	for (int g=0;g<groups_.size();g++){
-		SequenceGroup *sg = groups_.at(g);
+	for (int g=0;g<sequenceGroups.size();g++){
+		SequenceGroup *sg = sequenceGroups.at(g);
 		bool contained = true;
 		int selcnt=0;
 		for (int s=0;s<sg->size();s++){
@@ -302,7 +309,7 @@ bool Project::groupSelectedSequences(QColor gcol){
 	
 	for (int g=0;g<selgroups.size();g++){
 		SequenceGroup *sg = selgroups.at(g);
-		groups_.removeOne(sg);
+		sequenceGroups.removeOne(sg);
 		delete sg;
 	}
 	
@@ -310,7 +317,7 @@ bool Project::groupSelectedSequences(QColor gcol){
 
 	SequenceGroup *sg = new SequenceGroup();
 	sg->setTextColour(gcol);
-	groups_.append(sg);
+	sequenceGroups.append(sg);
 	for ( int s=0;s<sequenceSelection->size();s++){
 		Sequence *seq = sequenceSelection->itemAt(s);
 		sg->addSequence(seq);
@@ -327,8 +334,8 @@ bool Project::ungroupSelectedSequences()
 	for ( int s=0;s<sequenceSelection->size();s++){
 		Sequence *seq = sequenceSelection->itemAt(s);
 		if (seq->group){
-			for (int g=0;g<groups_.size();g++){
-				groups_.at(g)->removeSequence(seq); // this also removes the parent group form the sequence
+			for (int g=0;g<sequenceGroups.size();g++){
+				sequenceGroups.at(g)->removeSequence(seq); // this also removes the parent group form the sequence
 			}
 		}
 	}
@@ -347,8 +354,8 @@ void Project::lockSelectedGroups(bool lock){
 		}
 	}
 	QList<SequenceGroup *> selgroups;
-	for (int g=0;g<groups_.size();g++){
-		SequenceGroup *sg = groups_.at(g);
+	for (int g=0;g<sequenceGroups.size();g++){
+		SequenceGroup *sg = sequenceGroups.at(g);
 		bool contained=true;
 		for (int s=0;s<sg->size();s++){
 			if (!sequenceSelection->contains(sg->itemAt(s))){
@@ -370,8 +377,8 @@ void Project::lockSelectedGroups(bool lock){
 void Project::addGroupToSelection(SequenceGroup *selg)
 {
 	qDebug() << trace.header() << "Project::addGroupToSelection ";
-	for (int g=0;g<groups_.size();g++){
-		SequenceGroup *sg = groups_.at(g);
+	for (int g=0;g<sequenceGroups.size();g++){
+		SequenceGroup *sg = sequenceGroups.at(g);
 		if (selg==sg){
 			for (int s=0;s<sg->size();s++)
 				sequenceSelection->toggle(sg->itemAt(s));
@@ -398,7 +405,7 @@ bool Project::cutSelection()
 
 void Project::logOperation(Operation *op)
 {
-	undoStack.push(op);
+	undoStack_deprecated.push(op);
 }
 
 void Project::undo()
@@ -409,9 +416,9 @@ void Project::undo()
 // 	int col;
 // 	Operation *op;
 // 	
-// 	if (!undoStack.isEmpty()){
+// 	if (!undoStack_deprecated.isEmpty()){
 // 	
-// 		op = undoStack.top(); // FIXME ported but not tested
+// 		op = undoStack_deprecated.top(); // FIXME ported but not tested
 // 		startRow=op->startRow;
 // 		stopRow =op->stopRow;
 // 		startCol=op->startCol;
@@ -462,7 +469,7 @@ void Project::undo()
 // 				nAlignments--; // changeAlignment increments so decrement by 2
 // 				break;
 // 		} // end of case
-//  		Operation * op = undoStack.pop(); delete op; // FIXME ported but not tested
+//  		Operation * op = undoStack_deprecated_deprecated.pop(); delete op; // FIXME ported but not tested
 // 		emit sequencesChanged();
 // 	} // end of if
 // 	else{
@@ -471,34 +478,7 @@ void Project::undo()
 // 	}
 }
 
-void Project::redo()
-{
-	// TO DO
-}
 
-void Project::undoLastAlignment()
-{
-	// This is a special undo operation because it junks everything 
-	qDebug() << trace.header() << "SeqEdit::undoLastAlignment";
-	Operation *op;
-	
-	if (nAlignments > 0){
-		// Find the most recent alignment on the undo stack
-		// removing all other edit records
-		// TO DO the redo stack
-		op=undoStack.top();
-		while (op->mode != Operation::Alignment){ // FIXME ported but not checked yet
-			undoStack.pop();
-			delete op;
-			op = undoStack.top();
-		}
-		int oldSize = sequences.size();
-		setAlignment(op->seq);
-		nAlignments--;
-		emit sequencesChanged(sequences.size(),oldSize);
-	}
-	dirty_=true;
-}
 
 //
 //	Public slots:
@@ -550,8 +530,8 @@ bool Project::save(QString &fpathname)
 		
 	}
 	
-	for (int g=0;g<groups_.size();g++){
-		SequenceGroup *sg = groups_.at(g);
+	for (int g=0;g<sequenceGroups.size();g++){
+		SequenceGroup *sg = sequenceGroups.at(g);
 		QDomElement gel = saveDoc.createElement("group");
 		root.appendChild(gel);
 		XMLHelper::addElement(saveDoc,gel,"locked",(sg->locked()?"yes":"no"));
@@ -669,7 +649,7 @@ void Project::load(QString &fname)
 				}
 			}
 		}
-		groups_.append(sg);
+		sequenceGroups.append(sg);
 	}
 	
 	file.close();

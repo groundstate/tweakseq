@@ -21,6 +21,8 @@ HEADERS       =  include/AboutDialog.h \
 								 include/SequenceFile.h \
 								 include/SequenceGroup.h \
 								 include/SequenceSelection.h \
+								 include/UndoCommand.h \
+								 include/UndoAlignmentCommand.h \
 								 include/Version.h \
 								 include/XMLHelper.h
 								 
@@ -38,6 +40,9 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/SequenceGroup.cpp\
 									Core/SequenceSelection.cpp \
 									Core/XMLHelper.cpp
+									
+SOURCES				+=  Core/UndoCommand/UndoCommand.cpp \
+									Core/UndoCommand/UndoAlignmentCommand.cpp
 									
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/MessageWin.cpp \

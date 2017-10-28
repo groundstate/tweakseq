@@ -65,7 +65,9 @@
 #include "SeqEdit.h"
 #include "SeqEditMainWin.h"
 #include "Sequence.h"
+#include "SequenceGroup.h"
 #include "SequenceSelection.h"
+#include "UndoAlignmentCommand.h"
 
 #include "Resources/lock.xpm"
 #include "Resources/seqedit.xpm"
@@ -470,18 +472,42 @@ void SeqEditMainWin::fileClose(){
 }
 
 // Edit menu slots
+
+
+// Connected to  aboutToShow()
 void SeqEditMainWin::setupEditMenu()
 {
+	if (project_->undoStack().canUndo()){
+		undoAction->setEnabled(true);
+		undoAction->setText("Undo " + project_->undoStack().undoText());
+	}
+	else{
+		undoAction->setEnabled(false);
+		undoAction->setText("Undo");
+	}
+	
+	if (project_->undoStack().canRedo()){
+		redoAction->setEnabled(true);
+		redoAction->setText("Redo " + project_->undoStack().redoText() );
+	}
+	else{
+		redoAction->setEnabled(false);
+		redoAction->setText("Redo");
+	}
+	
 }
 
 void SeqEditMainWin::editUndo()
 {
+	project_->undoStack().undo();
+	setupEditMenu(); // need this so that keyboard accelerators are enabled/disabled
 	project_->undo();
 }
 
 void SeqEditMainWin::editRedo()
 {
-	project_->redo();
+	project_->undoStack().redo();
+	setupEditMenu();
 }
 
 void SeqEditMainWin::editCut()
@@ -529,11 +555,12 @@ void SeqEditMainWin::editRemoveExclude(){
 	
 void SeqEditMainWin::setupAlignmentMenu()
 {
-	goAction->setEnabled(project_->numSequences() >= 2);
+	alignAllAction->setEnabled(project_->numSequences() >= 2);
 }
 
-void SeqEditMainWin::alignmentGo()
+void SeqEditMainWin::alignmentAll()
 {
+
 	
 	if (NULL != alignmentProc_){
 		qDebug() << alignmentProc_->state();
@@ -569,8 +596,13 @@ void SeqEditMainWin::alignmentGo()
 	qDebug() <<  trace.header() << exec << args;
 	alignmentProc_->start(exec,args);
 	nAlignments++;
+	
 	// Update menu items
-	undoLastAction->setEnabled(true);
+	
+}
+
+void SeqEditMainWin::alignmentSelection()
+{
 }
 
 void SeqEditMainWin::alignmentStarted()
@@ -613,7 +645,7 @@ void SeqEditMainWin::alignmentUndo()
 	// Check whether there are still any alignments left to undo
 	// and update menu items
 	if (nAlignments > 0){
-		project_->undoLastAlignment();
+		//project_->undoLastAlignment();
 		nAlignments--;
 		undoLastAction->setEnabled(nAlignments==0);
 	}
@@ -776,11 +808,17 @@ void SeqEditMainWin::createActions()
 	connect(removeExcludeAction, SIGNAL(triggered()), this, SLOT(editRemoveExclude()));
 	
 	// Alignment actions
-	goAction = new QAction( tr("&Go"), this);
-	goAction->setStatusTip(tr("Run alignment"));
-	addAction(goAction);
-	connect(goAction, SIGNAL(triggered()), this, SLOT(alignmentGo()));
-	goAction->setEnabled(false);
+	alignAllAction = new QAction( tr("&Align all"), this);
+	alignAllAction->setStatusTip(tr("Run alignment on all sequences"));
+	addAction(alignAllAction);
+	connect(alignAllAction, SIGNAL(triggered()), this, SLOT(alignmentAll()));
+	alignAllAction->setEnabled(false);
+	
+	alignSelectionAction = new QAction( tr("&Align selection"), this);
+	alignSelectionAction->setStatusTip(tr("Run alignment on the current selection"));
+	addAction(alignSelectionAction);
+	connect(alignSelectionAction, SIGNAL(triggered()), this, SLOT(alignmentSelection()));
+	alignSelectionAction->setEnabled(false);
 	
 	// Help actions
 	helpAction = new QAction( tr("&Help"), this);
@@ -833,8 +871,9 @@ void SeqEditMainWin::createMenus()
 	
 	alignmentMenu = menuBar()->addMenu(tr("Alignment"));
 	connect(alignmentMenu,SIGNAL(aboutToShow()),this,SLOT(setupAlignmentMenu()));
-	alignmentMenu->addAction(goAction);
-	alignmentMenu->addAction(undoLastAction);
+	alignmentMenu->addAction(alignAllAction);
+	alignmentMenu->addAction(alignSelectionAction);
+	//alignmentMenu->addAction(undoLastAction);
 	
 	menuBar()->insertSeparator();
 	
@@ -866,6 +905,28 @@ void SeqEditMainWin::createStatusBar()
 
 void SeqEditMainWin::readNewAlignment()
 {
+	
+	// Make a copy of the existing alignment and groups
+	QList<Sequence *> oldSeqs;
+	QList<SequenceGroup *> oldGroups;
+	
+	for (int g=0;g<project_->sequenceGroups.size();g++){
+		SequenceGroup *sg = new SequenceGroup();
+		*sg = *(project_->sequenceGroups.at(g));
+		sg->clear();
+		oldGroups.append(sg);
+	}
+	
+	for (int s=0;s<project_->sequences.size();s++){
+		Sequence *seq = new Sequence();
+		*seq = *(project_->sequences.at(s));
+		oldSeqs.append(seq);
+		if (project_->sequences.at(s)->group){
+			int gi = groupIndex(project_->sequences.at(s)->group,project_->sequenceGroups);
+			oldGroups.at(gi)->addSequence(seq);
+		}
+	}
+	
 	FASTAFile fin(alignmentFileOut_->fileName());
 	QStringList newlabels,newseqs,newcomments;
 	fin.read(newlabels,newseqs,newcomments);
@@ -898,6 +959,13 @@ void SeqEditMainWin::readNewAlignment()
 		snew++;
 		sold++;
 	}
+	
+	project_->undoStack().push(new UndoAlignmentCommand(project_,oldSeqs,oldGroups,project_->sequences,project_->sequenceGroups,"alignment"));
+	// Tidy up time
+	while (!oldSeqs.isEmpty())
+		delete oldSeqs.takeFirst();
+	while (!oldGroups.isEmpty())
+		delete oldGroups.takeFirst();
 	
 	se->updateViewport();
 }
@@ -971,4 +1039,11 @@ bool SeqEditMainWin::maybeSave()
 	}
 	return true;
 }
- 
+
+int SeqEditMainWin::groupIndex(SequenceGroup *sg,const QList<SequenceGroup *> &sgl)
+{
+	for (int i=0;i<sgl.size();i++){
+		if (sgl.at(i) == sg) return i;
+	}
+	return -1;
+}

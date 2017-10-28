@@ -17,7 +17,7 @@ else:
 			print(e)
 
 os.chdir(includedir)				
-searchpaths = ['../Core','../UI']
+searchpaths = ['../Core','../UI','../Core/UndoCommand']
 
 for sp in searchpaths:
 	pattern=os.path.join(sp,'*.h')

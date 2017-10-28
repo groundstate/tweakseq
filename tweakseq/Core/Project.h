@@ -35,6 +35,7 @@
 #include <QObject>
 #include <QStack>
 #include <QString>
+#include <QUndoStack>
 
 #include "AlignmentTool.h"
 
@@ -75,8 +76,9 @@ class Project:public QObject
 		bool isModified(){return dirty_;}
 		
 		QList<Sequence *>  sequences;
-		ResidueSelection * residueSelection;
+		ResidueSelection *residueSelection;
 		SequenceSelection *sequenceSelection;
+		QList<SequenceGroup *> sequenceGroups;
 		
 		int numSequences(){return sequences.size();}
 		
@@ -91,8 +93,8 @@ class Project:public QObject
 		int  replaceSequence(QString,QString,QString);
 		void moveSequence(int,int);
 		void changeResidues(QString ,int pos);
-		void newAlignment(QList <Sequence *>);
-		void setAlignment(QList <Sequence *> );
+
+		void setAlignment(const QList<Sequence *> &,const QList<SequenceGroup *> &);
 		
 		bool groupSelectedSequences(QColor);
 		bool ungroupSelectedSequences();
@@ -101,10 +103,10 @@ class Project:public QObject
 		void lockSelectedGroups(bool);
 		bool cutSelection();
 		
-		void logOperation(Operation *);
 		void undo();
-		void redo();
-		void undoLastAlignment();
+		void logOperation(Operation *);
+		
+		QUndoStack &undoStack(){return undoStack_;}
 		
 		AlignmentTool*  alignmentTool(){return alignmentTool_;}
 		
@@ -143,9 +145,8 @@ class Project:public QObject
 		int nAlignments;
 		AlignmentTool *alignmentTool_;
 		
-		QStack<Operation *> undoStack;
-		
-		QList<SequenceGroup *> groups_;
+		QStack<Operation *> undoStack_deprecated;
+		QUndoStack undoStack_;
 	
 };
 

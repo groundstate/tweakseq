@@ -70,5 +70,10 @@ Sequence * SequenceGroup::itemAt(int i)
 	
 }
 
+void SequenceGroup::clear()
+{
+	seqs_.clear();
+}
+
 		
 	

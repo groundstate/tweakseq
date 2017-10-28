@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,42 +24,35 @@
 // THE SOFTWARE.
 //
 
-#ifndef __SEQUENCE_GROUP_H_
-#define __SEQUENCE_GROUP_H_
+#ifndef __UNDO_ALIGNMENT_COMMAND_H_
+#define __UNDO_ALIGNMENT_COMMAND_H_
 
-#include <QColor>
 #include <QList>
 
-class Sequence;
+#include "UndoCommand.h"
 
-class SequenceGroup
+class Sequence;
+class SequenceGroup;
+
+class UndoAlignmentCommand: public UndoCommand
 {
 	public:
 		
-		SequenceGroup();
-		~SequenceGroup();
-		
-		void addSequence(Sequence *);
-		void removeSequence(Sequence *);
-		bool contains(Sequence *);
-		int size(){return seqs_.size();}
-		Sequence * itemAt(int);
-		void clear();
-		
-		bool locked(){return locked_;}
-		void lock(bool l){locked_=l;}
+		UndoAlignmentCommand(Project *,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QString &);
+		virtual ~UndoAlignmentCommand();
 
-		// UI stuff
-		QColor & textColour(){return textColour_;}
-		void setTextColour(QColor c){textColour_=c;}
+		virtual void redo();
+		virtual void undo();
 		
 	private:
 		
-		bool locked_;
-		QList<Sequence *> seqs_;
+		int groupIndex(SequenceGroup *,const QList<SequenceGroup *> &);
 		
-		// UI stuff
-		QColor textColour_;
+		QList<Sequence *>  seqPreAlign_;
+		QList<Sequence *>  seqPostAlign_;
+		QList<SequenceGroup *> groupsPreAlign_;
+		QList<SequenceGroup *> groupsPostAlign_;
+		
 };
 
 #endif
