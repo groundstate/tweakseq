@@ -87,10 +87,13 @@ protected:
 private slots:
 	
 	void sequenceAdded(Sequence *);
+	void sequencesCleared();
 	
 private:
 	
 	void init();
+	void connectSignals();
+	void disconnectSignals();
 	
 	void insertCell(char c,int row,int col);
 	void insertCells(QString,int row,int col);

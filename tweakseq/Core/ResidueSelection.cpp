@@ -53,6 +53,8 @@ void ResidueSelection::clear()
 
 bool ResidueSelection::isInsertionsOnly()
 {
+	if (0 == sel_.size()) return false;
+	
 	for (int s=0;s<sel_.size();s++){
 		ResidueGroup *rg = sel_.at(s);
 		QString residues = rg->sequence->filter(); // marks stripped

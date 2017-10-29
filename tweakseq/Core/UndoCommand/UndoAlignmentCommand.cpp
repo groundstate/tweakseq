@@ -97,6 +97,7 @@ void UndoAlignmentCommand::redo()
 
 void UndoAlignmentCommand::undo()
 {
+	qDebug() << trace.header() << "UndoAlignmentCommand::undo()" << seqPreAlign_.size() << " " << groupsPreAlign_.size();
 	prj_->setAlignment(seqPreAlign_,groupsPreAlign_);
 }
 

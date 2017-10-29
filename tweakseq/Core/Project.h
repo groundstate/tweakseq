@@ -38,6 +38,7 @@
 #include <QUndoStack>
 
 #include "AlignmentTool.h"
+#include "Sequences.h"
 
 #define KEEP_FLAGS 0XFFFF // TO DO change all this to allow higher order bits
 #define REMOVE_FLAGS	0X007F	
@@ -75,24 +76,13 @@ class Project:public QObject
 		bool empty();
 		bool isModified(){return dirty_;}
 		
-		QList<Sequence *>  sequences;
+		Sequences  sequences;
 		ResidueSelection *residueSelection;
 		SequenceSelection *sequenceSelection;
 		QList<SequenceGroup *> sequenceGroups;
-		
-		int numSequences(){return sequences.size();}
-		
-		QString getSequence(int,int);
-		QString getSequence(QString);
+
+		QString getResidues(int,int);
 		QString getLabelAt(int);
-	
-		void clearSequences();
-		Sequence * addSequence(QString ,QString,QString,QString );
-		int  deleteSequence(QString);
-		void insertSequence(QString,QString,int);
-		int  replaceSequence(QString,QString,QString);
-		void moveSequence(int,int);
-		void changeResidues(QString ,int pos);
 
 		void setAlignment(const QList<Sequence *> &,const QList<SequenceGroup *> &);
 		
@@ -104,7 +94,6 @@ class Project:public QObject
 		bool cutSelection();
 		
 		void undo();
-		void logOperation(Operation *);
 		
 		QUndoStack &undoStack(){return undoStack_;}
 		
@@ -112,12 +101,6 @@ class Project:public QObject
 		
 		void exportFASTA(QString,bool);
 		void exportClustalW(QString,bool);
-		
-	signals:
-		
-		void sequencesChanged(int,int);
-		void sequenceAdded(Sequence *);
-		void sequencesRemoved(int,int);
 		
 	public slots:
 	
@@ -127,6 +110,10 @@ class Project:public QObject
 		void createMainWindow();
 	
 		void mainWindowClosed();
+		
+	private slots:
+		
+		void sequencesChanged();
 		
 	private:
 		

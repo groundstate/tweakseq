@@ -12,12 +12,12 @@ HEADERS       =  include/AboutDialog.h \
 								 include/DebuggingInfo.h \
 								 include/FASTAFile.h \
 								 include/MessageWin.h \
-								 include/Operation.h \
 								 include/Project.h \
 								 include/ResidueSelection.h \
 								 include/SeqEdit.h \
 								 include/SeqEditMainWin.h \
 								 include/Sequence.h \
+								  include/Sequences.h \
 								 include/SequenceFile.h \
 								 include/SequenceGroup.h \
 								 include/SequenceSelection.h \
@@ -32,10 +32,10 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/ClustalO.cpp \
 									Core/FASTAFile.cpp \
 									Core/Main.cpp \
-									Core/Operation.cpp \
 									Core/Project.cpp \
 									Core/ResidueSelection.cpp \
 									Core/Sequence.cpp \
+									Core/Sequences.cpp \
 									Core/SequenceFile.cpp\
 									Core/SequenceGroup.cpp\
 									Core/SequenceSelection.cpp \

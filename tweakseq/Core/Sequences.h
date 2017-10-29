@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,31 +24,53 @@
 // THE SOFTWARE.
 //
 
-#ifndef __OPERATION_H_
-#define __OPERATION_H_
 
-#include <Q3StrList>
+#ifndef __SEQUENCES_H_
+#define __SEQUENCES_H_
+
+#include <QObject>
 #include <QList>
-
-// Keeps information about an edit operation on sequences
-// so that it can be undone
+#include <QString>
 
 class Sequence;
+class SequenceGroup;
 
-class Operation
+class Sequences:public QObject
 {
+	Q_OBJECT
+	
 	public:
-	
-		Operation(int,int,int,int,int,Q3StrList);
-		Operation(int,QList <Sequence *>);
-		~Operation();
-	
-		enum Ops {Deletion,Insertion,Mark,Move,Alignment,Lock};
 		
-		int mode;
-		int startRow,stopRow,startCol,stopCol;
-		Q3StrList editText;
-		QList <Sequence *> seq;
+		Sequences();
+		~Sequences();
+		
+		QList<Sequence *> & sequences(){return sequences_;} 
+		
+		int getIndex(QString label);
+		QString getLabelAt(int);
+		
+		bool isEmpty();
+		int size(){return sequences_.size();}
+		void clear();
+		
+		Sequence * add(QString,QString,QString,QString );
+		void  append(Sequence *);
+		void  remove(QString);
+		void insert(QString,QString,int);
+		void  replace(QString,QString,QString);
+		void move(int,int);
+		void replaceResidues(QString ,int pos);
+	
+	signals:
+		
+		void sequenceAdded(Sequence *);
+		void cleared();
+		void changed();
+		
+	private:
+		
+		QList<Sequence *> sequences_;
+		
 };
 
 #endif

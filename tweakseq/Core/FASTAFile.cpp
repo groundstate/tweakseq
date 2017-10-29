@@ -148,12 +148,12 @@ bool FASTAFile::write(QStringList &l,QStringList &s,QStringList &c)
 
 void FASTAFile::parseComment(QString &s,QString &l)
 {
-	qDebug() << trace.header() << "FASTAFile::parseComment " << s;
+	//qDebug() << trace.header() << "FASTAFile::parseComment " << s;
 	// Provisionally use the comment to the first space
 	int index =s.indexOf(QChar(' '),1);
 	if (index == -1)
 		l = s.mid(1,-1); // use the lot
 	else
 		l = s.mid(1,index-1);
-	qDebug() << trace.header() << "FASTAFile::parseComment " << l;
+	//qDebug() << trace.header() << "FASTAFile::parseComment " << l;
 }

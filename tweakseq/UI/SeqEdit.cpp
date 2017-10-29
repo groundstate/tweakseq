@@ -65,7 +65,6 @@
 #include <QMouseEvent>
 
 #include "MessageWin.h"
-#include "Operation.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "SeqEdit.h"
@@ -121,7 +120,6 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	:Q3GridView(parent)
 {
 
-
 	init();
 	project_=project;
 	
@@ -154,27 +152,30 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	resize( 400, 200 );                         
 	
 	nAlignments=0;
-	connect(project_,SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
-
+	connectSignals();
+	
+	
 }
 
 SeqEdit::~SeqEdit()
 {
-	//seq.~QList();
-	//undoStack.~QStack();
 }
 
 void SeqEdit::setProject(Project *newProject)
 {
+	// init() resets project_ to NULL so do anything related to the old project before calling init()
+	disconnectSignals();
+	
+	
 	init(); // make sure we are in a clean state
-	disconnect(project_,SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	project_=newProject;
-	connect(project_,SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	connectSignals();
+	
 	draggedSeq=NULL;
 	// Now we need to resize the widget
 	int maxlen=0;
 	for (int s=0;s<project_->sequences.size();s++){
-		int seqlen = project_->sequences.at(s)->residues.length();
+		int seqlen = project_->sequences.sequences().at(s)->residues.length();
 		if (seqlen > maxlen)
 			maxlen = seqlen;
 	}
@@ -189,7 +190,7 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 	QChar pChar;
 	QString s;
 	
-	QList<Sequence *> &seq = project_->sequences;
+	QList<Sequence *> &seq = project_->sequences.sequences();
 	
 	// Note Since paintCell() calls this function before any sequences
 	// are added have to return valid values when the editor is empty
@@ -249,8 +250,8 @@ void SeqEdit::excludeSelection()
 		if (startCol > stopCol) swap_int(&startCol,&stopCol);
 		
 		// Create a new undo record
-		project_->logOperation( new Operation(Operation::Mark,startRow,stopRow,
-			startCol,stopCol,1));
+		//project_->logOperation( new Operation(Operation::Mark,startRow,stopRow,
+		//	startCol,stopCol,1));
 			
 		// Mark the residues
 		for (row=startRow;row<=stopRow;row++)
@@ -298,7 +299,7 @@ void SeqEdit::setCellMark(int row,int col,int on)
 {
 	// TO DO - make portable the OR
 	qDebug() << trace.header() << "SeqEdit::setCellMark() row=" << row << " col=" << col << " on=" << on;
-	QList<Sequence *> &seq = project_->sequences;
+	QList<Sequence *> &seq = project_->sequences.sequences();
 	
 	if (on)
 		seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)] = 
@@ -332,7 +333,7 @@ void SeqEdit::postLoadTidy(){
 	// Determine the last group colour used so that currGroupColour_ can be set correctly
 	int maxCol =0;
 	for (int s=0;s<project_->sequences.size();s++){
-		Sequence *seq = project_->sequences.at(s);
+		Sequence *seq = project_->sequences.sequences().at(s);
 		if (seq->group != NULL){
 			QColor gcol = seq->group->textColour();
 			
@@ -347,7 +348,6 @@ void SeqEdit::postLoadTidy(){
 		}
 	}
 	currGroupColour_=maxCol+1;
-
 }
 
 //
@@ -360,7 +360,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	QColor txtColor;
 	int cellSelected=FALSE;
 	
-	QList<Sequence *> &seq=project_->sequences;
+	QList<Sequence *> &seq=project_->sequences.sequences();
 	Sequence *currSeq = seq.at(row);
 	QRect r=cellGeometry(row,col);
 	int w = r.width();
@@ -504,7 +504,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 	// Handles mouse press events for the SeqEdit widget.
   // The current cell marker is set to the cell the mouse is clicked in.
 	
-	QList<Sequence *> &seq = project_->sequences;
+	QList<Sequence *> &seq = project_->sequences.sequences();
 	
 	if (seq.count() == 0) return;
 	
@@ -635,7 +635,7 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 				qDebug() << trace.header() << startRow << " " << startCol << " " << stopRow << " " << stopCol;
 				QList<ResidueGroup *> resSel;
 				for (int r=startRow;r<=stopRow;r++){
-					resSel.append(new ResidueGroup(project_->sequences.at(r),startCol,stopCol));
+					resSel.append(new ResidueGroup(project_->sequences.sequences().at(r),startCol,stopCol));
 				}
 				project_->residueSelection->set(resSel);
 				// DO NOT delete the selection
@@ -645,7 +645,7 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 				int startRow = seqSelectionAnchor_,stopRow=seqSelectionDrag_;
 				if (stopRow < startRow) swap_int(&startRow,&stopRow);
 				for (int r=startRow;r<=stopRow;r++){
-					project_->sequenceSelection->toggle(project_->sequences.at(r));
+					project_->sequenceSelection->toggle(project_->sequences.sequences().at(r));
 				}
 			}
 			break;
@@ -678,8 +678,8 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 	if (clickedRow >= numRows())
 		clickedRow = numRows() -1;
 	
-	if (project_->sequences.at(clickedRow)->label != lastInfo){
-		lastInfo = project_->sequences.at(clickedRow)->label;
+	if (project_->sequences.sequences().at(clickedRow)->label != lastInfo){
+		lastInfo = project_->sequences.sequences().at(clickedRow)->label;
 		emit info(lastInfo);
 	}
 	
@@ -727,7 +727,7 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 
 void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
 	// Double clicking on a group member selects the whole group
-	QList<Sequence *> &seq = project_->sequences;
+	QList<Sequence *> &seq = project_->sequences.sequences();
 	
 	if (seq.count() == 0) return;
 	
@@ -749,7 +749,7 @@ void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
 	}
 	
 	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH)){
-		Sequence *selseq = project_->sequences.at(clickedRow);
+		Sequence *selseq = project_->sequences.sequences().at(clickedRow);
 		if (selseq->group){
 			project_->sequenceSelection->clear();
 			project_->addGroupToSelection(selseq->group);
@@ -787,7 +787,7 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 					return;
 				else{
 					if (startRow > stopRow) swap_int(&startRow,&stopRow);
-					Sequence *currSeq = project_->sequences.at(startRow);
+					Sequence *currSeq = project_->sequences.sequences().at(startRow);
 					if (startRow == stopRow){ // only one cell is selected but if it's in a group select the whole group	
 						if (currSeq->group != NULL){
 							if (currSeq->group->locked()){
@@ -819,7 +819,7 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 					l.fill(QChar('-'),stopCol-startCol+1);
 					for (row=startRow;row<=stopRow;row++){
 						// FIXME check group
-						if (project_->sequences.at(row)->group != currSeq->group) continue;
+						if (project_->sequences.sequences().at(row)->group != currSeq->group) continue;
 						insertCells(l,row,startCol);
 						checkLength();
 						for (col=startCol;col< numCols();col++)
@@ -859,7 +859,7 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	// Stop setNumRows() from forcing a repaint
 	// FIXME setAutoUpdate(FALSE);
 	
-	qDebug() << trace.header() << "SeqEdit::sequenceAdded()";
+	qDebug() << trace.header() << "SeqEdit::sequenceAdded() " << s->label;
 	
 	rowNum = numRows();
 	setNumRows(rowNum+1);
@@ -881,7 +881,14 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	for (int i=0;i<sequenceLength;i++)
 		updateCell(rowNum,i+LABELWIDTH+FLAGSWIDTH);
 	
+	qDebug() << trace.header() << "SeqEdit::sequenceAdded() " << numRows() << " " << numCols();
 	this->viewport()->repaint();
+}
+
+void SeqEdit::sequencesCleared()
+{
+	setNumRows(0);
+	setNumCols(0);
 }
 
 //
@@ -905,17 +912,29 @@ void SeqEdit::init()
 	currGroupColour_=0;
 }
 
+void SeqEdit::connectSignals()
+{
+	connect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
+}
+
+void SeqEdit::disconnectSignals()
+{
+	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
+}
+	
 void SeqEdit::insertCell(char c,int row,int col){
 	// TO DO - not actually using this function ...
 	// Can only insert into a sequence so ..
-	QList<Sequence *> &seq = project_->sequences;
+	QList<Sequence *> &seq = project_->sequences.sequences();
 	seq.at(row)->residues.insert(col-LABELWIDTH-FLAGSWIDTH+1,c);
 	update();	
 }
 
 void SeqEdit::insertCells(QString s,int row,int col){
 	QString t;
-	QList<Sequence *> &seq = project_->sequences;
+	QList<Sequence *> &seq = project_->sequences.sequences();
 	(seq.at(row)->residues).insert(col-LABELWIDTH-FLAGSWIDTH+1,s); // post insertion
 	update();
 }
@@ -931,7 +950,7 @@ void SeqEdit::checkLength(){
 	// Number of rows is taken care of by deleteSequence(),
 	// addSequence() and clearSequence()
 	// All we need to do is find the longest row ..
-	QList<Sequence *> &seq = project_->sequences;
+	QList<Sequence *> &seq = project_->sequences.sequences();
 	if (numRows()==0)
 		maxLength=0;
  	else{
@@ -949,7 +968,7 @@ void SeqEdit::checkLength(){
 int SeqEdit::indexFirstinGroup(SequenceGroup *sg)
 {
 	for (int s=0;s<project_->sequences.size();s++){
-		if (sg==project_->sequences.at(s)->group)
+		if (sg==project_->sequences.sequences().at(s)->group)
 			return s;
 	}
 	return -1;
@@ -958,12 +977,11 @@ int SeqEdit::indexFirstinGroup(SequenceGroup *sg)
 int SeqEdit::indexLastinGroup(SequenceGroup *sg)
 {
 	for (int s=project_->sequences.size()-1;s>=0;s--){
-		if (sg==project_->sequences.at(s)->group)
+		if (sg==project_->sequences.sequences().at(s)->group)
 			return s;
 	}
 	return -1;
 }
-							
 
 //
 //

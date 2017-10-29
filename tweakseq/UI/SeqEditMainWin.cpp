@@ -146,7 +146,7 @@ void SeqEditMainWin::postLoadTidy()
 
 
 //
-// protected
+// Protected
 //
 	
 void SeqEditMainWin::closeEvent(QCloseEvent *ev)
@@ -226,7 +226,7 @@ void SeqEditMainWin::fileImport(){
 	QStringList seqnames,seqs,comments;
 	if (cf.read(seqnames,seqs,comments)){
 		for (int i=0;i<seqnames.size();i++){
-			project_->addSequence(seqnames.at(i),seqs.at(i),comments.at(i),fname);
+			project_->sequences.add(seqnames.at(i),seqs.at(i),comments.at(i),fname);
 		}
 		lastImportedFile=fname;
 	}
@@ -302,7 +302,7 @@ void SeqEditMainWin::filePrint(){
 		
 		int blockHeight = 
 			fm.height()+counterSpc+
-			project_->numSequences()*fm.height()+(project_->numSequences()-1)*lineSpc ;
+			project_->sequences.size()*fm.height()+(project_->sequences.size()-1)*lineSpc ;
 		
 		// There could of course be so many sequences that they won't
 		// even fit on one line
@@ -337,14 +337,14 @@ void SeqEditMainWin::filePrint(){
 		// How many pages ?
 		// Need to find the longest sequence 
 		
-		if (project_->numSequences()==0)
+		if (project_->sequences.size()==0)
 			numPages=1;
 		else{
 			// Find the longest sequence
-			maxLength=project_->getSequence(0,KEEP_FLAGS).length();
-			for (i=0;i<project_->numSequences();i++)
-				if (project_->getSequence(i,KEEP_FLAGS).length()>maxLength)
-					maxLength=project_->getSequence(i,KEEP_FLAGS).length();
+			maxLength=project_->getResidues(0,KEEP_FLAGS).length();
+			for (i=0;i<project_->sequences.size();i++)
+				if (project_->getResidues(i,KEEP_FLAGS).length()>maxLength)
+					maxLength=project_->getResidues(i,KEEP_FLAGS).length();
 			if (blocksPerPage==0)
 				numPages=99; // TO DO
 			else{
@@ -433,13 +433,13 @@ void SeqEditMainWin::filePrint(){
 					p.drawText(x,yt,tmp,-1);
 				}
 				p.setFont(mainFont);	
-				for (j=0;j<project_->numSequences();j++){
+				for (j=0;j<project_->sequences.size();j++){
 					// Print the sequence name
 					x=seqNameX0;
 					yt+=fm.height();
 					p.drawText(x,yt,project_->getLabelAt(j),-1); // TO DO bounding rect
 					// Print the residues
-					tmp=project_->getSequence(j,KEEP_FLAGS);
+					tmp=project_->getResidues(j,KEEP_FLAGS);
 					x=resX0;
 					for (k=resCnt;k<resCnt+wrap && k < tmp.length();k++){
 						printRes(&p,QChar(tmp[k-resCnt]),x,yt);
@@ -477,6 +477,8 @@ void SeqEditMainWin::fileClose(){
 // Connected to  aboutToShow()
 void SeqEditMainWin::setupEditMenu()
 {
+	cutAction->setEnabled(project_->residueSelection->isInsertionsOnly());
+	
 	if (project_->undoStack().canUndo()){
 		undoAction->setEnabled(true);
 		undoAction->setText("Undo " + project_->undoStack().undoText());
@@ -501,7 +503,7 @@ void SeqEditMainWin::editUndo()
 {
 	project_->undoStack().undo();
 	setupEditMenu(); // need this so that keyboard accelerators are enabled/disabled
-	project_->undo();
+	se->viewport()->repaint();
 }
 
 void SeqEditMainWin::editRedo()
@@ -555,7 +557,7 @@ void SeqEditMainWin::editRemoveExclude(){
 	
 void SeqEditMainWin::setupAlignmentMenu()
 {
-	alignAllAction->setEnabled(project_->numSequences() >= 2);
+	alignAllAction->setEnabled(project_->sequences.size() >= 2);
 }
 
 void SeqEditMainWin::alignmentAll()
@@ -919,10 +921,10 @@ void SeqEditMainWin::readNewAlignment()
 	
 	for (int s=0;s<project_->sequences.size();s++){
 		Sequence *seq = new Sequence();
-		*seq = *(project_->sequences.at(s));
+		*seq = *(project_->sequences.sequences().at(s));
 		oldSeqs.append(seq);
-		if (project_->sequences.at(s)->group){
-			int gi = groupIndex(project_->sequences.at(s)->group,project_->sequenceGroups);
+		if (project_->sequences.sequences().at(s)->group){
+			int gi = groupIndex(project_->sequences.sequences().at(s)->group,project_->sequenceGroups);
 			oldGroups.at(gi)->addSequence(seq);
 		}
 	}
@@ -939,12 +941,12 @@ void SeqEditMainWin::readNewAlignment()
 	for (int snew=0;snew<newseqs.size();snew++){
 		int sold=0;
 		while ((sold < project_->sequences.size())){
-			if (newlabels.at(snew) == (project_->sequences.at(sold)->label.trimmed())) // remember, labels are padded at the end with spaces
+			if (newlabels.at(snew) == (project_->sequences.sequences().at(sold)->label.trimmed())) // remember, labels are padded at the end with spaces
 				break;
 			sold++;
 		}
 		if (sold < project_->sequences.size()){
-			project_->moveSequence(sold,snew);
+			project_->sequences.move(sold,snew);
 		}
 		else{
 			qDebug() << trace.header() << "SeqEditMainWin::readNewAlignment() missed " << newlabels.at(snew); 
@@ -955,12 +957,12 @@ void SeqEditMainWin::readNewAlignment()
 	int snew =0;
 	int sold =0;
 	while (sold < project_->sequences.size() && snew<newseqs.size()){
-		project_->sequences.at(sold)->residues = newseqs.at(snew);
+		project_->sequences.sequences().at(sold)->residues = newseqs.at(snew);
 		snew++;
 		sold++;
 	}
 	
-	project_->undoStack().push(new UndoAlignmentCommand(project_,oldSeqs,oldGroups,project_->sequences,project_->sequenceGroups,"alignment"));
+	project_->undoStack().push(new UndoAlignmentCommand(project_,oldSeqs,oldGroups,project_->sequences.sequences(),project_->sequenceGroups,"alignment"));
 	// Tidy up time
 	while (!oldSeqs.isEmpty())
 		delete oldSeqs.takeFirst();

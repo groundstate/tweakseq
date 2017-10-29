@@ -64,6 +64,7 @@ void Application::setup()
 
 Project * Application::createProject()
 {
+	qDebug() << trace.header() << "Application::createProject()";
 	Project *p = new Project();
 	openProjects_.append(p);
 	return p;

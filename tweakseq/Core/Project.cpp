@@ -37,7 +37,6 @@
 #include "ClustalFile.h"
 #include "ClustalO.h"
 #include "FASTAFile.h"
-#include "Operation.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "Sequence.h"
@@ -55,6 +54,7 @@ extern Application *app;
 Project::Project()
 {
 	init();
+	connect(&sequences,SIGNAL(changed()),this,SLOT(sequencesChanged()));
 }
 
 
@@ -68,8 +68,9 @@ Project::~Project()
 
 void Project::setMainWindow(SeqEditMainWin *mainwin)
 {
+	qDebug() << trace.header() << "Project::setMainWindow";
 	mainWindow_=mainwin;
-	connect(mainWindow_, SIGNAL(byebye()), this,SLOT(mainWindowClosed()));
+	//connect(mainWindow_, SIGNAL(byebye()), this,SLOT(mainWindowClosed()));
 	connect(residueSelection,SIGNAL(changed()),mainWindow_,SLOT(residueSelectionChanged()));
 	connect(sequenceSelection,SIGNAL(changed()),mainWindow_,SLOT(sequenceSelectionChanged()));
 }
@@ -85,10 +86,10 @@ bool Project::named()
 }
 
 bool Project::empty(){
-	return sequences.empty();
+	return sequences.isEmpty();
 }
 
-QString Project::getSequence(int i,int maskFlags)
+QString Project::getResidues(int i,int maskFlags)
 {
 	
 	// First sequence has id 0
@@ -103,10 +104,10 @@ QString Project::getSequence(int i,int maskFlags)
 	
 	qDebug() << trace.header() << "Project::getSequence()" << i << " " << maskFlags;
 	// Return NULL if the index is out of range
-	if ( i > sequences.count()-1)
+	if ( i > sequences.sequences().count()-1)
 		return NULL;
 	else{
-		r=sequences.at(i)->residues;
+		r=sequences.sequences().at(i)->residues;
 		switch (maskFlags)
 		{
 			case KEEP_FLAGS:
@@ -134,20 +135,6 @@ QString Project::getSequence(int i,int maskFlags)
 }
 
 
-QString Project::getSequence(QString l)
-{
-	// Returns the (masked) sequence with label l
-	// Mainly for use by other programs
-	// Returns NULL if nothing matching is found
-	qDebug() << trace.header() << "Project::getSequence() " << l;
-	
-	int i;
-	if ((i=getSeqIndex(l)) == -1)
-		return NULL;
-	else
-		return sequences.at(i)->residues;
-}
-
 QString Project::getLabelAt(int i)
 {
 	qDebug() << trace.header() << "Project::getLabel() " << i;
@@ -156,84 +143,7 @@ QString Project::getLabelAt(int i)
 		return NULL;
 	else
 		// strip white space from the end of the string
-		return (sequences.at(i)->label).stripWhiteSpace(); 
-}
-
-void Project::clearSequences()
-{
-	// TO DO - more stuff ? Difference between clearing and a new project ?
-
-	qDebug() << trace.header() << "Project::clearSequences()";
-	sequences.clear();
-	emit sequencesChanged(0,sequences.size());
-	dirty_=true;
-}
-
-Sequence * Project::addSequence( QString l,QString s,QString c,QString f)
-{
-	qDebug() << trace.header() << "Project::addSequence()\n" << l << " " << s;
-	empty_=false;
-	Sequence * newSeq = new Sequence(l,s,c,f);
-	sequences.append(newSeq);
-	emit sequenceAdded(newSeq);
-	dirty_=true;
-	return newSeq;
-}
-
-
-int Project::deleteSequence(QString l){
-	// TODO
-	// Deletes the sequence with identifier id
-	// Returns position of the deleted sequence, -1 if id was not found
-	qWarning() << warning.header() << "Project::deleteSequence() NOT IMPLEMENTED!";
-	int i;
-	if ((i=getSeqIndex(l))>=0){ // found it
-	}
-	dirty_=true;
-	return i;
-}
-
-void Project::insertSequence(QString ,QString ,int )
-{
-	qWarning() << warning.header() << "Project::insertSequence() NOT IMPLEMENTED!";
-	dirty_=true;
-}
-
-int Project::replaceSequence(QString l,QString newLabel,QString newRes){
-	// Replace sequencewith identifier id
-	// Returns position of the replace sequence, -1 if id was not found
-	qDebug() << trace.header() << "Project::replaceSequence()";
-	int i;
-	if ((i=getSeqIndex(l))>=0){ // found it
-		deleteSequence(l);
-		insertSequence(newLabel,newRes,i);
-	}
-	
-	dirty_=true;
-	return  i;
-	
-}
-
-void Project::moveSequence(int i,int j)
-{
-	// Moves the sequence at position i to position j
-	qDebug() << trace.header() << "Project::moveSequence() from " << i << " " << j;
-	//Sequence *pSeq=sequences.take(i);
-	//sequences.insert(j,pSeq);
-	if (i<0 || j <0 || i >= sequences.size() || j >= sequences.size()){
-		return;
-	}
-	sequences.move(i,j);
-	dirty_=true;
-	emit sequencesChanged(sequences.size(),sequences.size());
-}
-
-void Project::changeResidues(QString r,int pos)
-{
-	qDebug() << trace.header() << "Project::changeResidues()  " << r << " " << pos;
-	sequences.at(pos)->residues=r;
-	dirty_=true;
-	emit sequencesChanged(sequences.size(),sequences.size());
+		return (sequences.sequences().at(i)->label).stripWhiteSpace(); 
 }
 
 void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<SequenceGroup *> &newGroups)
@@ -243,8 +153,8 @@ void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<Seq
 	residueSelection->clear();
 	sequenceSelection->clear();
 	
-	while (!sequences.isEmpty())
-		delete sequences.takeFirst();
+	sequences.clear();
+	
 	while (!sequenceGroups.isEmpty())
 		delete sequenceGroups.takeFirst();
 	
@@ -403,83 +313,6 @@ bool Project::cutSelection()
 //
 //
 
-void Project::logOperation(Operation *op)
-{
-	undoStack_deprecated.push(op);
-}
-
-void Project::undo()
-{
-	// Undo last editing command
-// 	qDebug() << trace.header() << "SeqEdit::undoEdit()";
-// 	int startRow,stopRow,startCol,stopCol,row,firstRow;
-// 	int col;
-// 	Operation *op;
-// 	
-// 	if (!undoStack_deprecated.isEmpty()){
-// 	
-// 		op = undoStack_deprecated.top(); // FIXME ported but not tested
-// 		startRow=op->startRow;
-// 		stopRow =op->stopRow;
-// 		startCol=op->startCol;
-// 		stopCol=op->stopCol;
-// 		
-// 		switch (op->mode){
-// 		
-//    		case Operation::Insertion:
-//      		for (row=startRow;row<=stopRow;row++){
-//       		deleteCells(row,startCol,stopCol);
-// 					checkLength();
-//       		// Update past the deletion point only FIXME
-//       		//for (col=startCol;col<numCols();col++)
-//         	//	updateCell(row,col);
-//     	 	}
-//     		
-//      		break;
-// 				
-//    		case Operation::Deletion:
-//     		
-//     		for (row=startRow;row<=stopRow;row++){
-//      			insertCells((op->editText).at(row-startRow),
-//          		row,startCol-1); // subtract 1 because we get a post-insertion
-// 					checkLength();
-//        		for (col=startCol;col< numCols();col++)
-//        			updateCell(row,col);
-//     		}
-//     		
-//      		break;
-// 				
-// 			case Operation::Mark:
-//     		for (row=startRow;row<=stopRow;row++)
-//       		for (col=startCol;col<=stopCol;col++){
-//         		setCellMark(row,col,FALSE);
-//         		updateCell(row,col);
-//       		}
-// 				break;
-// 			case Operation::Move:
-// 				moveSequence(stopRow,startRow);
-// 				//firstRow=stopRow; ?? FIXME
-// 				//if (startRow<stopRow) firstRow=startRow;
-// 				//for (row=firstRow;row<seq.count();row++)
-// 				//	for (col=0;col<seq.at(row)->residues.length()+LABELWIDTH+FLAGSWIDTH;col++)
-// 				//		updateCell(row,col); 
-//     		break;
-// 			case Operation::Alignment:
-// 				setAlignment(op->seq);
-// 				nAlignments--; // changeAlignment increments so decrement by 2
-// 				break;
-// 		} // end of case
-//  		Operation * op = undoStack_deprecated_deprecated.pop(); delete op; // FIXME ported but not tested
-// 		emit sequencesChanged();
-// 	} // end of if
-// 	else{
-// 		// Make a rude sound
-// 		printf("\a");
-// 	}
-}
-
-
-
 //
 //	Public slots:
 //
@@ -511,7 +344,7 @@ bool Project::save(QString &fpathname)
 	el.appendChild(te);
 		
 	for (int s=0;s<sequences.size();s++){
-		Sequence *seq = sequences.at(s);
+		Sequence *seq = sequences.sequences().at(s);
 		
 		QDomElement se = saveDoc.createElement("sequence");
 		root.appendChild(se);
@@ -611,7 +444,7 @@ void Project::load(QString &fname)
 			}
 			elem=elem.nextSiblingElement();
 		}
-		Sequence *seq = addSequence(sName,sResidues,sComment,sSrc);
+		Sequence *seq = sequences.add(sName,sResidues,sComment,sSrc);
 		for (int x=0;x<exclusions.size()-1;x+=2)
 			seq->exclude(exclusions.at(x),exclusions.at(x+1));
 				 
@@ -643,8 +476,8 @@ void Project::load(QString &fname)
 		sg->lock(gLocked);
 		for (int s=0;s<seqs.size();s++){
 			for (int ss=0;ss<sequences.size();ss++){
-				if (seqs.at(s) == sequences.at(ss)->label){
-					sg->addSequence(sequences.at(ss));
+				if (seqs.at(s) == sequences.sequences().at(ss)->label){
+					sg->addSequence(sequences.sequences().at(ss));
 					break;
 				}
 			}
@@ -663,9 +496,9 @@ void Project::exportFASTA(QString fname,bool removeExclusions)
 	FASTAFile ff(fname);
 	QStringList l,seqs,c;
 	for (int s=0;s<sequences.size();s++){
-		l.append(sequences.at(s)->label);
-		seqs.append(sequences.at(s)->filter(removeExclusions));
-		c.append(sequences.at(s)->comment);
+		l.append(sequences.sequences().at(s)->label);
+		seqs.append(sequences.sequences().at(s)->filter(removeExclusions));
+		c.append(sequences.sequences().at(s)->comment);
 	}
 	ff.write(l,seqs,c);
 }
@@ -675,9 +508,9 @@ void Project::exportClustalW(QString fname,bool removeExclusions)
 	ClustalFile cf(fname);
 	QStringList l,seqs,c;
 	for (int s=0;s<sequences.size();s++){
-		l.append(sequences.at(s)->label);
-		seqs.append(sequences.at(s)->filter(removeExclusions));
-		c.append(sequences.at(s)->comment);
+		l.append(sequences.sequences().at(s)->label);
+		seqs.append(sequences.sequences().at(s)->filter(removeExclusions));
+		c.append(sequences.sequences().at(s)->comment);
 	}
 	cf.write(l,seqs,c);
 }
@@ -708,6 +541,11 @@ void Project::mainWindowClosed()
 	closeIt();
 }
 
+void Project::sequencesChanged()
+{
+	dirty_=true;
+}
+
 // 
 // Private members
 //
@@ -729,8 +567,8 @@ int Project::getSeqIndex(QString l)
 	// Returns -1 if no match
 	int i=0;
 	QString t=l.stripWhiteSpace();// TO DO why is this here ?
-	while ((i<sequences.count()) && (getLabelAt(i) != t)) i++;
-	if (i==sequences.count())
+	while ((i<sequences.sequences().size()) && (getLabelAt(i) != t)) i++;
+	if (i==sequences.sequences().size())
 		return -1;
 	else
 		return i;
