@@ -41,6 +41,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <QFileDialog>
+#include <QFontDialog>
 #include <QLabel>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -653,6 +654,17 @@ void SeqEditMainWin::alignmentUndo()
 	}
 }
 
+void SeqEditMainWin::settingsEditorFont()
+{
+	bool ok;
+	QFont currFont = se->editorFont();
+	QFontDialog fd(currFont, this);
+	connect(&fd,SIGNAL(currentFontChanged(const QFont &)),se,SLOT(setEditorFont(const QFont &)));
+	if (fd.exec()==QDialog::Rejected) {
+		se->setEditorFont(currFont);
+	}
+}
+
 void SeqEditMainWin::helpHelp(){
 	app->showHelp("");
 }
@@ -822,6 +834,12 @@ void SeqEditMainWin::createActions()
 	connect(alignSelectionAction, SIGNAL(triggered()), this, SLOT(alignmentSelection()));
 	alignSelectionAction->setEnabled(false);
 	
+	// Settings actions
+	settingsEditorFontAction = new QAction( tr("Editor font"), this);
+	settingsEditorFontAction->setStatusTip(tr("Choose the font used in the sequence editor"));
+	addAction(settingsEditorFontAction);
+	connect(settingsEditorFontAction, SIGNAL(triggered()), this, SLOT(settingsEditorFont()));
+	
 	// Help actions
 	helpAction = new QAction( tr("&Help"), this);
 	helpAction->setStatusTip(tr("Help"));
@@ -876,6 +894,9 @@ void SeqEditMainWin::createMenus()
 	alignmentMenu->addAction(alignAllAction);
 	alignmentMenu->addAction(alignSelectionAction);
 	//alignmentMenu->addAction(undoLastAction);
+	
+	settingsMenu = menuBar()->addMenu(tr("Settings"));
+	settingsMenu->addAction(settingsEditorFontAction);
 	
 	menuBar()->insertSeparator();
 	

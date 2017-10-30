@@ -97,6 +97,8 @@ private slots:
 	void alignmentReadyReadStdErr();
 	void alignmentFinished(int,QProcess::ExitStatus);
 	
+	void settingsEditorFont();
+	
 	void helpHelp();
 	void helpAbout();
 	
@@ -117,13 +119,14 @@ private:
 	
 	int groupIndex(SequenceGroup *,const QList<SequenceGroup *> &);
 	
-	QMenu    *fileMenu,*alignmentMenu,*editMenu,*helpMenu;
+	QMenu    *fileMenu,*alignmentMenu,*editMenu,*settingsMenu,*helpMenu;
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
 	QAction  *alignAllAction,*alignSelectionAction,*undoLastAction;
 	QAction  *undoAction,*redoAction,*cutAction,*excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction;
 	QAction  *helpAction,*aboutAction;
+	QAction *settingsEditorFontAction;
 	
 	QToolBar *seqEditTB;
 	MessageWin *mw;

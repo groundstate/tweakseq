@@ -64,10 +64,13 @@ public:
 	QColor getSequenceGroupColour();
 	void updateViewport();
 	
+	const QFont &editorFont(){return font();}
+	
 public slots:
 	
 	void postLoadTidy();
-
+	void setEditorFont(const QFont &);
+	
 signals:
 	
 	void info(const QString &);
@@ -115,7 +118,6 @@ private:
 	int  seqSelectionAnchor_,seqSelectionDrag_;
 	
 	bool leftDown_;
-	QFont currFont;	
 	int nAlignments;
 	QString numStr;
 	

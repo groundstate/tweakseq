@@ -79,8 +79,8 @@ using namespace std;
 #define LABELWIDTH 16
 #define NULLCHAR '\0'
 
-#define HPADDING 0.9
-#define VPADDING 0.9
+#define HPADDING 1.3
+#define VPADDING 1.3
 
 #define N_GROUP_COLOURS 10
 //
@@ -138,13 +138,21 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	
 	// Cell width and height based on current font
 	
-  QFont currFont("Helvetica",14,50,FALSE);
-	currFont.setBold(true);
-	QFontMetrics fm (currFont);
-		                      
-	setCellWidth((int) (fm.maxWidth()*HPADDING));                        
-	setCellHeight((int) (fm.lineSpacing()*VPADDING)); 
-	                        
+  int w;
+	int h;
+	// FIXME may have misunderstood here: 
+	QFontInfo fi(font());
+	QFont f = font();
+	if (!fi.exactMatch()){
+		f= QFont(fi.family(),fi.pointSize(),fi.weight());
+	}
+	QFontMetrics fm(f);
+	w = fm.width('W');
+	h = fm.width('W');
+	setCellWidth((int) (w*HPADDING));                        
+	setCellHeight((int) (h*VPADDING)); 
+	
+	
 	//setTableFlags( Tbl_vScrollBar |             
   //             Tbl_hScrollBar |            
   //             Tbl_clipCellPainting |      
@@ -322,6 +330,7 @@ void SeqEdit::updateViewport(){
 }
 	
 
+
 //
 // Public slots
 //
@@ -348,6 +357,24 @@ void SeqEdit::postLoadTidy(){
 		}
 	}
 	currGroupColour_=maxCol+1;
+}
+
+void SeqEdit::setEditorFont(const QFont &f)
+{
+	int w;
+	int h;
+	QFontInfo fi(f);
+	QFont ftmp = f;
+	if (!fi.exactMatch()){
+		ftmp= QFont(fi.family(),fi.pointSize(),fi.weight());
+	}
+	QFontMetrics fm(ftmp);
+	w = fm.width('W');
+	h = fm.width('W'); // square looketh better ?
+	setCellWidth((int) (w*HPADDING));                        
+	setCellHeight((int) (h*VPADDING)); 
+	setFont(ftmp);
+	this->viewport()->repaint();
 }
 
 //
