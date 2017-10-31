@@ -66,6 +66,8 @@ public:
 	
 	const QFont &editorFont(){return font();}
 	
+	void setReadOnly(){readOnly_=true;}
+	
 public slots:
 	
 	void postLoadTidy();
@@ -108,6 +110,7 @@ private:
 	int indexLastinGroup(SequenceGroup *);
 	
 	Project *project_;
+	bool readOnly_;
 	
 	bool selectingResidues_;
 	int selAnchorRow,selAnchorCol,selDragRow,selDragCol;

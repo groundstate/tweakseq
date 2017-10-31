@@ -103,7 +103,6 @@ QString Application::applicationTmpPath()
 	return appDirPath_;
 }
 
-
 //	
 //	Public  slots
 //
@@ -150,3 +149,13 @@ void Application::init()
 		
 	}
 }
+
+void Application::readSettings()
+{
+}
+
+void Application::writeSettings()
+{
+}
+
+		

@@ -52,8 +52,6 @@ class Application : public QApplication
 		void showAboutDialog(QWidget *);
 		void showHelp(QString);
 	
-		//Settings defaultSettings;
-		
 		QString applicationSettingsPath();
 		QString applicationTmpPath();
 		
@@ -75,11 +73,14 @@ class Application : public QApplication
 	private:
 		
 		void init();
+		void readSettings();
+		void writeSettings();
 		
 		QString appDirPath_;
 		QList<Project *> openProjects_;
 		
 		AboutDialog *aboutDlg;
+		
 };
 
 extern Application *app;

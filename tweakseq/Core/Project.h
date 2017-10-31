@@ -100,6 +100,7 @@ class Project:public QObject
 		AlignmentTool*  alignmentTool(){return alignmentTool_;}
 		
 		void exportFASTA(QString,bool);
+		void exportSelectionFASTA(QString,bool);
 		void exportClustalW(QString,bool);
 		
 	public slots:

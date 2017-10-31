@@ -531,6 +531,8 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 	// Handles mouse press events for the SeqEdit widget.
   // The current cell marker is set to the cell the mouse is clicked in.
 	
+	if (readOnly_) return;
+	
 	QList<Sequence *> &seq = project_->sequences.sequences();
 	
 	if (seq.count() == 0) return;
@@ -648,6 +650,8 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 
 void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 	
+	if (readOnly_) return;
+	
 	QString l1,l2,s1,s2;
 	
 	switch (e->button()){
@@ -754,6 +758,9 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 
 void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
 	// Double clicking on a group member selects the whole group
+	
+	if (readOnly_) return;
+	
 	QList<Sequence *> &seq = project_->sequences.sequences();
 	
 	if (seq.count() == 0) return;
@@ -788,7 +795,8 @@ void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
 
 void SeqEdit::keyPressEvent( QKeyEvent* e )
 {
-
+	if (readOnly_) return;
+	
 	QString l;
 	int startRow=selAnchorRow,stopRow=selDragRow,
 			startCol=selAnchorCol,stopCol=selDragCol,row,col;	
@@ -925,6 +933,7 @@ void SeqEdit::sequencesCleared()
 void SeqEdit::init()
 {
 	project_=NULL;
+	readOnly_=false;
 	
 	selectingResidues_ = false;
 	draggingSequence = FALSE;

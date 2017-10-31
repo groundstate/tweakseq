@@ -381,6 +381,11 @@ bool Project::save(QString &fpathname)
 		XMLHelper::addElement(saveDoc,gel,"sequences",seqs);
 	}
 	
+	// UI settings
+	// QSettings is not used because we want per-project settings
+	
+	mainWindow_->writeSettings(saveDoc,root);
+	
 	saveDoc.save(ts,2);
 	f.close();
 	
@@ -396,8 +401,7 @@ void Project::load(QString &fname)
 	path_=fi.path();
 	name_=fi.fileName();
 	named_=true; 
-	dirty_=false;
-	empty_=false;
+
 	QDomDocument doc;
 	
 	QFile file(fname);
@@ -410,6 +414,9 @@ void Project::load(QString &fname)
 		file.close();
 		return ;
 	}
+	
+	mainWindow_->readSettings(doc); // do this first so no jarring geometry changes
+	
 	QList<long> gids;
 	
 	// Get all the sequences
@@ -486,8 +493,10 @@ void Project::load(QString &fname)
 	}
 	
 	file.close();
-
+	dirty_=false;
+	empty_=false;
 	mainWindow_->postLoadTidy();
+	
 }
 
 void Project::exportFASTA(QString fname,bool removeExclusions)
@@ -499,6 +508,18 @@ void Project::exportFASTA(QString fname,bool removeExclusions)
 		l.append(sequences.sequences().at(s)->label);
 		seqs.append(sequences.sequences().at(s)->filter(removeExclusions));
 		c.append(sequences.sequences().at(s)->comment);
+	}
+	ff.write(l,seqs,c);
+}
+
+void Project::exportSelectionFASTA(QString fname,bool removeExclusions)
+{
+	FASTAFile ff(fname);
+	QStringList l,seqs,c;
+	for (int s=0;s<sequenceSelection->size();s++){
+		l.append(sequenceSelection->itemAt(s)->label);
+		seqs.append(sequenceSelection->itemAt(s)->filter(removeExclusions));
+		c.append(sequenceSelection->itemAt(s)->comment);
 	}
 	ff.write(l,seqs,c);
 }

@@ -30,7 +30,10 @@
 #include <QMainWindow>
 #include <QProcess>
 
+class QDomDocument;
+class QDomElement;
 class QPrinter;
+class QSplitter;
 class QTemporaryFile;
 class QToolBar;
 
@@ -53,6 +56,8 @@ public:
 	SeqEdit *se;
 	
 	void postLoadTidy();
+	void writeSettings(QDomDocument &,QDomElement &);
+	void readSettings(QDomDocument &);
 	
 public slots:
 	
@@ -91,7 +96,7 @@ private slots:
 	void setupAlignmentMenu();
 	void alignmentAll();
 	void alignmentSelection();
-	void alignmentUndo();
+	
 	void alignmentStarted();
 	void alignmentReadyReadStdOut();
 	void alignmentReadyReadStdErr();
@@ -111,6 +116,7 @@ private:
 	void createToolBars();
 	void createStatusBar();
 	
+	void startAlignment();
 	void readNewAlignment();
 	
 	void printRes( QPainter*,QChar,int,int );
@@ -130,12 +136,13 @@ private:
 	
 	QToolBar *seqEditTB;
 	MessageWin *mw;
+	QSplitter *split;
 	
 	QPrinter *printer;	
 	
 	QProcess *alignmentProc_;
-	int nAlignments;
 	QTemporaryFile *alignmentFileIn_,*alignmentFileOut_;
+	bool alignAll;
 	
 	QString lastImportedFile;
 	

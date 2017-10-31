@@ -69,6 +69,7 @@
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
 #include "UndoAlignmentCommand.h"
+#include "XMLHelper.h"
 
 #include "Resources/lock.xpm"
 #include "Resources/seqedit.xpm"
@@ -103,7 +104,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	// TO DO ought to check that creation of widget does not fail because
 	// of lack of memory
 	
-	QSplitter *split = new QSplitter(Qt::Vertical,this,"sew_split");
+	split = new QSplitter(Qt::Vertical,this,"sew_split");
 	split->setMouseTracking(true);
 	se = new SeqEdit(project_,split);
 	
@@ -131,6 +132,7 @@ SeqEditMainWin::~SeqEditMainWin(){
 	if (alignmentFileOut_ != NULL) delete alignmentFileOut_;
 }
 
+
 void SeqEditMainWin::doAlignment(){
 }
 
@@ -140,6 +142,63 @@ void SeqEditMainWin::postLoadTidy()
 	setWindowTitle("tweakseq - " + project_->name());
 }
 
+void SeqEditMainWin::writeSettings(QDomDocument &doc,QDomElement &parentElem)
+{
+	QDomElement pelem = doc.createElement("main_window_ui");
+	parentElem.appendChild(pelem);
+	XMLHelper::addElement(doc,pelem,"width",QString::number(size().width()));
+	XMLHelper::addElement(doc,pelem,"height",QString::number(size().height()));
+	QList<int> splitterHeights = split->sizes();
+	XMLHelper::addElement(doc,pelem,"editor_window_height",QString::number(splitterHeights.at(0)));
+	XMLHelper::addElement(doc,pelem,"message_window_height",QString::number(splitterHeights.at(1)));
+	
+	pelem = doc.createElement("sequence_editor_ui");
+	parentElem.appendChild(pelem);
+	XMLHelper::addElement(doc,pelem,"font",se->editorFont().toString());
+}
+
+void SeqEditMainWin::readSettings(QDomDocument &doc)
+{
+	QDomNodeList nl = doc.elementsByTagName("main_window_ui");
+	if (nl.count() == 1){
+		QDomNode gNode = nl.item(0);
+		QDomElement elem = gNode.firstChildElement();
+		int w = width();
+		int h = height();
+		QList<int> wsizes=split->sizes();
+		while (!elem.isNull()){
+			if (elem.tagName() == "width"){
+				w=elem.text().toInt();
+			}
+			else if (elem.tagName() == "height"){
+				h=elem.text().toInt();
+			}
+			else if (elem.tagName() == "editor_window_height"){
+				wsizes.replace(0,elem.text().toInt());
+			}
+			else if (elem.tagName() == "message_window_height"){
+				wsizes.replace(1,elem.text().toInt());
+			}
+			elem=elem.nextSiblingElement();
+		}
+		setGeometry(0,0,w,h);
+		split->setSizes(wsizes);
+	}
+
+	nl = doc.elementsByTagName("sequence_editor_ui");
+	if (nl.count() == 1){
+		QDomNode gNode = nl.item(0);
+		QDomElement elem = gNode.firstChildElement();
+		QFont editorFont = se->editorFont();
+		while (!elem.isNull()){
+			if (elem.tagName() == "font"){
+				editorFont.fromString(elem.text());
+			}
+			elem=elem.nextSiblingElement();
+		}
+		se->setEditorFont(editorFont);
+	}
+}
 
 //
 // Public slots
@@ -559,53 +618,21 @@ void SeqEditMainWin::editRemoveExclude(){
 void SeqEditMainWin::setupAlignmentMenu()
 {
 	alignAllAction->setEnabled(project_->sequences.size() >= 2);
+	alignSelectionAction->setEnabled(project_->sequenceSelection->size() >= 2);
 }
 
 void SeqEditMainWin::alignmentAll()
 {
-
-	
-	if (NULL != alignmentProc_){
-		qDebug() << alignmentProc_->state();
-		if (alignmentProc_->state() != QProcess::NotRunning)
-			alignmentProc_->close();
-		delete alignmentProc_;
-	}
-	
-	alignmentProc_ = new QProcess(this);
-	connect(alignmentProc_,SIGNAL(started()),this,SLOT(alignmentStarted()));
-	connect(alignmentProc_,SIGNAL(readyReadStandardOutput()),this,SLOT(alignmentReadyReadStdOut()));
-	connect(alignmentProc_,SIGNAL(readyReadStandardError()),this,SLOT(alignmentReadyReadStdErr()));
-	connect(alignmentProc_,SIGNAL(finished(int,QProcess::ExitStatus)),this,SLOT(alignmentFinished(int,QProcess::ExitStatus)));
-	
-	QString exec;
-	QStringList args;
-	
-	QFileInfo fiin(app->applicationTmpPath(),"tweakseq.in.XXXXXX.fa");
-	alignmentFileIn_ = new QTemporaryFile(fiin.absoluteFilePath());
-	alignmentFileIn_->open();
-	alignmentFileIn_->close();
-	
-	QFileInfo fiout(app->applicationTmpPath(),"tweakseq.out.XXXXXX.fa");
-	alignmentFileOut_ = new QTemporaryFile(fiout.absoluteFilePath());
-	alignmentFileOut_->open();
-	alignmentFileOut_->close();
-	
-	QString fin  = alignmentFileIn_->fileName();
-	QString fout = alignmentFileOut_->fileName();
-	project_->exportFASTA(fin,true);
-	
-	project_->alignmentTool()->makeCommand(fin,fout,exec,args);
-	qDebug() <<  trace.header() << exec << args;
-	alignmentProc_->start(exec,args);
-	nAlignments++;
-	
+	alignAll=true;
+	startAlignment();
 	// Update menu items
 	
 }
 
 void SeqEditMainWin::alignmentSelection()
 {
+	alignAll=false;
+	startAlignment();
 }
 
 void SeqEditMainWin::alignmentStarted()
@@ -637,26 +664,17 @@ void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus exitSta
 		statusBar()->showMessage("Alignment finished");
 		// delete alignmentFileIn_; // FIXME reinstate
 		// alignmentFileIn_=NULL;
-		readNewAlignment();
+		if (alignAll)
+			readNewAlignment();
+		else{
+		}
 	}
 	
 }
 
-void SeqEditMainWin::alignmentUndo()
-{
-	qDebug() << trace.header() << "SeqEditMainWin::alignmentUndo()";
-	// Check whether there are still any alignments left to undo
-	// and update menu items
-	if (nAlignments > 0){
-		//project_->undoLastAlignment();
-		nAlignments--;
-		undoLastAction->setEnabled(nAlignments==0);
-	}
-}
 
 void SeqEditMainWin::settingsEditorFont()
 {
-	bool ok;
 	QFont currFont = se->editorFont();
 	QFontDialog fd(currFont, this);
 	connect(&fd,SIGNAL(currentFontChanged(const QFont &)),se,SLOT(setEditorFont(const QFont &)));
@@ -699,7 +717,6 @@ void SeqEditMainWin::residueSelectionChanged()
 
 void SeqEditMainWin::init()
 {
-	nAlignments=0;
 	lastImportedFile="";
 	alignmentProc_=NULL;
 	alignmentFileOut_=alignmentFileIn_=NULL;
@@ -924,7 +941,48 @@ void SeqEditMainWin::createStatusBar()
 	statusBar()->addPermanentWidget(info);
 	connect(se,SIGNAL(info(const QString &)),info,SLOT(setText(const QString &)));
 }
+
+void SeqEditMainWin::startAlignment()
+{
+	if (NULL != alignmentProc_){
+		qDebug() << alignmentProc_->state();
+		if (alignmentProc_->state() != QProcess::NotRunning)
+			alignmentProc_->close();
+		delete alignmentProc_;
+	}
 	
+	alignmentProc_ = new QProcess(this);
+	connect(alignmentProc_,SIGNAL(started()),this,SLOT(alignmentStarted()));
+	connect(alignmentProc_,SIGNAL(readyReadStandardOutput()),this,SLOT(alignmentReadyReadStdOut()));
+	connect(alignmentProc_,SIGNAL(readyReadStandardError()),this,SLOT(alignmentReadyReadStdErr()));
+	connect(alignmentProc_,SIGNAL(finished(int,QProcess::ExitStatus)),this,SLOT(alignmentFinished(int,QProcess::ExitStatus)));
+	
+	QString exec;
+	QStringList args;
+	
+	QFileInfo fiin(app->applicationTmpPath(),"tweakseq.in.XXXXXX.fa");
+	alignmentFileIn_ = new QTemporaryFile(fiin.absoluteFilePath());
+	alignmentFileIn_->open();
+	alignmentFileIn_->close();
+	
+	QFileInfo fiout(app->applicationTmpPath(),"tweakseq.out.XXXXXX.fa");
+	alignmentFileOut_ = new QTemporaryFile(fiout.absoluteFilePath());
+	alignmentFileOut_->open();
+	alignmentFileOut_->close();
+	
+	QString fin  = alignmentFileIn_->fileName();
+	QString fout = alignmentFileOut_->fileName();
+	if (alignAll){
+		project_->exportFASTA(fin,true);
+	}
+	else{
+		project_->exportSelectionFASTA(fin,true);
+	}
+	
+	project_->alignmentTool()->makeCommand(fin,fout,exec,args);
+	qDebug() <<  trace.header() << exec << args;
+	alignmentProc_->start(exec,args);
+}
 
 void SeqEditMainWin::readNewAlignment()
 {
