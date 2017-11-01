@@ -86,10 +86,12 @@ class Project:public QObject
 
 		void setAlignment(const QList<Sequence *> &,const QList<SequenceGroup *> &);
 		
+		bool canGroupSelectedSequences();
 		bool groupSelectedSequences(QColor);
 		bool ungroupSelectedSequences();
 		
 		void addGroupToSelection(SequenceGroup *);
+		bool canToggleLock();
 		void lockSelectedGroups(bool);
 		bool cutSelection();
 		

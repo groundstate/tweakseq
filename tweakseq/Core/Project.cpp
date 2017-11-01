@@ -185,6 +185,43 @@ void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<Seq
 //
 //
 
+bool Project::canGroupSelectedSequences()
+{
+	if (sequenceSelection->size() < 2)
+		return false;
+	
+	for (int g=0;g<sequenceGroups.size();g++){
+		SequenceGroup *sg = sequenceGroups.at(g);
+		int selcnt=0;
+		for (int s=0;s<sg->size();s++){
+			if (!sequenceSelection->contains(sg->itemAt(s))){
+				// don't break because we need to test the others for overlap
+			}
+			else
+				selcnt++;
+		}
+		// If only part of a group is selected then this is bad
+		if (selcnt > 0 && selcnt != sg->size()){
+			return false;
+		}
+	}
+	
+	// If everything in the selection is already grouped, and there's just one group then it's not groupable
+	int nGrouped=0;
+	QList<SequenceGroup*> groups;
+	for (int s=0;s<sequenceSelection->size();s++){
+		SequenceGroup * sg = sequenceSelection->itemAt(s)->group;
+		if (sg){ 
+			nGrouped++;
+			if (!groups.contains(sg))
+				groups.append(sg);
+		}
+	}
+	if (nGrouped == sequenceSelection->size() && groups.size()==1)
+		return false;
+	return true;
+}
+
 bool Project::groupSelectedSequences(QColor gcol){
 	// Require two or more sequences in the selection
 	if (sequenceSelection->size() < 2)
@@ -251,6 +288,30 @@ bool Project::ungroupSelectedSequences()
 	}
 	dirty_=true;
 	return true;
+}
+
+bool Project::canToggleLock()
+{
+	for (int s=0;s<sequenceSelection->size();s++){
+		if (sequenceSelection->itemAt(s)->group == NULL){
+			return false;
+		}
+	}
+	QList<SequenceGroup *> selgroups;
+	for (int g=0;g<sequenceGroups.size();g++){
+		SequenceGroup *sg = sequenceGroups.at(g);
+		bool contained=true;
+		for (int s=0;s<sg->size();s++){
+			if (!sequenceSelection->contains(sg->itemAt(s))){
+				contained=false;
+				break;
+			}
+		}
+		if (contained){
+			selgroups.append(sg);
+		}	
+	}
+	return (selgroups.size() != 0);
 }
 
 void Project::lockSelectedGroups(bool lock){

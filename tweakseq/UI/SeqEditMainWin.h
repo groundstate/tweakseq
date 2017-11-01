@@ -107,6 +107,8 @@ private slots:
 	void helpHelp();
 	void helpAbout();
 	
+	void createContextMenu(const QPoint &);
+	
 private:
 
 	void init();

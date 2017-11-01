@@ -88,6 +88,8 @@ const char *lockText = "Click this button to add and edit a new"
 SeqEditMainWin::SeqEditMainWin(Project *project)
 	:QMainWindow()
 {
+	qDebug() << trace.header() << "creating main window";
+	
 	init();
 	project_=project;
 	
@@ -121,6 +123,9 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	
 	printer = new QPrinter();
 	printer->setFullPage(TRUE);
+	
+	setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(this,SIGNAL(customContextMenuRequested ( const QPoint & )),this,SLOT(createContextMenu(const QPoint &)));
 	
 	statusBar()->message("Ready");
 
@@ -557,6 +562,16 @@ void SeqEditMainWin::setupEditMenu()
 		redoAction->setText("Redo");
 	}
 	
+	groupSequencesAction->setEnabled(project_->canGroupSelectedSequences());
+	// If the selection contains any grouped sequences then we can ungroup
+	ungroupSequencesAction->setEnabled(false);
+	for (int s=0;s<project_->sequenceSelection->size();s++){
+		if (project_->sequenceSelection->itemAt(s)->group != NULL)
+			ungroupSequencesAction->setEnabled(true);
+	}
+	
+	lockAction->setEnabled(project_->canToggleLock());
+	unlockAction->setEnabled(project_->canToggleLock());
 }
 
 void SeqEditMainWin::editUndo()
@@ -690,6 +705,33 @@ void SeqEditMainWin::helpHelp(){
 void SeqEditMainWin::helpAbout(){
 	app->showAboutDialog(this);
 }
+
+void SeqEditMainWin::createContextMenu(const QPoint &)
+{
+	QMenu *cm = new QMenu(this);
+	
+	setupEditMenu();
+	
+	cm->addAction(undoAction);
+	cm->addAction(redoAction);
+	cm->addSeparator();
+	
+	cm->addAction(cutAction);
+	cm->addSeparator();
+	
+	cm->addAction(groupSequencesAction);
+	cm->addAction(ungroupSequencesAction);
+	cm->addAction(lockAction);
+	cm->addAction(unlockAction);
+	cm->addSeparator();
+
+	cm->addAction(excludeAction);
+	cm->addAction(removeExcludeAction);
+	
+	cm->exec(QCursor::pos());
+	delete cm;
+}
+
 
 void SeqEditMainWin::sequenceSelectionChanged()
 {

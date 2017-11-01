@@ -4,6 +4,8 @@ OBJECTS_DIR = obj
 
 INCLUDEPATH += include
 
+DEPENDPATH=$$INCLUDEPATH
+
 HEADERS       =  include/AboutDialog.h \
 								 include/AlignmentTool.h \
 								 include/Application.h \

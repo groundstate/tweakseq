@@ -119,7 +119,7 @@ static int groupColours[N_GROUP_COLOURS][3]
 SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	:Q3GridView(parent)
 {
-
+	qDebug() << trace.header() << "Creating SeqEdit";
 	init();
 	project_=project;
 	
