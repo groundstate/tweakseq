@@ -512,17 +512,17 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 		}
 	}
 	
-	p->setPen(txtColor);
-	p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
-	
 	if ((!cellSelected) && (cwflags.unicode() & EXCLUDE_CELL) ){
 		//txtColor.setRgb(128,128,128);
 		//p->fillRect(0,0,w,h,txtColor);
-		txtColor.setRgb(255,255,255);
-		p->setPen(txtColor);
+		p->setPen(QColor(240,240,16));
 		p->drawLine(2,2,w-2,h-2); // X marks the spot ...
 		p->drawLine(w-2,2,2,h-2);
 	}
+	
+	p->setPen(txtColor);
+	p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
+	
 	
 }
 

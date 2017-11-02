@@ -64,6 +64,7 @@
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "SeqEdit.h"
+#include "SeqPreviewDlg.h"
 #include "SeqEditMainWin.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
@@ -572,6 +573,9 @@ void SeqEditMainWin::setupEditMenu()
 	
 	lockAction->setEnabled(project_->canToggleLock());
 	unlockAction->setEnabled(project_->canToggleLock());
+	
+	excludeAction->setEnabled(!(project_->residueSelection->empty())); // sloppy - don't worry about already excluded etc.
+	removeExcludeAction->setEnabled(!(project_->residueSelection->empty())); 
 }
 
 void SeqEditMainWin::editUndo()
@@ -704,6 +708,22 @@ void SeqEditMainWin::helpHelp(){
 
 void SeqEditMainWin::helpAbout(){
 	app->showAboutDialog(this);
+}
+
+void SeqEditMainWin::test(){
+	SeqPreviewDlg *pd = new SeqPreviewDlg(this); // parenting it keeps it on top
+	pd->setModal(false);
+	QStringList l,r;
+	for (int i=0;i<5;i++){
+		l.append(project_->sequences.sequences().at(i)->label);
+		r.append(project_->sequences.sequences().at(i)->residues);
+	}
+	pd->setPreviewFont(se->editorFont());
+	pd->setSequences(l,r);
+	pd->show();
+	pd->raise();
+	pd->activateWindow();
+	pd->setWidth(width());
 }
 
 void SeqEditMainWin::createContextMenu(const QPoint &)
@@ -909,6 +929,12 @@ void SeqEditMainWin::createActions()
 	aboutAction->setStatusTip(tr("About"));
 	addAction(aboutAction);
 	connect(aboutAction, SIGNAL(triggered()), this, SLOT(helpAbout()));
+	
+	testAction = new QAction( tr("Preview"), this);
+	testAction->setStatusTip(tr("Preview"));
+	addAction(testAction);
+	connect(testAction, SIGNAL(triggered()), this, SLOT(test()));
+	
 }
 
 void SeqEditMainWin::createMenus()
@@ -962,6 +988,10 @@ void SeqEditMainWin::createMenus()
 	helpMenu = menuBar()->addMenu(tr("&Help"));
 	helpMenu->addAction(helpAction);
 	helpMenu->addAction(aboutAction);
+	
+	testMenu = menuBar()->addMenu(tr("Test"));
+	testMenu->addAction(testAction);
+	
 }
 
 

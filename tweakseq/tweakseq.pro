@@ -18,6 +18,8 @@ HEADERS       =  include/AboutDialog.h \
 								 include/ResidueSelection.h \
 								 include/SeqEdit.h \
 								 include/SeqEditMainWin.h \
+								 include/SeqPreview.h \
+								 include/SeqPreviewDlg.h \
 								 include/Sequence.h \
 								  include/Sequences.h \
 								 include/SequenceFile.h \
@@ -49,7 +51,9 @@ SOURCES				+=  Core/UndoCommand/UndoCommand.cpp \
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/MessageWin.cpp \
 									UI/SeqEdit.cpp \
-									UI/SeqEditMainWin.cpp 
+									UI/SeqEditMainWin.cpp \
+									UI/SeqPreview.cpp \
+									UI/SeqPreviewDlg.cpp
 
 RESOURCES = UI/Resources/application.qrc
 									

@@ -107,6 +107,8 @@ private slots:
 	void helpHelp();
 	void helpAbout();
 	
+	void test();
+	
 	void createContextMenu(const QPoint &);
 	
 private:
@@ -127,7 +129,7 @@ private:
 	
 	int groupIndex(SequenceGroup *,const QList<SequenceGroup *> &);
 	
-	QMenu    *fileMenu,*alignmentMenu,*editMenu,*settingsMenu,*helpMenu;
+	QMenu    *fileMenu,*alignmentMenu,*editMenu,*settingsMenu,*helpMenu,*testMenu;
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
 	QAction  *alignAllAction,*alignSelectionAction,*undoLastAction;
@@ -135,6 +137,7 @@ private:
 	QAction  *groupSequencesAction,*ungroupSequencesAction;
 	QAction  *helpAction,*aboutAction;
 	QAction *settingsEditorFontAction;
+	QAction *testAction;
 	
 	QToolBar *seqEditTB;
 	MessageWin *mw;
