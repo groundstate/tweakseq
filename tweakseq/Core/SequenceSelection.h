@@ -49,6 +49,8 @@ class SequenceSelection:public QObject
 		int  size(){return sel_.size();}
 		Sequence * itemAt(int);
 		
+		void order();
+		
 	signals:
 		
 		void changed();

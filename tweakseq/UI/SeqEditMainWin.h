@@ -107,6 +107,8 @@ private slots:
 	void helpHelp();
 	void helpAbout();
 	
+	void alignmentPreviewClosed(int);
+	
 	void test();
 	
 	void createContextMenu(const QPoint &);
@@ -121,7 +123,8 @@ private:
 	void createStatusBar();
 	
 	void startAlignment();
-	void readNewAlignment();
+	void readNewAlignment(bool);
+	void previewNewAlignment();
 	
 	void printRes( QPainter*,QChar,int,int );
 	

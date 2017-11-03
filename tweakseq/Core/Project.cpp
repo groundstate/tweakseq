@@ -577,6 +577,9 @@ void Project::exportSelectionFASTA(QString fname,bool removeExclusions)
 {
 	FASTAFile ff(fname);
 	QStringList l,seqs,c;
+	
+	sequenceSelection->order();
+	
 	for (int s=0;s<sequenceSelection->size();s++){
 		l.append(sequenceSelection->itemAt(s)->label);
 		seqs.append(sequenceSelection->itemAt(s)->filter(removeExclusions));

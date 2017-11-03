@@ -651,6 +651,7 @@ void SeqEditMainWin::alignmentAll()
 void SeqEditMainWin::alignmentSelection()
 {
 	alignAll=false;
+	
 	startAlignment();
 }
 
@@ -684,8 +685,9 @@ void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus exitSta
 		// delete alignmentFileIn_; // FIXME reinstate
 		// alignmentFileIn_=NULL;
 		if (alignAll)
-			readNewAlignment();
+			readNewAlignment(true);
 		else{
+			previewNewAlignment();
 		}
 	}
 	
@@ -708,6 +710,14 @@ void SeqEditMainWin::helpHelp(){
 
 void SeqEditMainWin::helpAbout(){
 	app->showAboutDialog(this);
+}
+
+void SeqEditMainWin::alignmentPreviewClosed(int result)
+{
+	if (result == QDialog::Accepted){
+		readNewAlignment(false);
+	}
+	alignmentMenu->setEnabled(true); // good to go 
 }
 
 void SeqEditMainWin::test(){
@@ -1056,7 +1066,7 @@ void SeqEditMainWin::startAlignment()
 	alignmentProc_->start(exec,args);
 }
 
-void SeqEditMainWin::readNewAlignment()
+void SeqEditMainWin::readNewAlignment(bool isFullAlignment)
 {
 	
 	// Make a copy of the existing alignment and groups
@@ -1089,31 +1099,52 @@ void SeqEditMainWin::readNewAlignment()
 	// Groupings are preserved
 	
 	// Preserve tree-order
-	for (int snew=0;snew<newseqs.size();snew++){
-		int sold=0;
-		while ((sold < project_->sequences.size())){
-			if (newlabels.at(snew) == (project_->sequences.sequences().at(sold)->label.trimmed())) // remember, labels are padded at the end with spaces
-				break;
-			sold++;
-		}
-		if (sold < project_->sequences.size()){
-			project_->sequences.move(sold,snew);
-		}
-		else{
-			qDebug() << trace.header() << "SeqEditMainWin::readNewAlignment() missed " << newlabels.at(snew); 
-		}
-	}
 	
-	// Update each sequence
-	int snew =0;
-	int sold =0;
-	while (sold < project_->sequences.size() && snew<newseqs.size()){
-		project_->sequences.sequences().at(sold)->residues = newseqs.at(snew);
-		snew++;
-		sold++;
+	if (isFullAlignment){
+		// Sequences are moved to their new position in the alignment and updated
+		for (int snew=0;snew<newseqs.size();snew++){
+			int sold=0;
+			while ((sold < project_->sequences.size())){
+				if (newlabels.at(snew) == (project_->sequences.sequences().at(sold)->label.trimmed())) // remember, labels are padded at the end with spaces
+					break;
+				sold++;
+			}
+			if (sold < project_->sequences.size()){
+				project_->sequences.move(sold,snew);
+				project_->sequences.sequences().at(snew)->residues = newseqs.at(snew);
+			}
+			else{
+				qDebug() << trace.header() << "SeqEditMainWin::readNewAlignment() missed " << newlabels.at(snew); 
+			}
+		}
 	}
+	else{
+		// The saved selection is examined and each sequence is replaced by the corresponding sequence in the new alignment
+		SequenceSelection *sel = project_->sequenceSelection;
+		Sequences &seqs = project_->sequences;
+		
+		QList<Sequence *> newSequences;	
+		// Make a list of pointers to the Sequences in the new alignment
+		for (int s=0;s<newlabels.size();s++){
+			int seqIndex = seqs.getIndex(newlabels.at(s));
+			newSequences.append(seqs.sequences().at(seqIndex));
+		}
+		// Make a list of indices of the sequences in the selection
+		QList<int> selIndices;
+		for (int s=0;s<sel->size();s++){
+			selIndices.append(seqs.getIndex(sel->itemAt(s)->label));
+		}
+		
+		for (int s=0;s<selIndices.size();s++){
+			seqs.sequences().replace(selIndices.at(s),newSequences.at(s));
+			seqs.sequences().at(selIndices.at(s))->residues = newseqs.at(s); // update the residues
+		}
+		
+	}
+
 	
 	project_->undoStack().push(new UndoAlignmentCommand(project_,oldSeqs,oldGroups,project_->sequences.sequences(),project_->sequenceGroups,"alignment"));
+	
 	// Tidy up time
 	while (!oldSeqs.isEmpty())
 		delete oldSeqs.takeFirst();
@@ -1122,6 +1153,27 @@ void SeqEditMainWin::readNewAlignment()
 	
 	se->updateViewport();
 }
+
+void SeqEditMainWin::previewNewAlignment()
+{
+	
+	FASTAFile fin(alignmentFileOut_->fileName());
+	QStringList newlabels,newresidues,newcomments;
+	fin.read(newlabels,newresidues,newcomments);
+	
+	SeqPreviewDlg *pd = new SeqPreviewDlg(this); // parenting it keeps it on top
+	connect(pd,SIGNAL(finished(int)),this,SLOT(alignmentPreviewClosed(int)));
+	pd->setModal(false);
+	pd->setPreviewFont(se->editorFont());
+	pd->setSequences(newlabels,newresidues);
+	pd->show();
+	pd->raise();
+	pd->activateWindow();
+	pd->setWidth(width());
+
+	alignmentMenu->setEnabled(false); // the alignment preview is modeless so disable further alignments until the preview is done with
+}
+
 
 
 void SeqEditMainWin::printRes( QPainter* p,QChar r,int x,int y)
