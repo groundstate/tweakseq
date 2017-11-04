@@ -66,7 +66,8 @@ public:
 	
 	const QFont &editorFont(){return font();}
 	
-	void setReadOnly(){readOnly_=true;}
+	void setReadOnly(bool readOnly){readOnly_=readOnly;}
+	bool isReadOnly(){return readOnly_;}
 	
 public slots:
 	

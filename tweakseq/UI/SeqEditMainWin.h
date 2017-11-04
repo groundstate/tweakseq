@@ -80,7 +80,7 @@ private slots:
 	void fileExportClustalW();
 	void fileClose();
 	
-	void setupEditMenu();
+	void setupEditActions();
 	void editUndo();
 	void editRedo();
 	void editCut();
@@ -92,6 +92,8 @@ private slots:
 	void editRemoveExclude();
 	void editLock();
 	void editUnlock();
+	
+	void editReadOnly();
 	
 	void setupAlignmentMenu();
 	void alignmentAll();
@@ -138,6 +140,7 @@ private:
 	QAction  *alignAllAction,*alignSelectionAction,*undoLastAction;
 	QAction  *undoAction,*redoAction,*cutAction,*excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction;
+	QAction  *readOnlyAction;
 	QAction  *helpAction,*aboutAction;
 	QAction *settingsEditorFontAction;
 	QAction *testAction;

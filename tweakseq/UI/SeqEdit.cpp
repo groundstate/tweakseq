@@ -714,6 +714,8 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 		emit info(lastInfo);
 	}
 	
+	if (readOnly_) return;
+	
 	if (selectingSequences_ && leftDown_){
 		if (seqSelectionDrag_ != clickedRow){
 			seqSelectionDrag_=clickedRow;

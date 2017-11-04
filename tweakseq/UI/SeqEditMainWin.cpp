@@ -541,8 +541,21 @@ void SeqEditMainWin::fileClose(){
 
 
 // Connected to  aboutToShow()
-void SeqEditMainWin::setupEditMenu()
+void SeqEditMainWin::setupEditActions()
 {
+	if (se->isReadOnly()){
+		cutAction->setEnabled(false);
+		undoAction->setEnabled(false);
+		redoAction->setEnabled(false);
+		groupSequencesAction->setEnabled(false);
+		ungroupSequencesAction->setEnabled(false);
+		lockAction->setEnabled(false);
+		unlockAction->setEnabled(false);
+		excludeAction->setEnabled(false);
+		removeExcludeAction->setEnabled(false);
+		return;
+	}
+	
 	cutAction->setEnabled(project_->residueSelection->isInsertionsOnly());
 	
 	if (project_->undoStack().canUndo()){
@@ -581,14 +594,14 @@ void SeqEditMainWin::setupEditMenu()
 void SeqEditMainWin::editUndo()
 {
 	project_->undoStack().undo();
-	setupEditMenu(); // need this so that keyboard accelerators are enabled/disabled
+	setupEditActions(); // need this so that keyboard accelerators are enabled/disabled
 	se->viewport()->repaint();
 }
 
 void SeqEditMainWin::editRedo()
 {
 	project_->undoStack().redo();
-	setupEditMenu();
+	setupEditActions();
 }
 
 void SeqEditMainWin::editCut()
@@ -633,7 +646,13 @@ void SeqEditMainWin::editExclude(){
 void SeqEditMainWin::editRemoveExclude(){
 	se->removeExcludeSelection();
 }
+
+void SeqEditMainWin::editReadOnly(){
 	
+	readOnlyAction->setChecked(!readOnlyAction->isChecked());
+	
+}
+
 void SeqEditMainWin::setupAlignmentMenu()
 {
 	alignAllAction->setEnabled(project_->sequences.size() >= 2);
@@ -644,14 +663,13 @@ void SeqEditMainWin::alignmentAll()
 {
 	alignAll=true;
 	startAlignment();
-	// Update menu items
-	
 }
 
 void SeqEditMainWin::alignmentSelection()
 {
 	alignAll=false;
-	
+	se->setReadOnly(true);
+	setupEditActions();
 	startAlignment();
 }
 
@@ -717,6 +735,7 @@ void SeqEditMainWin::alignmentPreviewClosed(int result)
 	if (result == QDialog::Accepted){
 		readNewAlignment(false);
 	}
+	se->setReadOnly(false);
 	alignmentMenu->setEnabled(true); // good to go 
 }
 
@@ -740,7 +759,7 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 {
 	QMenu *cm = new QMenu(this);
 	
-	setupEditMenu();
+	setupEditActions();
 	
 	cm->addAction(undoAction);
 	cm->addAction(redoAction);
@@ -910,6 +929,13 @@ void SeqEditMainWin::createActions()
 	addAction(removeExcludeAction);
 	connect(removeExcludeAction, SIGNAL(triggered()), this, SLOT(editRemoveExclude()));
 	
+	readOnlyAction = new QAction( tr("Read only"), this);
+	readOnlyAction->setStatusTip(tr("Set the alignment to read only"));
+	addAction(readOnlyAction);
+	readOnlyAction->setCheckable(true);
+	readOnlyAction->setChecked(false);
+	connect(readOnlyAction, SIGNAL(triggered()), this, SLOT(editReadOnly()));
+	
 	// Alignment actions
 	alignAllAction = new QAction( tr("&Align all"), this);
 	alignAllAction->setStatusTip(tr("Run alignment on all sequences"));
@@ -966,7 +992,7 @@ void SeqEditMainWin::createMenus()
 	fileMenu->addAction(quitAction);
 	
 	editMenu = menuBar()->addMenu(tr("&Edit"));
-	connect(editMenu,SIGNAL(aboutToShow()),this,SLOT(setupEditMenu()));
+	connect(editMenu,SIGNAL(aboutToShow()),this,SLOT(setupEditActions()));
 	
 	editMenu->addAction(undoAction);
 	editMenu->addAction(redoAction);
@@ -983,6 +1009,9 @@ void SeqEditMainWin::createMenus()
 
 	editMenu->addAction(excludeAction);
 	editMenu->addAction(removeExcludeAction);
+	editMenu->addSeparator();
+	
+	editMenu->addAction(readOnlyAction);
 	
 	alignmentMenu = menuBar()->addMenu(tr("Alignment"));
 	connect(alignmentMenu,SIGNAL(aboutToShow()),this,SLOT(setupAlignmentMenu()));
