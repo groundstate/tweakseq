@@ -105,6 +105,8 @@ class Project:public QObject
 		void exportSelectionFASTA(QString,bool);
 		void exportClustalW(QString,bool);
 		
+		void readNewAlignment(QString,bool);
+		
 	public slots:
 	
 		
@@ -122,6 +124,7 @@ class Project:public QObject
 		
 		void init();
 		int  getSeqIndex(QString);
+		int  getGroupIndex(SequenceGroup *sg);
 		
 		// Widgets we keep track of
 		SeqEditMainWin *mainWindow_;
@@ -134,8 +137,6 @@ class Project:public QObject
 		
 		int nAlignments;
 		AlignmentTool *alignmentTool_;
-		
-		QStack<Operation *> undoStack_deprecated;
 		QUndoStack undoStack_;
 	
 };

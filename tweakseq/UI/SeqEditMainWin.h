@@ -132,8 +132,6 @@ private:
 	
 	bool maybeSave();
 	
-	int groupIndex(SequenceGroup *,const QList<SequenceGroup *> &);
-	
 	QMenu    *fileMenu,*alignmentMenu,*editMenu,*settingsMenu,*helpMenu,*testMenu;
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;

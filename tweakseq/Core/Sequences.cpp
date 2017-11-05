@@ -93,12 +93,12 @@ void  Sequences::replace(QString oldLabel,QString newLabel,QString newResidues)
 	emit changed();
 }
 
-void Sequences::move(int i,int j)
+void Sequences::move(int oldPos,int newPos)
 {
-	if (i<0 || j <0 || i >= sequences_.size() || j >= sequences_.size()){
+	if (oldPos<0 || newPos <0 || oldPos >= sequences_.size() || newPos >= sequences_.size()){
 		return;
 	}
-	sequences_.move(i,j);
+	sequences_.move(oldPos,newPos);
 	emit changed();
 }
 
@@ -108,6 +108,25 @@ void Sequences::replaceResidues(QString newResidues,int pos)
 	emit changed();
 }
 
+void  Sequences::addInsertions(int startSequence,int stopSequence,int startPos,int nInsertions)
+{
+	QString ins(nInsertions,'-');
+	for (int s=startSequence; s<=stopSequence; s++){
+		sequences_.at(s)->residues.insert(startPos,ins);
+	}
+	emit changed();
+}
+
+// Mainly used for removing insertions
+void  Sequences::removeResidues(int startSequence,int stopSequence,int startPos,int nResidues) 
+{
+	for (int s=startSequence; s<=stopSequence; s++){
+		sequences_.at(s)->residues.remove(startPos,nResidues);
+	}
+	emit changed();
+}
+
+		
 int Sequences::getIndex(QString label)
 {
 	// Get the index of the sequence with label l

@@ -43,6 +43,7 @@
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
 #include "SeqEditMainWin.h"
+#include "UndoAlignmentCommand.h"
 #include "XMLHelper.h"
 
 extern Application *app;
@@ -600,6 +601,92 @@ void Project::exportClustalW(QString fname,bool removeExclusions)
 	cf.write(l,seqs,c);
 }
 
+void Project::readNewAlignment(QString fname,bool isFullAlignment){
+	
+	// Make a copy of the existing alignment and groups
+	QList<Sequence *> oldSeqs;
+	QList<SequenceGroup *> oldGroups;
+	
+	for (int g=0;g<sequenceGroups.size();g++){
+		SequenceGroup *sg = new SequenceGroup();
+		*sg = *sequenceGroups.at(g);
+		sg->clear();
+		oldGroups.append(sg);
+	}
+	
+	for (int s=0;s<sequences.size();s++){
+		Sequence *seq = new Sequence();
+		*seq = *(sequences.sequences().at(s));
+		oldSeqs.append(seq);
+		if (sequences.sequences().at(s)->group){
+			int gi = getGroupIndex(sequences.sequences().at(s)->group);
+			oldGroups.at(gi)->addSequence(seq);
+		}
+	}
+	
+	FASTAFile fin(fname);
+	QStringList newlabels,newseqs,newcomments;
+	fin.read(newlabels,newseqs,newcomments);
+	
+	//qDebug() << trace.header() << newseqs.size() << " " << sequences.size();
+
+	// Groupings are preserved
+	
+	// Preserve tree-order
+	
+	if (isFullAlignment){
+		// Sequences are moved to their new position in the alignment and updated
+		for (int snew=0;snew<newseqs.size();snew++){
+			int sold=0;
+			while ((sold < sequences.size())){
+				if (newlabels.at(snew) == (sequences.sequences().at(sold)->label.trimmed())) // remember, labels are padded at the end with spaces
+					break;
+				sold++;
+			}
+			if (sold < sequences.size()){
+				sequences.move(sold,snew);
+				sequences.sequences().at(snew)->residues = newseqs.at(snew);
+			}
+			else{
+				qDebug() << trace.header() << " Project::readNewAlignment missed " << newlabels.at(snew); 
+			}
+		}
+	}
+	else{
+		// The saved selection is examined and each sequence is replaced by the corresponding sequence in the new alignment
+		SequenceSelection *sel = sequenceSelection;
+		Sequences &seqs = sequences;
+		
+		QList<Sequence *> newSequences;	
+		// Make a list of pointers to the Sequences in the new alignment
+		for (int s=0;s<newlabels.size();s++){
+			int seqIndex = seqs.getIndex(newlabels.at(s));
+			newSequences.append(seqs.sequences().at(seqIndex));
+		}
+		// Make a list of indices of the sequences in the selection
+		QList<int> selIndices;
+		for (int s=0;s<sel->size();s++){
+			selIndices.append(seqs.getIndex(sel->itemAt(s)->label));
+		}
+		
+		for (int s=0;s<selIndices.size();s++){
+			seqs.sequences().replace(selIndices.at(s),newSequences.at(s));
+			seqs.sequences().at(selIndices.at(s))->residues = newseqs.at(s); // update the residues
+		}
+		
+	}
+
+	undoStack().push(new UndoAlignmentCommand(this,oldSeqs,oldGroups,sequences.sequences(),sequenceGroups,"alignment"));
+	
+	// Tidy up time
+	while (!oldSeqs.isEmpty())
+		delete oldSeqs.takeFirst();
+	while (!oldGroups.isEmpty())
+		delete oldGroups.takeFirst();
+	
+}
+
+
 void Project::closeIt()
 {
 	static bool closing = false;
@@ -659,4 +746,10 @@ int Project::getSeqIndex(QString l)
 		return i;
 }
 
-
+int Project::getGroupIndex(SequenceGroup *sg)
+{
+	for (int i=0;i<sequenceGroups.size();i++){
+		if (sequenceGroups.at(i) == sg) return i;
+	}
+	return -1;
+}

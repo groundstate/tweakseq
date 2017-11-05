@@ -693,12 +693,13 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 	int startRow,stopRow,startCol,stopCol;
 	int clickedRow,clickedCol;
 	
-	if (numRows() == 0) return;
+	if (numRows() == 0) return; // so we don't have to guard against null pointers
 	
 	clickedPos = ev->pos();              		
 	clickedRow=rowAt( clickedPos.y());
 	clickedCol=columnAt( clickedPos.x());
 	
+	// clamp to bounds
 	if (clickedRow < 0){
 		if (clickedPos.y() >=0) // clamp to bottom
 			clickedRow = numRows() -1;
@@ -709,6 +710,7 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 	if (clickedRow >= numRows())
 		clickedRow = numRows() -1;
 	
+	// show the label of the sequence we are moving over
 	if (project_->sequences.sequences().at(clickedRow)->label != lastInfo){
 		lastInfo = project_->sequences.sequences().at(clickedRow)->label;
 		emit info(lastInfo);

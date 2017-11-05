@@ -56,11 +56,13 @@ class Sequences:public QObject
 		Sequence * add(QString,QString,QString,QString );
 		void  append(Sequence *);
 		void  remove(QString);
-		void insert(QString,QString,int);
+		void  insert(QString,QString,int);
 		void  replace(QString,QString,QString);
-		void move(int,int);
-		void replaceResidues(QString ,int pos);
-	
+		void  move(int,int);
+		void  replaceResidues(QString ,int pos);
+		void  addInsertions(int,int,int,int);
+		void  removeResidues(int,int,int,int);
+		
 	signals:
 		
 		void sequenceAdded(Sequence *);

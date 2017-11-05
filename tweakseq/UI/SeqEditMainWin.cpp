@@ -283,11 +283,7 @@ void SeqEditMainWin::fileImport(){
 	QString fname = QFileDialog::getOpenFileName(this,
     tr("Open Sequence"), "./", tr("Sequence Files (*.fasta *.aln *.clustal *.fa)"));
 	if (fname.isNull()) return;
-	
-	//ClustalFile cf("/home/michael/src/da/src/alignmentin.aln");
-	// ClustalFile cf("/home/michael/src/seqme/seqme/test/Bcl2l15_12_10.clustal");
-	//QString fname = "/home/michael/src/seqme/seqme/test/Bcl2l15_12_10.fasta";
-	
+
 	FASTAFile cf(fname);
 	QStringList seqnames,seqs,comments;
 	if (cf.read(seqnames,seqs,comments)){
@@ -884,12 +880,6 @@ void SeqEditMainWin::createActions()
 	connect(redoAction, SIGNAL(triggered()), this, SLOT(editRedo()));
 	redoAction->setEnabled(false);
 	
-	undoLastAction = new QAction( tr("Undo &Last"), this);
-	undoLastAction->setStatusTip(tr("Undo last alignment"));
-	addAction(undoLastAction);
-	connect(undoLastAction, SIGNAL(triggered()), this, SLOT(alignmentUndo()));
-	undoLastAction->setEnabled(false);
-	
 	cutAction = new QAction( tr("Cu&t"), this);
 	cutAction->setStatusTip(tr("Cut"));
 	addAction(cutAction);
@@ -1029,7 +1019,7 @@ void SeqEditMainWin::createMenus()
 	helpMenu->addAction(aboutAction);
 	
 	testMenu = menuBar()->addMenu(tr("Test"));
-	testMenu->addAction(testAction);
+	//testMenu->addAction(testAction);
 	
 }
 
@@ -1097,89 +1087,7 @@ void SeqEditMainWin::startAlignment()
 
 void SeqEditMainWin::readNewAlignment(bool isFullAlignment)
 {
-	
-	// Make a copy of the existing alignment and groups
-	QList<Sequence *> oldSeqs;
-	QList<SequenceGroup *> oldGroups;
-	
-	for (int g=0;g<project_->sequenceGroups.size();g++){
-		SequenceGroup *sg = new SequenceGroup();
-		*sg = *(project_->sequenceGroups.at(g));
-		sg->clear();
-		oldGroups.append(sg);
-	}
-	
-	for (int s=0;s<project_->sequences.size();s++){
-		Sequence *seq = new Sequence();
-		*seq = *(project_->sequences.sequences().at(s));
-		oldSeqs.append(seq);
-		if (project_->sequences.sequences().at(s)->group){
-			int gi = groupIndex(project_->sequences.sequences().at(s)->group,project_->sequenceGroups);
-			oldGroups.at(gi)->addSequence(seq);
-		}
-	}
-	
-	FASTAFile fin(alignmentFileOut_->fileName());
-	QStringList newlabels,newseqs,newcomments;
-	fin.read(newlabels,newseqs,newcomments);
-	
-	qDebug() << trace.header() << newseqs.size() << " " << project_->sequences.size();
-
-	// Groupings are preserved
-	
-	// Preserve tree-order
-	
-	if (isFullAlignment){
-		// Sequences are moved to their new position in the alignment and updated
-		for (int snew=0;snew<newseqs.size();snew++){
-			int sold=0;
-			while ((sold < project_->sequences.size())){
-				if (newlabels.at(snew) == (project_->sequences.sequences().at(sold)->label.trimmed())) // remember, labels are padded at the end with spaces
-					break;
-				sold++;
-			}
-			if (sold < project_->sequences.size()){
-				project_->sequences.move(sold,snew);
-				project_->sequences.sequences().at(snew)->residues = newseqs.at(snew);
-			}
-			else{
-				qDebug() << trace.header() << "SeqEditMainWin::readNewAlignment() missed " << newlabels.at(snew); 
-			}
-		}
-	}
-	else{
-		// The saved selection is examined and each sequence is replaced by the corresponding sequence in the new alignment
-		SequenceSelection *sel = project_->sequenceSelection;
-		Sequences &seqs = project_->sequences;
-		
-		QList<Sequence *> newSequences;	
-		// Make a list of pointers to the Sequences in the new alignment
-		for (int s=0;s<newlabels.size();s++){
-			int seqIndex = seqs.getIndex(newlabels.at(s));
-			newSequences.append(seqs.sequences().at(seqIndex));
-		}
-		// Make a list of indices of the sequences in the selection
-		QList<int> selIndices;
-		for (int s=0;s<sel->size();s++){
-			selIndices.append(seqs.getIndex(sel->itemAt(s)->label));
-		}
-		
-		for (int s=0;s<selIndices.size();s++){
-			seqs.sequences().replace(selIndices.at(s),newSequences.at(s));
-			seqs.sequences().at(selIndices.at(s))->residues = newseqs.at(s); // update the residues
-		}
-		
-	}
-
-	
-	project_->undoStack().push(new UndoAlignmentCommand(project_,oldSeqs,oldGroups,project_->sequences.sequences(),project_->sequenceGroups,"alignment"));
-	
-	// Tidy up time
-	while (!oldSeqs.isEmpty())
-		delete oldSeqs.takeFirst();
-	while (!oldGroups.isEmpty())
-		delete oldGroups.takeFirst();
-	
+	project_->readNewAlignment(alignmentFileOut_->fileName(),isFullAlignment);
 	se->updateViewport();
 }
 
@@ -1202,8 +1110,6 @@ void SeqEditMainWin::previewNewAlignment()
 
 	alignmentMenu->setEnabled(false); // the alignment preview is modeless so disable further alignments until the preview is done with
 }
-
-
 
 void SeqEditMainWin::printRes( QPainter* p,QChar r,int x,int y)
 {
@@ -1274,10 +1180,3 @@ bool SeqEditMainWin::maybeSave()
 	return true;
 }
 
-int SeqEditMainWin::groupIndex(SequenceGroup *sg,const QList<SequenceGroup *> &sgl)
-{
-	for (int i=0;i<sgl.size();i++){
-		if (sgl.at(i) == sg) return i;
-	}
-	return -1;
-}
