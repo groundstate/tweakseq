@@ -523,7 +523,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	p->setPen(txtColor);
 	p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 	
-	
+
 }
 
 void SeqEdit::mousePressEvent( QMouseEvent* e )
@@ -688,6 +688,7 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 
 void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 {
+	
 	QPoint clickedPos;
 	int col,row,currRow,currCol;
 	int startRow,stopRow,startCol,stopCol;
@@ -716,13 +717,19 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 		emit info(lastInfo);
 	}
 	
+	ensureCellVisible(clickedRow,clickedCol); // FIXME not ideal - scrolls too fast
+	
 	if (readOnly_) return;
 	
 	if (selectingSequences_ && leftDown_){
 		if (seqSelectionDrag_ != clickedRow){
-			seqSelectionDrag_=clickedRow;
-			for (int col=FLAGSWIDTH; col < LABELWIDTH+FLAGSWIDTH; col ++)
-				updateCell(clickedRow,col);
+			currRow = clickedRow;
+			startRow =  find_smallest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
+			stopRow  =  find_largest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
+			seqSelectionDrag_=currRow;
+			for (int row=startRow;row<=stopRow;row++)
+				for (int col=FLAGSWIDTH; col < LABELWIDTH+FLAGSWIDTH; col ++)
+					updateCell(row,col);
 			qDebug() << trace.header() << seqSelectionAnchor_ << " " << seqSelectionDrag_ ;
 		}
 		return;
@@ -743,7 +750,7 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 		currRow = clickedRow;    // map to row; set current cell
 		currCol = clickedCol;    // map to col; set current cell
 		// Determine the bounds of the rectangle enclosing both
-		// the old highlight box and the new highlight box
+		// the old highlight box and the new highlight box (so we redraw cells in the old box)
 		// Determine the vertical bounds
 		startRow = find_smallest_int(currRow,selAnchorRow,selDragRow);
 		stopRow  = find_largest_int(currRow,selAnchorRow,selDragRow);
