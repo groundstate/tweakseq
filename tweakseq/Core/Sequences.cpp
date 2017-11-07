@@ -148,3 +148,4 @@ QString Sequences::getLabelAt(int i)
 		// strip white space from the end of the string
 		return (sequences_.at(i)->label).stripWhiteSpace(); 
 }
+

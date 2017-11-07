@@ -482,6 +482,7 @@ void Project::load(QString &fname)
 	QList<long> gids;
 	
 	// Get all the sequences
+	emit loadingSequences(true);
 	QDomNodeList nl = doc.elementsByTagName("sequence");
 	for (int i=0;i<nl.count();i++){
 		QDomNode sNode = nl.item(i);
@@ -518,8 +519,10 @@ void Project::load(QString &fname)
 			seq->exclude(exclusions.at(x),exclusions.at(x+1));
 				 
 	}	
+	emit loadingSequences(false);
 	
 	// Get all the groups
+	
 	nl = doc.elementsByTagName("group");
 	for (int i=0;i<nl.count();i++){
 		QDomNode gNode = nl.item(i);
@@ -634,6 +637,8 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 	
 	// Preserve tree-order
 	
+	emit loadingSequences(true);
+	
 	if (isFullAlignment){
 		// Sequences are moved to their new position in the alignment and updated
 		for (int snew=0;snew<newseqs.size();snew++){
@@ -683,6 +688,8 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 		delete oldSeqs.takeFirst();
 	while (!oldGroups.isEmpty())
 		delete oldGroups.takeFirst();
+	
+	emit loadingSequences(false);
 	
 }
 

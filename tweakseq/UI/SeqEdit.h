@@ -94,6 +94,7 @@ private slots:
 	
 	void sequenceAdded(Sequence *);
 	void sequencesCleared();
+	void loadingSequences(bool);
 	
 private:
 	
@@ -112,6 +113,7 @@ private:
 	
 	Project *project_;
 	bool readOnly_;
+	bool loadingSequences_;
 	
 	bool selectingResidues_;
 	int selAnchorRow,selAnchorCol,selDragRow,selDragCol;

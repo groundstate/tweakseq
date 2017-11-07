@@ -717,10 +717,11 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 		emit info(lastInfo);
 	}
 	
-	ensureCellVisible(clickedRow,clickedCol); // FIXME not ideal - scrolls too fast
-	
 	if (readOnly_) return;
 	
+	if (leftDown_) // only scroll if we are selecting
+		ensureCellVisible(clickedRow,clickedCol); // FIXME not ideal - scrolls too fast
+		
 	if (selectingSequences_ && leftDown_){
 		if (seqSelectionDrag_ != clickedRow){
 			currRow = clickedRow;
@@ -900,12 +901,11 @@ void SeqEdit::focusOutEvent( QFocusEvent* )
 //
 void SeqEdit::sequenceAdded(Sequence *s)
 {
+
 	int rowNum,rowLength;
 	int sequenceLength = s->residues.length();
 	// Stop setNumRows() from forcing a repaint
 	// FIXME setAutoUpdate(FALSE);
-	
-	qDebug() << trace.header() << "SeqEdit::sequenceAdded() " << s->label;
 	
 	rowNum = numRows();
 	setNumRows(rowNum+1);
@@ -918,6 +918,8 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	// Now we update the new cells
 	// repainting only this line
 	
+	if (loadingSequences_) return;
+	
 	for (unsigned int i=0;i<FLAGSWIDTH;i++)
 		updateCell(rowNum,i);
 	
@@ -926,8 +928,7 @@ void SeqEdit::sequenceAdded(Sequence *s)
 		
 	for (int i=0;i<sequenceLength;i++)
 		updateCell(rowNum,i+LABELWIDTH+FLAGSWIDTH);
-	
-	qDebug() << trace.header() << "SeqEdit::sequenceAdded() " << numRows() << " " << numCols();
+
 	this->viewport()->repaint();
 }
 
@@ -935,6 +936,14 @@ void SeqEdit::sequencesCleared()
 {
 	setNumRows(0);
 	setNumCols(0);
+}
+
+void SeqEdit::loadingSequences(bool loading)
+{
+	qDebug() << trace.header() << "SeqEdit::loadingSequences " << loading;
+	loadingSequences_= loading;
+	if (!loadingSequences_)
+		updateViewport();
 }
 
 //
@@ -945,6 +954,8 @@ void SeqEdit::init()
 {
 	project_=NULL;
 	readOnly_=false;
+	
+	loadingSequences_=false;
 	
 	selectingResidues_ = false;
 	draggingSequence = FALSE;
@@ -963,12 +974,14 @@ void SeqEdit::connectSignals()
 {
 	connect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
+	connect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
 }
 
 void SeqEdit::disconnectSignals()
 {
 	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
+	disconnect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
 }
 	
 void SeqEdit::insertCell(char c,int row,int col){
@@ -998,9 +1011,12 @@ void SeqEdit::checkLength(){
 	// addSequence() and clearSequence()
 	// All we need to do is find the longest row ..
 	QList<Sequence *> &seq = project_->sequences.sequences();
-	if (numRows()==0)
+	if (project_->sequences.sequences().size()==0){
 		maxLength=0;
+		setNumRows(0);
+	}
  	else{
+		setNumRows(project_->sequences.sequences().size());
 		maxLength=seq.at(0)->residues.length();
 		for (i=0;i<seq.count();i++)
 			if (seq.at(i)->residues.length() > maxLength)

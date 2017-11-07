@@ -72,7 +72,6 @@ class Sequences:public QObject
 	private:
 		
 		QList<Sequence *> sequences_;
-		
 };
 
 #endif

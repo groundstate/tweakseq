@@ -106,6 +106,10 @@ class Project:public QObject
 		void exportClustalW(QString,bool);
 		
 		void readNewAlignment(QString,bool);
+	
+	signals:
+		
+		void loadingSequences(bool);
 		
 	public slots:
 	
