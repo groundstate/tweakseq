@@ -73,6 +73,7 @@ public slots:
 	
 	void postLoadTidy();
 	void setEditorFont(const QFont &);
+	void loadingSequences(bool);
 	
 signals:
 	
@@ -94,7 +95,6 @@ private slots:
 	
 	void sequenceAdded(Sequence *);
 	void sequencesCleared();
-	void loadingSequences(bool);
 	
 private:
 	

@@ -105,6 +105,7 @@ private slots:
 	void alignmentFinished(int,QProcess::ExitStatus);
 	
 	void settingsEditorFont();
+	void settingsSaveAppDefaults();
 	
 	void helpHelp();
 	void helpAbout();
@@ -130,6 +131,8 @@ private:
 	
 	void printRes( QPainter*,QChar,int,int );
 	
+	QStringList findDuplicates(QStringList &);
+	
 	bool maybeSave();
 	
 	QMenu    *fileMenu,*alignmentMenu,*editMenu,*settingsMenu,*helpMenu,*testMenu;
@@ -140,7 +143,7 @@ private:
 	QAction  *groupSequencesAction,*ungroupSequencesAction;
 	QAction  *readOnlyAction;
 	QAction  *helpAction,*aboutAction;
-	QAction *settingsEditorFontAction;
+	QAction *settingsEditorFontAction,*settingsSaveAppDefaultsAction;
 	QAction *testAction;
 	
 	QToolBar *seqEditTB;

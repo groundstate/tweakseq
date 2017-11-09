@@ -49,6 +49,7 @@
 #include <QPixmap>
 #include <QPrinter>
 #include <QProcess>
+#include <QSet>
 #include <QStatusBar>
 #include <QSplitter>
 #include <QTemporaryFile>
@@ -287,9 +288,24 @@ void SeqEditMainWin::fileImport(){
 	FASTAFile cf(fname);
 	QStringList seqnames,seqs,comments;
 	if (cf.read(seqnames,seqs,comments)){
+		// Check for duplicates
+		QStringList dups = findDuplicates(seqnames);
+		if (dups.size() > 0){
+			QString msg("There are duplicate sequences in the file being imported:\n");
+			for (int i=0; i< dups.size()-1;i++)
+				msg = msg + dups.at(i) + ",";
+			msg=msg+dups.last() + "\nYou will have to fix this.";
+			
+			QMessageBox::critical(this, tr("Error during import"),msg);
+			return;
+		}
+		
+		se->loadingSequences(true);
 		for (int i=0;i<seqnames.size();i++){
 			project_->sequences.add(seqnames.at(i),seqs.at(i),comments.at(i),fname);
 		}
+		se->loadingSequences(false);
+		
 		lastImportedFile=fname;
 	}
 	else{
@@ -718,6 +734,34 @@ void SeqEditMainWin::settingsEditorFont()
 	}
 }
 
+void SeqEditMainWin::settingsSaveAppDefaults()
+{
+	QString tmp;
+	
+// 	if(!fpathname.isNull()){
+// 		QFileInfo fi(fpathname);
+// 		path_=fi.path();
+// 		name_=fi.fileName();
+// 	}
+// 	
+// 	QDomDocument saveDoc;
+// 	QDomElement root = saveDoc.createElement("tweakseq");
+// 	saveDoc.appendChild(root);
+// 	
+// 	QFileInfo fi(path_,name_);
+// 	QFile f(fi.filePath());
+// 	f.open(IO_WriteOnly);
+// 	QTextStream ts(&f);
+// 	
+// 	QDomElement el = saveDoc.createElement("version");
+// 	root.appendChild(el);
+// 	QDomText te = saveDoc.createTextNode(app->version());
+// 	el.appendChild(te);
+// 	
+	
+}
+
+
 void SeqEditMainWin::helpHelp(){
 	app->showHelp("");
 }
@@ -945,6 +989,11 @@ void SeqEditMainWin::createActions()
 	addAction(settingsEditorFontAction);
 	connect(settingsEditorFontAction, SIGNAL(triggered()), this, SLOT(settingsEditorFont()));
 	
+	settingsSaveAppDefaultsAction = new QAction( tr("Save as application defaults"), this);
+	settingsSaveAppDefaultsAction->setStatusTip(tr("Save settings as application defaults"));
+	addAction(settingsSaveAppDefaultsAction);
+	connect(settingsSaveAppDefaultsAction, SIGNAL(triggered()), this, SLOT(settingsSaveAppDefaults()));
+	
 	// Help actions
 	helpAction = new QAction( tr("&Help"), this);
 	helpAction->setStatusTip(tr("Help"));
@@ -1011,6 +1060,8 @@ void SeqEditMainWin::createMenus()
 	
 	settingsMenu = menuBar()->addMenu(tr("Settings"));
 	settingsMenu->addAction(settingsEditorFontAction);
+	settingsMenu->addSeparator();
+	settingsMenu->addAction(settingsSaveAppDefaultsAction);
 	
 	menuBar()->insertSeparator();
 	
@@ -1156,6 +1207,22 @@ void SeqEditMainWin::printRes( QPainter* p,QChar r,int x,int y)
 	}
 	
 	p->setPen(oldPen);
+}
+
+QStringList SeqEditMainWin::findDuplicates(QStringList &sl)
+{
+		QStringList ret;
+		QSet<QString> visited;
+		for (int i=0;i<sl.size();++i){
+			const QString &s = sl.at(i);
+			if (visited.contains(s)){
+				ret.append(s);
+				continue;
+			}
+			visited.insert(s);
+		}
+		ret.removeDuplicates();
+		return ret;
 }
 
 bool SeqEditMainWin::maybeSave()
