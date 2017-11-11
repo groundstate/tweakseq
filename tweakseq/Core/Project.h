@@ -68,6 +68,8 @@ class Project:public QObject
 		
 		bool save(QString &);
 		void load(QString &);
+		void writeSettings(QDomDocument &,QDomElement &);
+		void readSettings(QDomDocument &);
 		
 		QString name(){return name_;}
 		void setName(QString &);

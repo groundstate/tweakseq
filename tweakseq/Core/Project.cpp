@@ -564,6 +564,16 @@ void Project::load(QString &fname)
 	
 }
 
+void Project::writeSettings(QDomDocument &doc,QDomElement &root)
+{
+	mainWindow_->writeSettings(doc,root);
+}
+
+void Project::readSettings(QDomDocument &)
+{
+}
+
+
 void Project::exportFASTA(QString fname,bool removeExclusions)
 {
 
@@ -711,6 +721,7 @@ void Project::createMainWindow()
 	connect(mainWindow_, SIGNAL(byebye()), this,SLOT(mainWindowClosed()));
 	connect(residueSelection,SIGNAL(changed()),mainWindow_,SLOT(residueSelectionChanged()));
 	connect(sequenceSelection,SIGNAL(changed()),mainWindow_,SLOT(sequenceSelectionChanged()));
+	mainWindow_->readSettings(app->defaultSettings());
 	mainWindow_->show();
 }
 
@@ -738,6 +749,10 @@ void Project::init()
 	name_="unnamed.tsq";
 	empty_=true;
 	alignmentTool_= new ClustalO();
+	
+	QDomDocument &doc = app->defaultSettings();
+	readSettings(doc);
+	
 }
 
 int Project::getSeqIndex(QString l)

@@ -289,9 +289,15 @@ void SeqEditMainWin::fileImport(){
 	QStringList seqnames,seqs,comments;
 	if (cf.read(seqnames,seqs,comments)){
 		// Check for duplicates
-		QStringList dups = findDuplicates(seqnames);
+		QStringList currSeqNames;
+		QList<Sequence *> currseq = project_->sequences.sequences();
+		for (int i=0;i<currseq.size();++i)
+			currSeqNames.append(currseq.at(i)->label.trimmed());
+		currSeqNames = currSeqNames + seqnames;
+		QStringList dups = findDuplicates(currSeqNames);
 		if (dups.size() > 0){
-			QString msg("There are duplicate sequences in the file being imported:\n");
+			QString msg("There are duplicated sequences in the file being imported:\n");
+			
 			for (int i=0; i< dups.size()-1;i++)
 				msg = msg + dups.at(i) + ",";
 			msg=msg+dups.last() + "\nYou will have to fix this.";
@@ -736,29 +742,7 @@ void SeqEditMainWin::settingsEditorFont()
 
 void SeqEditMainWin::settingsSaveAppDefaults()
 {
-	QString tmp;
-	
-// 	if(!fpathname.isNull()){
-// 		QFileInfo fi(fpathname);
-// 		path_=fi.path();
-// 		name_=fi.fileName();
-// 	}
-// 	
-// 	QDomDocument saveDoc;
-// 	QDomElement root = saveDoc.createElement("tweakseq");
-// 	saveDoc.appendChild(root);
-// 	
-// 	QFileInfo fi(path_,name_);
-// 	QFile f(fi.filePath());
-// 	f.open(IO_WriteOnly);
-// 	QTextStream ts(&f);
-// 	
-// 	QDomElement el = saveDoc.createElement("version");
-// 	root.appendChild(el);
-// 	QDomText te = saveDoc.createTextNode(app->version());
-// 	el.appendChild(te);
-// 	
-	
+	app->saveDefaultSettings(project_);
 }
 
 

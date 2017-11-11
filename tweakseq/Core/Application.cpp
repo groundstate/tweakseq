@@ -70,10 +70,29 @@ Project * Application::createProject()
 	return p;
 }
 
-void Application::saveDefaultSettings()
+void Application::saveDefaultSettings(Project *project)
 {
-	QString prefFile=appDirPath_+"/defaults.xml";
-	//defaultSettings.saveIt(prefFile);
+	// Saves  the settings in the Project as application defaults
+	
+	QDomDocument saveDoc;
+	QDomElement root = saveDoc.createElement("tweakseq");
+	saveDoc.appendChild(root);
+	
+	QFileInfo fi(applicationSettingsFile_);
+	QFile f(fi.filePath());
+	f.open(IO_WriteOnly);
+	QTextStream ts(&f);
+	
+	QDomElement el = saveDoc.createElement("version");
+	root.appendChild(el);
+	QDomText te = saveDoc.createTextNode(app->version());
+	el.appendChild(te);
+	
+	project->writeSettings(saveDoc,root);
+	
+	saveDoc.save(ts,2);
+	f.close();
+	
 }
 	
 void Application::showHelp(QString)
@@ -91,11 +110,6 @@ void Application::showAboutDialog(QWidget *parent)
 	aboutDlg->show();
   aboutDlg->raise();
   aboutDlg->activateWindow();
-}
-
-QString Application::applicationSettingsPath()
-{
-	return appDirPath_;
 }
 
 QString Application::applicationTmpPath()
@@ -117,7 +131,7 @@ void Application::helpClosed()
 
 void Application::cleanup()
 {
-	saveDefaultSettings();
+	//saveDefaultSettings();
 }
 
 void Application::projectClosed(Project *p)
@@ -138,16 +152,22 @@ void Application::projectClosed(Project *p)
 void Application::init()
 {
 	aboutDlg = NULL;
-
+	defaultSettings_ = new QDomDocument();
+	
 	// load default settings 
-	QString path = appDirPath_+"/defaults.xml";
-	QFile defs(path);
+	applicationSettingsFile_ = appDirPath_+"/defaults.xml";
+	QFile defs(applicationSettingsFile_);
 	if (defs.exists()){
-		//defaultSettings.load(path);
+		if ( !defs.open( IO_ReadOnly ) )
+			return;
+		QString err; int errlineno,errcolno;
+		if ( !defaultSettings_->setContent(&defs,true,&err,&errlineno,&errcolno ) ){	
+			qDebug() << trace.header() << " Application::init() error at line " << errlineno;
+			defs.close();
+			return;
+		}
 	}
-	else{ // make a default settings document, save it and load it
-		
-	}
+	
 }
 
 void Application::readSettings()

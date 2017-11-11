@@ -29,8 +29,9 @@
 #define __APPLICATION_H_
 
 #include <QApplication>
+#include <QDomDocument>
 #include <QStringList>
-//#include "Settings.h"
+
 
 #include "Version.h"
 
@@ -47,12 +48,13 @@ class Application : public QApplication
 		
 		Project * createProject();
 		
+		QDomDocument & defaultSettings(){return *defaultSettings_;}
+		
 		void setup();
 		
 		void showAboutDialog(QWidget *);
 		void showHelp(QString);
 	
-		QString applicationSettingsPath();
 		QString applicationTmpPath();
 		
 		QStringList previousProjects;
@@ -61,7 +63,7 @@ class Application : public QApplication
 		
 	public slots:
 	
-		void saveDefaultSettings();
+		void saveDefaultSettings(Project *);
 		
 	private slots:
 	
@@ -77,9 +79,12 @@ class Application : public QApplication
 		void writeSettings();
 		
 		QString appDirPath_;
+		QString applicationSettingsFile_;
 		QList<Project *> openProjects_;
 		
 		AboutDialog *aboutDlg;
+		
+		QDomDocument *defaultSettings_;
 		
 };
 
