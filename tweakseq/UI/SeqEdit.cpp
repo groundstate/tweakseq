@@ -827,7 +827,7 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 			break;
 		case Qt::Key_Space:
 			if (selectingResidues_){
-			
+				
 				// Check that selection is only one column wide - if not
 				// do nothing because the user probably hit the spacebar by mistake
 				if (startCol != stopCol)
@@ -855,6 +855,8 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 					else
 						stopCol=startCol;
 					
+					bool postInsert = !(e->modifiers() & Qt::ShiftModifier);
+					
 					// Add 1 to startCol,stopCol because  post insertion is
 					// used and undo deletes [startCol,stopCol]
 					//project_->logOperation( new Operation(Operation::Insertion,startRow,stopRow,
@@ -863,11 +865,16 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 					// Insertions across multiple rows are allowed
 					// Increase the size of the displayed area 
 					setNumCols(numCols()+stopCol-startCol+1);
-					l.fill(QChar('-'),stopCol-startCol+1);
-					for (row=startRow;row<=stopRow;row++){
+					
+					for (row=startRow;row<=stopRow;++row){
 						// FIXME check group
 						if (project_->sequences.sequences().at(row)->group != currSeq->group) continue;
-						insertCells(l,row,startCol);
+		
+						if (postInsert)
+							project_->sequences.addInsertions(row,row,startCol-LABELWIDTH-FLAGSWIDTH+1,stopCol-startCol+1);
+						else
+							project_->sequences.addInsertions(row,row,startCol-LABELWIDTH-FLAGSWIDTH,stopCol-startCol+1);
+	
 						checkLength();
 						for (col=startCol;col< numCols();col++)
 							updateCell(row,col);
@@ -982,21 +989,6 @@ void SeqEdit::disconnectSignals()
 	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
 	disconnect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
-}
-	
-void SeqEdit::insertCell(char c,int row,int col){
-	// TO DO - not actually using this function ...
-	// Can only insert into a sequence so ..
-	QList<Sequence *> &seq = project_->sequences.sequences();
-	seq.at(row)->residues.insert(col-LABELWIDTH-FLAGSWIDTH+1,c);
-	update();	
-}
-
-void SeqEdit::insertCells(QString s,int row,int col){
-	QString t;
-	QList<Sequence *> &seq = project_->sequences.sequences();
-	(seq.at(row)->residues).insert(col-LABELWIDTH-FLAGSWIDTH+1,s); // post insertion
-	update();
 }
 
 

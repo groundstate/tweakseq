@@ -24,6 +24,9 @@
 // THE SOFTWARE.
 //
 
+#include <QtDebug>
+#include "DebuggingInfo.h"
+
 #include "Sequence.h"
 #include "Sequences.h"
 #include "SequenceGroup.h"
@@ -110,6 +113,7 @@ void Sequences::replaceResidues(QString newResidues,int pos)
 
 void  Sequences::addInsertions(int startSequence,int stopSequence,int startPos,int nInsertions)
 {
+	qDebug() << trace.header() << startSequence << " " << stopSequence << " " << startPos << " " << nInsertions;
 	QString ins(nInsertions,'-');
 	for (int s=startSequence; s<=stopSequence; s++){
 		sequences_.at(s)->residues.insert(startPos,ins);

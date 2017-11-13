@@ -102,8 +102,6 @@ private:
 	void connectSignals();
 	void disconnectSignals();
 	
-	void insertCell(char c,int row,int col);
-	void insertCells(QString,int row,int col);
 	void setCellMark(int row,int col,int on);
 
 	void checkLength();
