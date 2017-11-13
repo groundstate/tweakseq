@@ -14,6 +14,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/DebuggingInfo.h \
 								 include/FASTAFile.h \
 								 include/MessageWin.h \
+								 include/Muscle.h \
 								 include/Project.h \
 								 include/ResidueSelection.h \
 								 include/SeqEdit.h \
@@ -36,6 +37,7 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/ClustalO.cpp \
 									Core/FASTAFile.cpp \
 									Core/Main.cpp \
+									Core/Muscle.cpp \
 									Core/Project.cpp \
 									Core/ResidueSelection.cpp \
 									Core/Sequence.cpp \

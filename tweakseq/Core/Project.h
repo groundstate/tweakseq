@@ -102,6 +102,7 @@ class Project:public QObject
 		QUndoStack &undoStack(){return undoStack_;}
 		
 		AlignmentTool*  alignmentTool(){return alignmentTool_;}
+		void setAlignmentTool(AlignmentTool *);
 		
 		void exportFASTA(QString,bool);
 		void exportSelectionFASTA(QString,bool);

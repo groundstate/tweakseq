@@ -105,6 +105,8 @@ private slots:
 	void alignmentFinished(int,QProcess::ExitStatus);
 	
 	void settingsEditorFont();
+	void settingsAlignmentToolClustalO();
+	void settingsAlignmentToolMUSCLE();
 	void settingsSaveAppDefaults();
 	
 	void helpHelp();
@@ -143,7 +145,7 @@ private:
 	QAction  *groupSequencesAction,*ungroupSequencesAction;
 	QAction  *readOnlyAction;
 	QAction  *helpAction,*aboutAction;
-	QAction *settingsEditorFontAction,*settingsSaveAppDefaultsAction;
+	QAction *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction,*settingsSaveAppDefaultsAction;
 	QAction *testAction;
 	
 	QToolBar *seqEditTB;

@@ -60,8 +60,10 @@
 
 #include "Application.h"
 #include "ClustalFile.h"
+#include "ClustalO.h"
 #include "FASTAFile.h"
 #include "MessageWin.h"
+#include "Muscle.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "SeqEdit.h"
@@ -740,6 +742,20 @@ void SeqEditMainWin::settingsEditorFont()
 	}
 }
 
+void SeqEditMainWin::settingsAlignmentToolClustalO()
+{
+	if (project_->alignmentTool()->name() != "clustalo"){
+		project_->setAlignmentTool(new ClustalO());
+	}
+}
+
+void SeqEditMainWin::settingsAlignmentToolMUSCLE()
+{
+	if (project_->alignmentTool()->name() != "MUSCLE"){
+		project_->setAlignmentTool(new Muscle());
+	}
+}
+	
 void SeqEditMainWin::settingsSaveAppDefaults()
 {
 	app->saveDefaultSettings(project_);
@@ -973,6 +989,25 @@ void SeqEditMainWin::createActions()
 	addAction(settingsEditorFontAction);
 	connect(settingsEditorFontAction, SIGNAL(triggered()), this, SLOT(settingsEditorFont()));
 	
+
+	settingsAlignmentToolClustalOAction = new QAction( tr("ClustalO"), this);
+	settingsAlignmentToolClustalOAction->setStatusTip(tr("Select Clustal Omega"));
+	addAction(settingsAlignmentToolClustalOAction);
+	connect(settingsAlignmentToolClustalOAction, SIGNAL(triggered()), this, SLOT(settingsAlignmentToolClustalO()));
+	settingsAlignmentToolClustalOAction->setCheckable(true);
+	settingsAlignmentToolClustalOAction->setChecked(true);
+	
+	settingsAlignmentToolMUSCLEAction = new QAction( tr("MUSCLE"), this);
+	settingsAlignmentToolMUSCLEAction->setStatusTip(tr("Select MUSCLE"));
+	addAction(settingsAlignmentToolMUSCLEAction);
+	connect(settingsAlignmentToolMUSCLEAction, SIGNAL(triggered()), this, SLOT(settingsAlignmentToolMUSCLE()));
+	settingsAlignmentToolMUSCLEAction->setCheckable(true);
+	
+	QActionGroup *ag = new QActionGroup(this);
+	ag->setExclusive(true);
+	ag->addAction(settingsAlignmentToolClustalOAction);
+	ag->addAction(settingsAlignmentToolMUSCLEAction);
+	
 	settingsSaveAppDefaultsAction = new QAction( tr("Save as application defaults"), this);
 	settingsSaveAppDefaultsAction->setStatusTip(tr("Save settings as application defaults"));
 	addAction(settingsSaveAppDefaultsAction);
@@ -1044,6 +1079,10 @@ void SeqEditMainWin::createMenus()
 	
 	settingsMenu = menuBar()->addMenu(tr("Settings"));
 	settingsMenu->addAction(settingsEditorFontAction);
+	QMenu* alignmentToolMenu = settingsMenu->addMenu(tr("Alignment tool"));
+	alignmentToolMenu->addAction(settingsAlignmentToolClustalOAction);
+	alignmentToolMenu->addAction(settingsAlignmentToolMUSCLEAction);
+	
 	settingsMenu->addSeparator();
 	settingsMenu->addAction(settingsSaveAppDefaultsAction);
 	

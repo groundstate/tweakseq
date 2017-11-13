@@ -58,8 +58,6 @@ Project::Project()
 	connect(&sequences,SIGNAL(changed()),this,SLOT(sequencesChanged()));
 }
 
-
-		
 Project::~Project()
 {
 	delete sequenceSelection;
@@ -151,6 +149,7 @@ void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<Seq
 {
 	qDebug() << trace.header() << " Project::setAlignment";
 	// Clear the selections because they will be meaningless post alignment
+	emit loadingSequences(true);
 	residueSelection->clear();
 	sequenceSelection->clear();
 	
@@ -178,7 +177,7 @@ void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<Seq
 			sequenceGroups.at(gi)->addSequence(seq);
 		}
 	}
-	
+	emit loadingSequences(false);
 	dirty_=true;
 }
 
@@ -369,6 +368,12 @@ bool Project::cutSelection()
 	}
 	residueSelection->clear();
 	return true;
+}
+
+void Project::setAlignmentTool(AlignmentTool *alignTool)
+{
+	if (alignmentTool_) delete alignmentTool_;
+	alignmentTool_ = alignTool;
 }
 
 //
