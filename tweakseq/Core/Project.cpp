@@ -448,10 +448,9 @@ bool Project::save(QString &fpathname)
 		XMLHelper::addElement(saveDoc,gel,"sequences",seqs);
 	}
 	
-	// UI settings
+
 	// QSettings is not used because we want per-project settings
-	
-	mainWindow_->writeSettings(saveDoc,root);
+	writeSettings(saveDoc,root);
 	
 	saveDoc.save(ts,2);
 	f.close();
@@ -562,6 +561,8 @@ void Project::load(QString &fname)
 		sequenceGroups.append(sg);
 	}
 	
+	readAlignmentToolSettings(doc);
+	
 	file.close();
 	dirty_=false;
 	empty_=false;
@@ -572,10 +573,12 @@ void Project::load(QString &fname)
 void Project::writeSettings(QDomDocument &doc,QDomElement &root)
 {
 	mainWindow_->writeSettings(doc,root);
+	alignmentTool_->writeSettings(doc,root);
 }
 
-void Project::readSettings(QDomDocument &)
+void Project::readSettings(QDomDocument &doc)
 {
+	readAlignmentToolSettings(doc);
 }
 
 
@@ -753,11 +756,31 @@ void Project::init()
 	dirty_=false;
 	name_="unnamed.tsq";
 	empty_=true;
-	alignmentTool_= new ClustalO();
+	alignmentTool_= NULL;
 	
 	QDomDocument &doc = app->defaultSettings();
 	readSettings(doc);
 	
+}
+
+void Project::readAlignmentToolSettings(QDomDocument &doc)
+{
+	QDomNodeList nl = doc.elementsByTagName("alignment_tool");
+	if (nl.count() == 1){
+		QDomNode gNode = nl.item(0);
+		QDomElement elem = gNode.firstChildElement();
+		while (!elem.isNull()){
+			if (elem.tagName() == "name"){
+				if (alignmentTool_ != NULL)
+					delete alignmentTool_;
+				if (elem.text() == "clustalo"){
+					alignmentTool_ = new ClustalO();
+					alignmentTool_->readSettings(doc);
+				}
+			}
+			elem=elem.nextSiblingElement();
+		}
+	}
 }
 
 int Project::getSeqIndex(QString l)

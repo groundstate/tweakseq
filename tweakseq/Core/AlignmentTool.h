@@ -30,12 +30,15 @@
 
 #include <QString>
 
+class QDomDocument;
+class QDomElement;
+
 class AlignmentTool
 {
 	public:
 		
 		AlignmentTool();
-		~AlignmentTool();
+		virtual ~AlignmentTool();
 		
 		QString name(){return name_;}
 		QString version(){return version_;}
@@ -45,6 +48,9 @@ class AlignmentTool
 		
 		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
 		
+		virtual void writeSettings(QDomDocument &,QDomElement &);
+		virtual void readSettings(QDomDocument &);
+	
 	protected:
 	
 		QString name_;

@@ -59,6 +59,8 @@
 
 
 #include "Application.h"
+#include "AlignmentTool.h"
+#include "AlignmentToolDlg.h"
 #include "ClustalFile.h"
 #include "ClustalO.h"
 #include "FASTAFile.h"
@@ -755,7 +757,14 @@ void SeqEditMainWin::settingsAlignmentToolMUSCLE()
 		project_->setAlignmentTool(new Muscle());
 	}
 }
-	
+
+void SeqEditMainWin::settingsAlignmentToolProperties()
+{
+		AlignmentToolDlg ad(project_->alignmentTool(),this); 
+		ad.exec();
+}
+
+
 void SeqEditMainWin::settingsSaveAppDefaults()
 {
 	app->saveDefaultSettings(project_);
@@ -1008,6 +1017,11 @@ void SeqEditMainWin::createActions()
 	ag->addAction(settingsAlignmentToolClustalOAction);
 	ag->addAction(settingsAlignmentToolMUSCLEAction);
 	
+	settingsAlignmentToolPropertiesAction = new QAction( project_->alignmentTool()->name(), this);
+	settingsAlignmentToolPropertiesAction->setStatusTip(tr("Alignment tool properties"));
+	addAction(settingsAlignmentToolPropertiesAction);
+	connect(settingsAlignmentToolPropertiesAction, SIGNAL(triggered()), this, SLOT(settingsAlignmentToolProperties()));
+	
 	settingsSaveAppDefaultsAction = new QAction( tr("Save as application defaults"), this);
 	settingsSaveAppDefaultsAction->setStatusTip(tr("Save settings as application defaults"));
 	addAction(settingsSaveAppDefaultsAction);
@@ -1082,6 +1096,7 @@ void SeqEditMainWin::createMenus()
 	QMenu* alignmentToolMenu = settingsMenu->addMenu(tr("Alignment tool"));
 	alignmentToolMenu->addAction(settingsAlignmentToolClustalOAction);
 	alignmentToolMenu->addAction(settingsAlignmentToolMUSCLEAction);
+	settingsMenu->addAction(settingsAlignmentToolPropertiesAction);
 	
 	settingsMenu->addSeparator();
 	settingsMenu->addAction(settingsSaveAppDefaultsAction);

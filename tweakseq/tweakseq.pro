@@ -8,6 +8,7 @@ DEPENDPATH=$$INCLUDEPATH
 
 HEADERS       =  include/AboutDialog.h \
 								 include/AlignmentTool.h \
+								 include/AlignmentToolDlg.h \
 								 include/Application.h \
 								 include/ClustalFile.h \
 								 include/ClustalO.h \
@@ -51,6 +52,7 @@ SOURCES				+=  Core/UndoCommand/UndoCommand.cpp \
 									Core/UndoCommand/UndoAlignmentCommand.cpp
 									
 SOURCES       +=  UI/AboutDialog.cpp \
+									UI/AlignmentToolDlg.cpp \
 									UI/MessageWin.cpp \
 									UI/SeqEdit.cpp \
 									UI/SeqEditMainWin.cpp \

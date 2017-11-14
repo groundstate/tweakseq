@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+/// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,25 +24,34 @@
 // THE SOFTWARE.
 //
 
-#ifndef __MUSCLE_H_
-#define __MUSCLE_H_
+#ifndef __ALIGNMENT_TOOL_DLG_H_
+#define __ALIGNMENT_TOOL_DLG_H_
 
-#include "AlignmentTool.h"
+#include <QDialog>
 
-class Muscle: public AlignmentTool
+class QDialogButtonBox;
+class QLineEdit;
+
+class AlignmentTool;
+
+class AlignmentToolDlg:public QDialog
 {
+	Q_OBJECT
+	
 	public:
 		
-		Muscle();
-		~Muscle();
-		
-		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
-		virtual void writeSettings(QDomDocument &,QDomElement &);
-		virtual void readSettings(QDomDocument &);
+		AlignmentToolDlg(AlignmentTool *, QWidget* parent = 0, Qt::WindowFlags f = 0 );
+		~AlignmentToolDlg();
+	
+	private slots:
+	
+		void browse();
 		
 	private:
-	
-		void init();
+		
+		QLineEdit *executableTE_;
+		QDialogButtonBox *buttonBox_;
+		
 };
 
 #endif

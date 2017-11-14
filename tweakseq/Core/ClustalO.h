@@ -37,10 +37,14 @@ class ClustalO: public AlignmentTool
 		~ClustalO();
 		
 		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
+		virtual void writeSettings(QDomDocument &,QDomElement &);
+		virtual void readSettings(QDomDocument &);
 		
 	private:
 	
 		void init();
+		void getVersion();
+		
 };
 
 #endif

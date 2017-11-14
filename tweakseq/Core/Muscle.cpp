@@ -27,10 +27,11 @@
 #include <QtDebug>
 #include "DebuggingInfo.h"
 
-
+#include <QDomDocument>
 #include <QProcess>
 
 #include "Muscle.h"
+#include "XMLHelper.h"
 
 //
 //	Public
@@ -49,6 +50,18 @@ void Muscle::makeCommand(QString &fin, QString &fout, QString &exec, QStringList
 {
 	exec = executable_;
 	arglist <<  "-in" << fin << "-out" << fout;
+}
+
+void Muscle::writeSettings(QDomDocument &doc,QDomElement &parentElem)
+{
+	QDomElement pelem = doc.createElement("alignment_tool");
+	parentElem.appendChild(pelem);
+	XMLHelper::addElement(doc,pelem,"name",name());
+	XMLHelper::addElement(doc,pelem,"path",executable());
+}
+
+void Muscle::readSettings(QDomDocument &doc)
+{
 }
 
 //		

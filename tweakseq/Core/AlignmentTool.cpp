@@ -43,6 +43,14 @@ void AlignmentTool::makeCommand(QString &, QString &, QString &, QStringList &)
 {
 }
 
+void AlignmentTool::writeSettings(QDomDocument &,QDomElement &)
+{
+}
+
+void AlignmentTool::readSettings(QDomDocument &)
+{
+}
+		
 //
 //	Private
 //	

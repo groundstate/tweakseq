@@ -130,6 +130,8 @@ class Project:public QObject
 	private:
 		
 		void init();
+		void readAlignmentToolSettings(QDomDocument &);
+		
 		int  getSeqIndex(QString);
 		int  getGroupIndex(SequenceGroup *sg);
 		

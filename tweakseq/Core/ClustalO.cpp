@@ -27,11 +27,11 @@
 #include <QtDebug>
 #include "DebuggingInfo.h"
 
-
+#include <QDomDocument>
 #include <QProcess>
 
 #include "ClustalO.h"
-
+#include "XMLHelper.h"
 //
 //	Public
 //
@@ -51,6 +51,32 @@ void ClustalO::makeCommand(QString &fin, QString &fout, QString &exec, QStringLi
 	arglist << "--force" << "-v" << "--outfmt=fa" << "--output-order=tree-order" << "-i" << fin << "-o" << fout;
 }
 
+void ClustalO::writeSettings(QDomDocument &doc,QDomElement &parentElem)
+{
+	QDomElement pelem = doc.createElement("alignment_tool");
+	parentElem.appendChild(pelem);
+	XMLHelper::addElement(doc,pelem,"name",name());
+	XMLHelper::addElement(doc,pelem,"path",executable());
+}
+
+void ClustalO::readSettings(QDomDocument &doc)
+{
+	QDomNodeList nl = doc.elementsByTagName("alignment_tool");
+	if (nl.count() == 1){
+		QDomNode gNode = nl.item(0);
+		QDomElement elem = gNode.firstChildElement();
+		while (!elem.isNull()){
+			if (elem.tagName() == "path"){
+				executable_=elem.text();
+			}
+			elem=elem.nextSiblingElement();
+		}
+	}
+	
+	getVersion();
+	
+}
+
 //		
 //	Private
 //	
@@ -61,6 +87,10 @@ void ClustalO::init()
 	version_="";
 	executable_="/usr/local/bin/clustalo";
 	
+}
+
+void ClustalO::getVersion()
+{
 	QProcess getver;
 	getver.start(executable_, QStringList() << "--version");
 	if (getver.waitForStarted()){
