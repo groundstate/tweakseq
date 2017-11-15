@@ -23,10 +23,11 @@ HEADERS       =  include/AboutDialog.h \
 								 include/SeqPreview.h \
 								 include/SeqPreviewDlg.h \
 								 include/Sequence.h \
-								  include/Sequences.h \
+								 include/Sequences.h \
 								 include/SequenceFile.h \
 								 include/SequenceGroup.h \
 								 include/SequenceSelection.h \
+								 include/SetupWizard.h \
 								 include/UndoCommand.h \
 								 include/UndoAlignmentCommand.h \
 								 include/Version.h \
@@ -57,7 +58,8 @@ SOURCES       +=  UI/AboutDialog.cpp \
 									UI/SeqEdit.cpp \
 									UI/SeqEditMainWin.cpp \
 									UI/SeqPreview.cpp \
-									UI/SeqPreviewDlg.cpp
+									UI/SeqPreviewDlg.cpp \
+									UI/SetupWizard.cpp
 
 RESOURCES = UI/Resources/application.qrc
 									

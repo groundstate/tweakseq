@@ -36,22 +36,22 @@
 #include "AboutDialog.h"
 #include "Application.h"
 #include "Project.h"
+#include "SetupWizard.h"
 
 Application::Application(int &argc, char **argv):QApplication(argc,argv)
 {
 	app = this;
-	
-	setup(); // run first time setup
 	
 	init();
 	connect(this,SIGNAL(lastWindowClosed()),this,SLOT(quit())); // FIXME mainwindows are parent to project so this may not work
 	connect(this,SIGNAL(aboutToQuit()),this,SLOT(cleanup()));
 }
 
-void Application::setup()
+bool Application::configure()
 {
-	// FIXME this does first time setup of the application
-	// create a directory for the app if it doesn't exist etc
+	// This does first time setup of the application if necessary
+	
+	// Create a directory for the app if it doesn't exist etc
 	QString path = QDir::home().absolutePath();
 	appDirPath_ = path + "/.tweakseq";
 	QDir appDir(appDirPath_);
@@ -59,7 +59,30 @@ void Application::setup()
 		appDir.setPath(path);
 		appDir.mkdir(".tweakseq");
 	}
-	// Create default preferences file
+	
+	// Load default settings 
+	applicationSettingsFile_ = appDirPath_+"/defaults.xml";
+	QFile defs(applicationSettingsFile_);
+	if (defs.exists()){
+		readSettings();
+		return true;
+	}
+	
+	// If we get here, then we have to run the wizard
+	SetupWizard sw;
+	int ret = sw.exec();
+	if (ret == QDialog::Accepted){
+		qDebug() << trace.header() << sw.preferredTool();
+	}
+	else{
+		QMessageBox::warning(NULL, tr("tweakseq"),
+																tr("Configuration was canceled. The application will now exit."));
+		return false;
+	}
+	
+	// Create a default settings file
+	
+	return true;
 }
 
 Project * Application::createProject()
@@ -154,10 +177,13 @@ void Application::init()
 	aboutDlg = NULL;
 	defaultSettings_ = new QDomDocument();
 	
-	// load default settings 
-	applicationSettingsFile_ = appDirPath_+"/defaults.xml";
+}
+
+void Application::readSettings()
+{
 	QFile defs(applicationSettingsFile_);
 	if (defs.exists()){
+		qDebug() << trace.header() << "Application::readSettings() reading " << applicationSettingsFile_;
 		if ( !defs.open( IO_ReadOnly ) )
 			return;
 		QString err; int errlineno,errcolno;
@@ -167,11 +193,6 @@ void Application::init()
 			return;
 		}
 	}
-	
-}
-
-void Application::readSettings()
-{
 }
 
 void Application::writeSettings()

@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,70 +24,44 @@
 // THE SOFTWARE.
 //
 
+#ifndef __SETUP_WIZARD_H_
+#define __SETUP_WIZARD_H_
 
-#ifndef __APPLICATION_H_
-#define __APPLICATION_H_
+#include <QWizard> 
 
-#include <QApplication>
-#include <QDomDocument>
-#include <QStringList>
+class QCheckBox;
+class QComboBox;
+class QLineEdit;
 
-
-#include "Version.h"
-
-class AboutDialog;
-class Project;
-
-class Application : public QApplication
+class SetupWizard: public QWizard
 {
+	
 	Q_OBJECT
 	
 	public:
 	
-		Application(int &argc, char **argv);
+		SetupWizard(QWidget *parent =0,Qt::WindowFlags flags = 0);
+		~SetupWizard();
 		
-		Project * createProject();
-		
-		QDomDocument & defaultSettings(){return *defaultSettings_;}
-		
-		bool configure();
-		
-		void showAboutDialog(QWidget *);
-		void showHelp(QString);
-	
-		QString applicationTmpPath();
-		
-		QStringList previousProjects;
-		
-		QString version(){return APP_VERSION;}
-		
-	public slots:
-	
-		void saveDefaultSettings(Project *);
+		void clustalOConfig(bool &,QString &);
+		void muscleConfig(bool &,QString &);
+		QString preferredTool();
 		
 	private slots:
-	
-		void helpClosed();
-		void cleanup();
 		
-		void projectClosed(Project *);
-		
+		  void browseClustalO();
+			void browseMUSCLE();
+			
 	private:
 		
-		void init();
-		void readSettings();
-		void writeSettings();
+		QWizardPage * createIntroPage();
+		QWizardPage * createAlignmentToolPage();
 		
-		QString appDirPath_;
-		QString applicationSettingsFile_;
-		QList<Project *> openProjects_;
+		QCheckBox *clustaloCB_,*muscleCB_;
+		QLineEdit *clustaloLE_,*muscleLE_;
 		
-		AboutDialog *aboutDlg;
-		
-		QDomDocument *defaultSettings_;
+		QComboBox *preferredTool_;
 		
 };
-
-extern Application *app;
 
 #endif

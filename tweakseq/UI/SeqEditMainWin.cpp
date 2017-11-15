@@ -94,19 +94,19 @@ const char *lockText = "Click this button to add and edit a new"
 SeqEditMainWin::SeqEditMainWin(Project *project)
 	:QMainWindow()
 {
-	qDebug() << trace.header() << "creating main window";
+	qDebug() << trace.header() << "SeqEditMainWin::SeqEditMainWin";
 	
 	init();
 	project_=project;
 	
 	setWindowTitle("tweakseq - " + project->name());
 	setGeometry(0,0,800,600);
-	setWindowIcon(QIcon(seqedit_xpm));
+	//setWindowIcon(QIcon(seqedit_xpm));
 	
 	createActions();
 	createMenus();
 	createToolBars();
-	
+
 	// Hmm what to do about number of columns
 	// TO DO This needs to be resizeable
 	// TO DO ought to check that creation of widget does not fail because

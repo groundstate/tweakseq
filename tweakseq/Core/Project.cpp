@@ -54,6 +54,7 @@ extern Application *app;
 
 Project::Project()
 {
+	qDebug() << trace.header() << "Project::Project()";
 	init();
 	connect(&sequences,SIGNAL(changed()),this,SLOT(sequencesChanged()));
 }
@@ -765,8 +766,10 @@ void Project::init()
 
 void Project::readAlignmentToolSettings(QDomDocument &doc)
 {
+	qDebug() << trace.header() << "Project::readAlignmentToolSettings";
 	QDomNodeList nl = doc.elementsByTagName("alignment_tool");
 	if (nl.count() == 1){
+		qDebug() << trace.header() << "Project::readAlignmentToolSettings alignment_tool";
 		QDomNode gNode = nl.item(0);
 		QDomElement elem = gNode.firstChildElement();
 		while (!elem.isNull()){
