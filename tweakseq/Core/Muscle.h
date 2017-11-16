@@ -43,6 +43,7 @@ class Muscle: public AlignmentTool
 	private:
 	
 		void init();
+		void getVersion();
 };
 
 #endif

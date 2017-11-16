@@ -33,8 +33,10 @@
 #include <QLineEdit>
 #include <QPushButton>
 
+#include "Application.h"
 #include "SetupWizard.h"
 
+extern Application *app;
 
 //
 //	public:
@@ -43,11 +45,17 @@
 SetupWizard::SetupWizard(QWidget *parent,Qt::WindowFlags flags):QWizard(parent,flags)
 {
 	addPage(createIntroPage());
-	addPage(createAlignmentToolPage());
+	idAlignmentTool_ = addPage(createAlignmentToolPage());
+	msg_="";
 }
 
 SetupWizard::~SetupWizard()
 {
+}
+
+void SetupWizard::addMessage(QString &msg)
+{
+	msg_+=msg;
 }
 
 void SetupWizard::clustalOConfig(bool &checked,QString &executable)
@@ -66,8 +74,48 @@ QString SetupWizard::preferredTool()
 {
 	return preferredTool_->currentText();
 }
+
+bool SetupWizard::validateCurrentPage()
+{
+	if (idAlignmentTool_ == currentId()){
+		
+		// The preferred tool has to be checked
+		QString tool = preferredTool();
+		if ("clustalo" == tool){
+			if (!clustaloCB_->isChecked()){
+				app->beep();
+				return false;
+			}
+		}
+		else if ("MUSCLE" == tool){
+			if (!muscleCB_->isChecked()){
+				app->beep();
+				return false;
+			}
+		}
+		
+	  // If a tool is checked then we need the executable path
+		if (muscleCB_->isChecked()){
+			if (muscleLE_->text().isEmpty()){
+				app->beep();
+				return false;
+			}
+		}
+		if (clustaloCB_->isChecked()){
+			if (clustaloLE_->text().isEmpty()){
+				app->beep();
+				return false;
+			}
+		}
+	}
+	
+	return true;
+	
+}
+
+
 //
-// private slots
+// Private slots
 //
 		
 void  SetupWizard::browseClustalO()
@@ -101,6 +149,11 @@ QWizardPage * SetupWizard::createIntroPage()
 
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(label);
+	
+	label = new QLabel(msg_);
+	label->setWordWrap(true);
+	layout->addWidget(label);
+	
 	page->setLayout(layout);
 
 	return page;
@@ -112,7 +165,7 @@ QWizardPage * SetupWizard::createAlignmentToolPage()
 	
 	page->setTitle("Alignment tools");
 	
-	QLabel *label = new QLabel("Choose the alignment tools you want to configure");
+	QLabel *label = new QLabel("Configure the alignment tool(s) you will be using.");
 	label->setWordWrap(true);
 
 	QVBoxLayout *layout = new QVBoxLayout;
@@ -128,6 +181,10 @@ QWizardPage * SetupWizard::createAlignmentToolPage()
 	preferredTool_->addItem("clustalo");
 	preferredTool_->addItem("MUSCLE");
 	hb->addWidget(preferredTool_);
+	
+	label = new QLabel("Check the alignment tool(s) you want to configure and set the path to the executable");
+	label->setWordWrap(true);
+	layout->addWidget(label);
 	
 	QGridLayout *gl = new QGridLayout();
 	layout->addLayout(gl);

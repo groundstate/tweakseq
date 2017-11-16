@@ -58,10 +58,31 @@ void Muscle::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 	parentElem.appendChild(pelem);
 	XMLHelper::addElement(doc,pelem,"name",name());
 	XMLHelper::addElement(doc,pelem,"path",executable());
+	XMLHelper::addElement(doc,pelem,"preferred",(preferred() ? "yes":"no"));
 }
 
 void Muscle::readSettings(QDomDocument &doc)
 {
+	QDomNodeList nl = doc.elementsByTagName("alignment_tool");
+	for (int i=0;i<nl.count();++i){
+		QDomNode gNode = nl.item(i);
+		QDomElement elem = gNode.firstChildElement();
+		while (!elem.isNull()){
+			if (elem.tagName() == "name"){
+				if (elem.text() != name_)
+					break;
+			}
+			if (elem.tagName() == "path"){
+				executable_=elem.text();
+			}
+			if (elem.tagName() == "preferred"){
+				setPreferred(elem.text() == "yes");
+			}
+			elem=elem.nextSiblingElement();
+		}
+	}
+	
+	getVersion();
 }
 
 //		
@@ -74,6 +95,10 @@ void Muscle::init()
 	version_="";
 	executable_="/usr/local/bin/muscle3.8.31_i86linux64";
 	
+}
+
+void Muscle::getVersion()
+{
 	QProcess getver;
 	getver.start(executable_, QStringList() << "-version");
 	if (getver.waitForStarted()){
@@ -81,10 +106,8 @@ void Muscle::init()
 		getver.waitForFinished();
 		version_ = QString(getver.readAll());
 		QStringList sl = version_.split(QRegExp("\\s+"));
-		if (sl.size() == 3)
+		if (version_.size() >= 1)
 			version_=sl.at(1);
-			
 	}
 	qDebug() << trace.header() << name_ << " " << version_;
 }
-

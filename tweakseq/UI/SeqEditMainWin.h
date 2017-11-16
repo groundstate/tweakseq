@@ -104,6 +104,7 @@ private slots:
 	void alignmentReadyReadStdErr();
 	void alignmentFinished(int,QProcess::ExitStatus);
 	
+	void setupSettingsMenu();
 	void settingsEditorFont();
 	void settingsAlignmentToolClustalO();
 	void settingsAlignmentToolMUSCLE();

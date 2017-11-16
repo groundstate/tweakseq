@@ -33,6 +33,7 @@
 
 AlignmentTool::AlignmentTool()
 {
+	init();
 }
 
 AlignmentTool::~AlignmentTool()
@@ -57,4 +58,5 @@ void AlignmentTool::readSettings(QDomDocument &)
 
 void AlignmentTool::init()
 {
+	preferred_=false;
 }

@@ -734,6 +734,11 @@ void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus exitSta
 }
 
 
+void SeqEditMainWin::setupSettingsMenu()
+{
+	settingsAlignmentToolPropertiesAction->setText(project_->alignmentTool()->name());
+}
+
 void SeqEditMainWin::settingsEditorFont()
 {
 	QFont currFont = se->editorFont();
@@ -747,14 +752,14 @@ void SeqEditMainWin::settingsEditorFont()
 void SeqEditMainWin::settingsAlignmentToolClustalO()
 {
 	if (project_->alignmentTool()->name() != "clustalo"){
-		project_->setAlignmentTool(new ClustalO());
+		project_->setAlignmentTool("clustalo");
 	}
 }
 
 void SeqEditMainWin::settingsAlignmentToolMUSCLE()
 {
 	if (project_->alignmentTool()->name() != "MUSCLE"){
-		project_->setAlignmentTool(new Muscle());
+		project_->setAlignmentTool("MUSCLE");
 	}
 }
 
@@ -1004,13 +1009,16 @@ void SeqEditMainWin::createActions()
 	addAction(settingsAlignmentToolClustalOAction);
 	connect(settingsAlignmentToolClustalOAction, SIGNAL(triggered()), this, SLOT(settingsAlignmentToolClustalO()));
 	settingsAlignmentToolClustalOAction->setCheckable(true);
-	settingsAlignmentToolClustalOAction->setChecked(true);
+	settingsAlignmentToolClustalOAction->setChecked(project_->alignmentTool()->name()=="clustalo");
+	settingsAlignmentToolClustalOAction->setEnabled(app->alignmentToolAvailable("clustalo"));
 	
 	settingsAlignmentToolMUSCLEAction = new QAction( tr("MUSCLE"), this);
 	settingsAlignmentToolMUSCLEAction->setStatusTip(tr("Select MUSCLE"));
 	addAction(settingsAlignmentToolMUSCLEAction);
 	connect(settingsAlignmentToolMUSCLEAction, SIGNAL(triggered()), this, SLOT(settingsAlignmentToolMUSCLE()));
 	settingsAlignmentToolMUSCLEAction->setCheckable(true);
+	settingsAlignmentToolMUSCLEAction->setChecked(project_->alignmentTool()->name()=="MUSCLE");
+	settingsAlignmentToolMUSCLEAction->setEnabled(app->alignmentToolAvailable("MUSCLE"));
 	
 	QActionGroup *ag = new QActionGroup(this);
 	ag->setExclusive(true);
@@ -1092,6 +1100,8 @@ void SeqEditMainWin::createMenus()
 	//alignmentMenu->addAction(undoLastAction);
 	
 	settingsMenu = menuBar()->addMenu(tr("Settings"));
+	connect(settingsMenu,SIGNAL(aboutToShow()),this,SLOT(setupSettingsMenu()));
+	
 	settingsMenu->addAction(settingsEditorFontAction);
 	QMenu* alignmentToolMenu = settingsMenu->addMenu(tr("Alignment tool"));
 	alignmentToolMenu->addAction(settingsAlignmentToolClustalOAction);

@@ -61,6 +61,8 @@ class Application : public QApplication
 		
 		QString version(){return APP_VERSION;}
 		
+		bool alignmentToolAvailable(const QString &);
+		
 	public slots:
 	
 		void saveDefaultSettings(Project *);
@@ -86,6 +88,7 @@ class Application : public QApplication
 		
 		QDomDocument *defaultSettings_;
 		
+		bool clustaloConfigured_,muscleConfigured_;
 };
 
 extern Application *app;

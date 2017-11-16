@@ -45,7 +45,11 @@
 
 #define EXCLUDE_CELL 0x0080
 
+
+class QDomDocumentFragment;
+
 enum alignmentFormats {FASTA,CLUSTALW};
+
 
 class AlignmentTool;
 class Operation;
@@ -102,7 +106,7 @@ class Project:public QObject
 		QUndoStack &undoStack(){return undoStack_;}
 		
 		AlignmentTool*  alignmentTool(){return alignmentTool_;}
-		void setAlignmentTool(AlignmentTool *);
+		void setAlignmentTool(const QString &);
 		
 		void exportFASTA(QString,bool);
 		void exportSelectionFASTA(QString,bool);
@@ -145,9 +149,11 @@ class Project:public QObject
 		QDir path_;
 		
 		int nAlignments;
-		AlignmentTool *alignmentTool_;
+		AlignmentTool *alignmentTool_,*clustalOTool_,*muscleTool_;
 		QUndoStack undoStack_;
 	
+		QDomDocumentFragment *clustaloSettings_,*muscleSettings_;
+		
 };
 
 #endif

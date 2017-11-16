@@ -46,6 +46,9 @@ class AlignmentTool
 		
 		void setExecutable(QString e){executable_=e;}
 		
+		void setPreferred(bool pref){preferred_=pref;}
+		bool preferred(){return preferred_;}
+		
 		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
 		
 		virtual void writeSettings(QDomDocument &,QDomElement &);
@@ -56,7 +59,8 @@ class AlignmentTool
 		QString name_;
 		QString version_;
 		QString executable_;
-	
+		bool preferred_;
+		
 	private:
 	
 		void init();

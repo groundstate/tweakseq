@@ -37,6 +37,7 @@
 #include "ClustalFile.h"
 #include "ClustalO.h"
 #include "FASTAFile.h"
+#include "Muscle.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "Sequence.h"
@@ -64,6 +65,8 @@ Project::~Project()
 	delete sequenceSelection;
 	delete residueSelection;
 	// FIXME and the rest ..
+	if (muscleTool_) delete muscleTool_;
+	if (clustalOTool_) delete clustalOTool_;
 }
 
 void Project::setMainWindow(SeqEditMainWin *mainwin)
@@ -371,10 +374,12 @@ bool Project::cutSelection()
 	return true;
 }
 
-void Project::setAlignmentTool(AlignmentTool *alignTool)
+void Project::setAlignmentTool(const QString & atool)
 {
-	if (alignmentTool_) delete alignmentTool_;
-	alignmentTool_ = alignTool;
+	if (atool == "clustalo" && clustalOTool_)
+		alignmentTool_=clustalOTool_;
+	else if (atool == "MUSCLE" && muscleTool_)
+		alignmentTool_=muscleTool_;
 }
 
 //
@@ -574,7 +579,10 @@ void Project::load(QString &fname)
 void Project::writeSettings(QDomDocument &doc,QDomElement &root)
 {
 	mainWindow_->writeSettings(doc,root);
-	alignmentTool_->writeSettings(doc,root);
+	if (clustalOTool_)
+		clustalOTool_->writeSettings(doc,root);
+	if (muscleTool_)
+		muscleTool_->writeSettings(doc,root);;
 }
 
 void Project::readSettings(QDomDocument &doc)
@@ -757,6 +765,15 @@ void Project::init()
 	dirty_=false;
 	name_="unnamed.tsq";
 	empty_=true;
+	
+	muscleTool_= NULL;
+	if (app->alignmentToolAvailable("MUSCLE"))
+		muscleTool_ = new Muscle();
+	
+	clustalOTool_ = NULL;
+	if (app->alignmentToolAvailable("clustalo"))
+		clustalOTool_ = new ClustalO();
+	
 	alignmentTool_= NULL;
 	
 	QDomDocument &doc = app->defaultSettings();
@@ -767,23 +784,20 @@ void Project::init()
 void Project::readAlignmentToolSettings(QDomDocument &doc)
 {
 	qDebug() << trace.header() << "Project::readAlignmentToolSettings";
-	QDomNodeList nl = doc.elementsByTagName("alignment_tool");
-	if (nl.count() == 1){
-		qDebug() << trace.header() << "Project::readAlignmentToolSettings alignment_tool";
-		QDomNode gNode = nl.item(0);
-		QDomElement elem = gNode.firstChildElement();
-		while (!elem.isNull()){
-			if (elem.tagName() == "name"){
-				if (alignmentTool_ != NULL)
-					delete alignmentTool_;
-				if (elem.text() == "clustalo"){
-					alignmentTool_ = new ClustalO();
-					alignmentTool_->readSettings(doc);
-				}
-			}
-			elem=elem.nextSiblingElement();
-		}
+	
+	if (muscleTool_){
+		muscleTool_->readSettings(doc);
+		if (muscleTool_->preferred())
+			alignmentTool_=muscleTool_;
 	}
+	
+	if (clustalOTool_){
+		clustalOTool_->readSettings(doc);
+		if (clustalOTool_->preferred())
+			alignmentTool_=clustalOTool_;
+	}
+	
+	
 }
 
 int Project::getSeqIndex(QString l)

@@ -35,6 +35,8 @@
 
 #include "AboutDialog.h"
 #include "Application.h"
+#include "ClustalO.h"
+#include "Muscle.h"
 #include "Project.h"
 #include "SetupWizard.h"
 
@@ -54,10 +56,12 @@ bool Application::configure()
 	// Create a directory for the app if it doesn't exist etc
 	QString path = QDir::home().absolutePath();
 	appDirPath_ = path + "/.tweakseq";
+	QString msg="";
 	QDir appDir(appDirPath_);
 	if (!(appDir.exists())){
 		appDir.setPath(path);
 		appDir.mkdir(".tweakseq");
+		msg = "The directory " + appDirPath_ + " was created";
 	}
 	
 	// Load default settings 
@@ -70,9 +74,17 @@ bool Application::configure()
 	
 	// If we get here, then we have to run the wizard
 	SetupWizard sw;
+	sw.addMessage(msg);
+	
 	int ret = sw.exec();
+	// 
+	QString preferredTool;
+	QString clustalO,muscle;
+	
 	if (ret == QDialog::Accepted){
-		qDebug() << trace.header() << sw.preferredTool();
+		preferredTool = sw.preferredTool();
+		sw.clustalOConfig(clustaloConfigured_,clustalO);
+		sw.muscleConfig(muscleConfigured_,muscle);
 	}
 	else{
 		QMessageBox::warning(NULL, tr("tweakseq"),
@@ -81,6 +93,39 @@ bool Application::configure()
 	}
 	
 	// Create a default settings file
+	QDomDocument saveDoc;
+	QDomElement root = saveDoc.createElement("tweakseq");
+	saveDoc.appendChild(root);
+	
+	QFileInfo fi(applicationSettingsFile_);
+	QFile f(fi.filePath());
+	f.open(IO_WriteOnly);
+	QTextStream ts(&f);
+	
+	QDomElement el = saveDoc.createElement("version");
+	root.appendChild(el);
+	QDomText te = saveDoc.createTextNode(app->version());
+	el.appendChild(te);
+	
+	if (clustaloConfigured_){
+		ClustalO atool;
+		atool.setPreferred(preferredTool == "clustalo");
+		atool.setExecutable(clustalO);
+		atool.writeSettings(saveDoc,root);
+	}
+	
+	if (muscleConfigured_){
+		Muscle atool;
+		atool.setPreferred(preferredTool == "MUSCLE");
+		atool.setExecutable(muscle);
+		atool.writeSettings(saveDoc,root);
+	}
+	
+	saveDoc.save(ts,2);
+	f.close();
+	
+	// and read it again 
+	readSettings();
 	
 	return true;
 }
@@ -112,7 +157,7 @@ void Application::saveDefaultSettings(Project *project)
 	el.appendChild(te);
 	
 	project->writeSettings(saveDoc,root);
-	
+
 	saveDoc.save(ts,2);
 	f.close();
 	
@@ -138,6 +183,13 @@ void Application::showAboutDialog(QWidget *parent)
 QString Application::applicationTmpPath()
 {
 	return appDirPath_;
+}
+
+bool Application::alignmentToolAvailable(const QString &toolName){
+	if (toolName == "clustalo")
+		return clustaloConfigured_;
+	if (toolName == "MUSCLE")
+		return muscleConfigured_;
 }
 
 //	
@@ -176,7 +228,7 @@ void Application::init()
 {
 	aboutDlg = NULL;
 	defaultSettings_ = new QDomDocument();
-	
+	clustaloConfigured_=muscleConfigured_=false;
 }
 
 void Application::readSettings()
@@ -192,6 +244,23 @@ void Application::readSettings()
 			defs.close();
 			return;
 		}
+		
+		// Now pick out some stuff
+		QDomNodeList nl = defaultSettings_->elementsByTagName("alignment_tool");
+		for (int i=0;i<nl.count();i++){
+			QDomNode gNode = nl.item(i);
+			QDomElement elem = gNode.firstChildElement();
+			while (!elem.isNull()){
+				if (elem.tagName() == "name"){
+					if (elem.text()=="clustalo")
+						clustaloConfigured_=true;
+					else if (elem.text()=="MUSCLE")
+						muscleConfigured_=true;
+				}
+				elem=elem.nextSiblingElement();
+			}
+		}
+		
 	}
 }
 

@@ -43,9 +43,12 @@ class SetupWizard: public QWizard
 		SetupWizard(QWidget *parent =0,Qt::WindowFlags flags = 0);
 		~SetupWizard();
 		
+		void addMessage(QString &);
 		void clustalOConfig(bool &,QString &);
 		void muscleConfig(bool &,QString &);
 		QString preferredTool();
+		
+		virtual bool validateCurrentPage();
 		
 	private slots:
 		
@@ -61,6 +64,10 @@ class SetupWizard: public QWizard
 		QLineEdit *clustaloLE_,*muscleLE_;
 		
 		QComboBox *preferredTool_;
+		
+		QString msg_;
+		
+		int idAlignmentTool_;
 		
 };
 
