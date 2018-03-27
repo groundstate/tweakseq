@@ -324,7 +324,7 @@ void Project::lockSelectedGroups(bool lock){
 	// First, check for an ungrouped sequence because this is fatal
 	for (int s=0;s<sequenceSelection->size();s++){
 		if (sequenceSelection->itemAt(s)->group == NULL){
-			qDebug() << trace.header() << "Project::lockSelectedGroups() ungrouped sequence in the selcetion";
+			qDebug() << trace.header() << "Project::lockSelectedGroups() ungrouped sequence in the selection";
 			return;
 		}
 	}
@@ -374,6 +374,54 @@ bool Project::cutSelection()
 	return true;
 }
 
+
+void Project::hideNonSelectedGroupMembers()
+{
+	qDebug() << trace.header() << "Project::hideNonSelectedGroupMembers ";
+	
+	// FIXME This duplicates what's in the UI 
+	// Check the selection
+	QList<SequenceGroup *> groups;
+	for (int s=0;s<sequenceSelection->size();s++){
+		SequenceGroup *g = sequenceSelection->itemAt(s)->group;
+		if (g != NULL){
+			if (!groups.contains(g))
+				groups.append(g);
+		}
+	}
+	
+	if (groups.size() != 1) return;
+	
+	SequenceGroup  *selGroup = groups.at(0);
+	for (int s=0; s<selGroup->size();s++){
+		Sequence *seq = selGroup->itemAt(s);
+		if (!sequenceSelection->contains(seq)){
+			seq->hidden=true;
+		}
+	}
+}
+
+void Project::unhideAllGroupMembers()
+{
+	QList<SequenceGroup *> groups;
+	for (int s=0;s<sequenceSelection->size();s++){
+		SequenceGroup *g = sequenceSelection->itemAt(s)->group;
+		if (g != NULL){
+			if (!groups.contains(g))
+				groups.append(g);
+		}
+	}
+	
+	if (groups.size() != 1) return;
+	
+	SequenceGroup  *selGroup = groups.at(0);
+	
+	for (int s=0; s<selGroup->size();s++){
+		Sequence *seq = selGroup->itemAt(s);
+		seq->hidden = false;
+	}
+}
+		
 void Project::setAlignmentTool(const QString & atool)
 {
 	if (atool == "clustalo" && clustalOTool_)
@@ -426,6 +474,7 @@ bool Project::save(QString &fpathname)
 		XMLHelper::addElement(saveDoc,se,"comment",seq->comment);		
 		XMLHelper::addElement(saveDoc,se,"residues",seq->filter());
 		XMLHelper::addElement(saveDoc,se,"source",seq->source);
+		XMLHelper::addElement(saveDoc,se,"hidden",(seq->hidden?"yes":"no"));
 		QList<int> x = seq->exclusions();
 		QString xs="";
 		for (int xi=0;xi<x.size()-1;xi+=2){
@@ -498,6 +547,7 @@ void Project::load(QString &fname)
 		QDomNode sNode = nl.item(i);
 		
 		QString sName,sComment,sResidues,sSrc;
+		bool sHidden = false;
 		
 		QDomElement elem = sNode.firstChildElement();
 		QList<int> exclusions;
@@ -510,6 +560,8 @@ void Project::load(QString &fname)
 				sResidues = elem.text().trimmed();
 			else if (elem.tagName() == "source")
 				sSrc = elem.text().trimmed();
+			else if (elem.tagName() == "hidden")
+				sHidden = XMLHelper::stringToBool(elem.text().trimmed());
 			else if (elem.tagName() == "exclusions"){
 				QStringList sl = elem.text().trimmed().split(',');
 				for (int sli=0;sli<sl.size();sli++){
@@ -524,7 +576,7 @@ void Project::load(QString &fname)
 			}
 			elem=elem.nextSiblingElement();
 		}
-		Sequence *seq = sequences.add(sName,sResidues,sComment,sSrc);
+		Sequence *seq = sequences.add(sName,sResidues,sComment,sSrc,sHidden);
 		for (int x=0;x<exclusions.size()-1;x+=2)
 			seq->exclude(exclusions.at(x),exclusions.at(x+1));
 				 

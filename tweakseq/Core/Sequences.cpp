@@ -57,9 +57,9 @@ void Sequences::clear()
 	emit changed();
 }
 
-Sequence * Sequences::add(QString l,QString s,QString c,QString f)
+Sequence * Sequences::add(QString l,QString s,QString c,QString f,bool h)
 {
-	Sequence * newSeq = new Sequence(l,s,c,f);
+	Sequence * newSeq = new Sequence(l,s,c,f,h);
 	sequences_.append(newSeq);
 	emit sequenceAdded(newSeq);
 	emit changed();

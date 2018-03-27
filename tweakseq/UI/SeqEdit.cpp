@@ -389,11 +389,12 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	
 	QList<Sequence *> &seq=project_->sequences.sequences();
 	Sequence *currSeq = seq.at(row);
+	
 	QRect r=cellGeometry(row,col);
 	int w = r.width();
 	int h = r.height();
 	
-	if (col==0){
+	if (col==0 && !currSeq->hidden){
 		if (currSeq->group != NULL){
 			if (currSeq->group->locked()){
 				txtColor.setRgb(255,0,0);
@@ -410,7 +411,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	
 	// If the cell is highlighted then do it
 	
-	if (selectingResidues_){
+	if (selectingResidues_ && !currSeq->hidden){
 	txtColor.setRgb(255,255,255);
 		if (selAnchorRow <= selDragRow){ // dragging top to bottom
 			if (selAnchorCol <= selDragCol){ // left to right
@@ -449,7 +450,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	
 	//  Draw cell content (text
 	
-	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH){ 
+	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH && !currSeq->hidden){ 
 		// Set colour of text
 		if (currSeq->group != NULL)
 			txtColor=currSeq->group->textColour();
@@ -468,11 +469,10 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 		}
 	}
 	else{
-
 		switch (c.toAscii()){
 			case 'D': case 'E': case 'S': case 'T':// red 
 				txtColor.setRgb(255,0,0);
- 				break; 
+				break; 
 			case 'R': case 'K': case 'H': // sky blue
 				txtColor.setRgb(135,206,235);
 				break;
@@ -496,7 +496,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 				txtColor.setRgb(0,255,0);
 				break;
 		};
-		
+
 		// FIXME not so useful if the group is not contiguous
 		if (currSeq->group != NULL){
 			int start = indexFirstinGroup(currSeq->group);
@@ -512,7 +512,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 		}
 	}
 	
-	if ((!cellSelected) && (cwflags.unicode() & EXCLUDE_CELL) ){
+	if ((!cellSelected) && (cwflags.unicode() & EXCLUDE_CELL) && !currSeq->hidden ){
 		//txtColor.setRgb(128,128,128);
 		//p->fillRect(0,0,w,h,txtColor);
 		p->setPen(QColor(240,240,16));
@@ -520,9 +520,10 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 		p->drawLine(w-2,2,2,h-2);
 	}
 	
-	p->setPen(txtColor);
-	p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
-	
+	if (!currSeq->hidden){
+		p->setPen(txtColor);
+		p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
+	}
 
 }
 

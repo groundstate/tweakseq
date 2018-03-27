@@ -53,7 +53,7 @@ class Sequences:public QObject
 		int size(){return sequences_.size();}
 		void clear();
 		
-		Sequence * add(QString,QString,QString,QString );
+		Sequence * add(QString,QString,QString,QString,bool );
 		void  append(Sequence *);
 		void  remove(QString);
 		void  insert(QString,QString,int);

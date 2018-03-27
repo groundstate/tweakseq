@@ -100,6 +100,8 @@ class Project:public QObject
 		bool canToggleLock();
 		void lockSelectedGroups(bool);
 		bool cutSelection();
+		void hideNonSelectedGroupMembers();
+		void unhideAllGroupMembers();
 		
 		void undo();
 		

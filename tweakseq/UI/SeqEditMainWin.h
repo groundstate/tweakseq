@@ -92,7 +92,8 @@ private slots:
 	void editRemoveExclude();
 	void editLock();
 	void editUnlock();
-	
+	void editHideNonSelectedGroupMembers();
+	void editUnhideAllGroupMembers();
 	void editReadOnly();
 	
 	void setupAlignmentMenu();
@@ -144,6 +145,7 @@ private:
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
 	QAction  *alignAllAction,*alignSelectionAction,*undoLastAction;
 	QAction  *undoAction,*redoAction,*cutAction,*excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
+	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction;
 	QAction  *readOnlyAction;
 	QAction  *helpAction,*aboutAction;

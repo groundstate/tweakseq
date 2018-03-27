@@ -312,7 +312,7 @@ void SeqEditMainWin::fileImport(){
 		
 		se->loadingSequences(true);
 		for (int i=0;i<seqnames.size();i++){
-			project_->sequences.add(seqnames.at(i),seqs.at(i),comments.at(i),fname);
+			project_->sequences.add(seqnames.at(i),seqs.at(i),comments.at(i),fname,false);
 		}
 		se->loadingSequences(false);
 		
@@ -571,6 +571,8 @@ void SeqEditMainWin::setupEditActions()
 		redoAction->setEnabled(false);
 		groupSequencesAction->setEnabled(false);
 		ungroupSequencesAction->setEnabled(false);
+		hideNonSelectedGroupMembersAction->setEnabled(false);
+		unhideAllGroupMembersAction->setEnabled(false);
 		lockAction->setEnabled(false);
 		unlockAction->setEnabled(false);
 		excludeAction->setEnabled(false);
@@ -609,6 +611,23 @@ void SeqEditMainWin::setupEditActions()
 	lockAction->setEnabled(project_->canToggleLock());
 	unlockAction->setEnabled(project_->canToggleLock());
 	
+	// If the selection contains only sequences within a single group then the non-selected sequences can be hidden
+	// or unhidden
+	QList<SequenceGroup *> groups;
+	for (int s=0;s<project_->sequenceSelection->size();s++){
+		SequenceGroup *g = project_->sequenceSelection->itemAt(s)->group;
+		if (g != NULL){
+			if (!groups.contains(g))
+				groups.append(g);
+		}
+	}
+	hideNonSelectedGroupMembersAction->setEnabled(groups.size()==1);
+	if (groups.size()!=1){
+		unhideAllGroupMembersAction->setEnabled(false);
+	}
+	else{
+		unhideAllGroupMembersAction->setEnabled(true);
+	}
 	excludeAction->setEnabled(!(project_->residueSelection->empty())); // sloppy - don't worry about already excluded etc.
 	removeExcludeAction->setEnabled(!(project_->residueSelection->empty())); 
 }
@@ -661,6 +680,17 @@ void SeqEditMainWin::editUnlock(){
 	se->viewport()->repaint();
 }
 
+void SeqEditMainWin::editHideNonSelectedGroupMembers()
+{
+	project_->hideNonSelectedGroupMembers();
+	se->viewport()->repaint();
+}
+
+void SeqEditMainWin::editUnhideAllGroupMembers(){
+	project_->unhideAllGroupMembers();
+	se->viewport()->repaint();
+}
+	
 void SeqEditMainWin::editExclude(){
 	se->excludeSelection();
 }
@@ -967,6 +997,16 @@ void SeqEditMainWin::createActions()
 	addAction(unlockAction);
 	connect(unlockAction, SIGNAL(triggered()), this, SLOT(editUnlock()));
 	
+	hideNonSelectedGroupMembersAction = new QAction( tr("Hide non-selected"), this);
+	hideNonSelectedGroupMembersAction ->setStatusTip(tr("Hide non-selected sequences in the group"));
+	addAction(hideNonSelectedGroupMembersAction);
+	connect(hideNonSelectedGroupMembersAction, SIGNAL(triggered()), this, SLOT(editHideNonSelectedGroupMembers()));
+	
+	unhideAllGroupMembersAction = new QAction( tr("Unhide all in group"), this);
+	unhideAllGroupMembersAction ->setStatusTip(tr("Hide non-selected sequences in the group"));
+	addAction(unhideAllGroupMembersAction);
+	connect(unhideAllGroupMembersAction, SIGNAL(triggered()), this, SLOT(editUnhideAllGroupMembers()));
+	
 	excludeAction = new QAction( tr("Exclude residues"), this);
 	excludeAction->setStatusTip(tr("Exclude residues"));
 	addAction(excludeAction);
@@ -1085,6 +1125,8 @@ void SeqEditMainWin::createMenus()
 	editMenu->addAction(ungroupSequencesAction);
 	editMenu->addAction(lockAction);
 	editMenu->addAction(unlockAction);
+	editMenu->addAction(hideNonSelectedGroupMembersAction);
+	editMenu->addAction(unhideAllGroupMembersAction);
 	editMenu->addSeparator();
 
 	editMenu->addAction(excludeAction);
