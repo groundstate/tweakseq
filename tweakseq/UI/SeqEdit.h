@@ -106,8 +106,8 @@ private:
 
 	void checkLength();
 	
-	int indexFirstinGroup(SequenceGroup *);
-	int indexLastinGroup(SequenceGroup *);
+	int indexFirstVisibleSequenceInGroup(SequenceGroup *);
+	int indexLastVisibleSequenceInGroup(SequenceGroup *);
 	
 	Project *project_;
 	bool readOnly_;

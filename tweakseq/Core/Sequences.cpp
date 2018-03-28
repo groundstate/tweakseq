@@ -53,6 +53,7 @@ int Sequences::visibleSize()
 			if ((sequences_.at(i)->visible)) 
 				nvis++;
 		}
+		qDebug() << trace.header() << "vis = " << nvis << " tot seq = " << sequences_.size();
 		return nvis;
 }
 
@@ -66,6 +67,33 @@ void Sequences::clear()
 	}
 	emit cleared();
 	emit changed();
+}
+
+Sequence * Sequences::visibleAt(int pos)
+{
+	int visIndex=0;
+	for (int i=0;i<sequences_.size();i++){
+		Sequence *seq = sequences_.at(i);
+		if (visIndex == pos && seq->visible)
+			return seq;
+		if (seq->visible)
+			visIndex++;
+	}
+	return NULL;
+}
+
+// Convert index of visible sequence to actual index
+int Sequences::visibleToActual(int pos)
+{
+	int visIndex=0;
+	for (int i=0;i<sequences_.size();i++){
+		Sequence *seq = sequences_.at(i);
+		if (visIndex == pos)
+			return i;
+		if (seq->visible)
+			visIndex++;
+	}
+	return 0; // FIXME
 }
 
 Sequence * Sequences::add(QString l,QString s,QString c,QString f,bool h)

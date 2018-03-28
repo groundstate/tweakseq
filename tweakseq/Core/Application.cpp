@@ -188,8 +188,9 @@ QString Application::applicationTmpPath()
 bool Application::alignmentToolAvailable(const QString &toolName){
 	if (toolName == "clustalo")
 		return clustaloConfigured_;
-	if (toolName == "MUSCLE")
+	else if (toolName == "MUSCLE")
 		return muscleConfigured_;
+	return false;
 }
 
 //	

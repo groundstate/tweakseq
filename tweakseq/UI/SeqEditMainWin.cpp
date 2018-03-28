@@ -683,11 +683,13 @@ void SeqEditMainWin::editUnlock(){
 void SeqEditMainWin::editHideNonSelectedGroupMembers()
 {
 	project_->hideNonSelectedGroupMembers();
-	se->viewport()->repaint();
+	se->updateViewport();
+	//se->viewport()->repaint();
 }
 
 void SeqEditMainWin::editUnhideAllGroupMembers(){
 	project_->unhideAllGroupMembers();
+	se->updateViewport();
 	se->viewport()->repaint();
 }
 	

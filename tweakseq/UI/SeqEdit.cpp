@@ -182,12 +182,12 @@ void SeqEdit::setProject(Project *newProject)
 	draggedSeq=NULL;
 	// Now we need to resize the widget
 	int maxlen=0;
-	for (int s=0;s<project_->sequences.size();s++){
+	for (int s=0;s<project_->sequences.size();s++){ // checked OK
 		int seqlen = project_->sequences.sequences().at(s)->residues.length();
 		if (seqlen > maxlen)
 			maxlen = seqlen;
 	}
-	setNumRows(project_->sequences.size());
+	setNumRows(project_->sequences.visibleSize()); // checked OK
 	setNumCols( FLAGSWIDTH + LABELWIDTH + maxlen);
 }
 
@@ -199,6 +199,7 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 	QString s;
 	
 	QList<Sequence *> &seq = project_->sequences.sequences();
+	Sequence *currSeq = project_->sequences.visibleAt(row);
 	
 	// Note Since paintCell() calls this function before any sequences
 	// are added have to return valid values when the editor is empty
@@ -209,7 +210,7 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 			return QChar(0);
 		}
 		else if (col >= FLAGSWIDTH && col < LABELWIDTH + FLAGSWIDTH ){ // in label field
-			s = seq.at(row)->label;
+			s = currSeq->label;
 			pChar = s[col-FLAGSWIDTH];
 			// FIXME looks like random copypasta
 			if ((pChar.unicode() != 0) &&(col-FLAGSWIDTH < s.length()))
@@ -218,7 +219,7 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 				return QChar(0); // don't want to un/mask NULLs
 		}
 		else{ // in sequence field
-			s=seq.at(row)->residues;
+			s=currSeq->residues;
 			pChar= s[col-(LABELWIDTH+FLAGSWIDTH)];
 			if (pChar.unicode() != 0){
 				if (col < LABELWIDTH + FLAGSWIDTH + s.length())
@@ -338,10 +339,10 @@ void SeqEdit::updateViewport(){
 // Do any cleanup needed after loading a project
 void SeqEdit::postLoadTidy(){
 	
-	qDebug() << trace.header() << "SeqEdit::postLoadTidy()";
+	qDebug() << trace.header() << "SeqEdit::postLoadTidy() ";
 	// Determine the last group colour used so that currGroupColour_ can be set correctly
 	int maxCol =0;
-	for (int s=0;s<project_->sequences.size();s++){
+	for (int s=0;s<project_->sequences.size();s++){ // checked OK
 		Sequence *seq = project_->sequences.sequences().at(s);
 		if (seq->group != NULL){
 			QColor gcol = seq->group->textColour();
@@ -388,7 +389,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	int cellSelected=FALSE;
 	
 	QList<Sequence *> &seq=project_->sequences.sequences();
-	Sequence *currSeq = seq.at(row);
+	Sequence *currSeq = project_->sequences.visibleAt(row);
 	
 	QRect r=cellGeometry(row,col);
 	int w = r.width();
@@ -499,8 +500,8 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 
 		// FIXME not so useful if the group is not contiguous
 		if (currSeq->group != NULL){
-			int start = indexFirstinGroup(currSeq->group);
-			int stop  = indexLastinGroup(currSeq->group);
+			int start = indexFirstVisibleSequenceInGroup(currSeq->group);
+			int stop  = indexLastVisibleSequenceInGroup(currSeq->group);
 			if (row==start){
 				p->setPen(currSeq->group->textColour());
 				p->drawLine(0,2,w-1,2);
@@ -559,7 +560,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 	// Clicked inside the "sequence label" area
 	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH))
 	{
-		Sequence *selSeq = seq.at(clickedRow);
+		Sequence *selSeq =  project_->sequences.visibleAt(clickedRow);
 		qDebug() << trace.header() << "Selected " << selSeq->label;
 		// Remove any residue selection
 		selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
@@ -666,6 +667,9 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 				if (stopCol < startCol) swap_int(&startCol,&stopCol);
 				qDebug() << trace.header() << startRow << " " << startCol << " " << stopRow << " " << stopCol;
 				QList<ResidueGroup *> resSel;
+				// startRow and stopRow are for the visible sequences but we need to loop over the hidden ones too
+				startRow = project_->sequences.visibleToActual(startRow);
+				stopRow  = project_->sequences.visibleToActual(stopRow);
 				for (int r=startRow;r<=stopRow;r++){
 					resSel.append(new ResidueGroup(project_->sequences.sequences().at(r),startCol,stopCol));
 				}
@@ -676,6 +680,8 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 				selectingSequences_=false;
 				int startRow = seqSelectionAnchor_,stopRow=seqSelectionDrag_;
 				if (stopRow < startRow) swap_int(&startRow,&stopRow);
+				startRow = project_->sequences.visibleToActual(startRow);
+				stopRow  = project_->sequences.visibleToActual(stopRow);
 				for (int r=startRow;r<=stopRow;r++){
 					project_->sequenceSelection->toggle(project_->sequences.sequences().at(r));
 				}
@@ -713,8 +719,9 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 		clickedRow = numRows() -1;
 	
 	// show the label of the sequence we are moving over
-	if (project_->sequences.sequences().at(clickedRow)->label != lastInfo){
-		lastInfo = project_->sequences.sequences().at(clickedRow)->label;
+	Sequence *currSeq = project_->sequences.visibleAt(clickedRow);
+	if (currSeq->label != lastInfo){
+		lastInfo = currSeq->label;
 		emit info(lastInfo);
 	}
 	
@@ -729,6 +736,7 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 			startRow =  find_smallest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
 			stopRow  =  find_largest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
 			seqSelectionDrag_=currRow;
+			// don't need to translate visible to actual here
 			for (int row=startRow;row<=stopRow;row++)
 				for (int col=FLAGSWIDTH; col < LABELWIDTH+FLAGSWIDTH; col ++)
 					updateCell(row,col);
@@ -786,7 +794,7 @@ void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
 	clickedCol=columnAt( clickedPos.x() +contentsX());
 	
 	// If we clicked outside the editing area ... well ... do nothing
-	if ((clickedRow < 0) || (clickedRow > seq.count() -1) || (clickedCol <0 )){
+	if ((clickedRow < 0) || (clickedRow > project_->sequences.visibleSize() -1) || (clickedCol <0 )){
 		switch (e->button()){
 			case Qt::LeftButton:
 				break;
@@ -796,7 +804,7 @@ void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
 	}
 	
 	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH)){
-		Sequence *selseq = project_->sequences.sequences().at(clickedRow);
+		Sequence *selseq = project_->sequences.visibleAt(clickedRow);
 		if (selseq->group){
 			project_->sequenceSelection->clear();
 			project_->addGroupToSelection(selseq->group);
@@ -840,9 +848,9 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 						if (currSeq->group != NULL){
 							if (currSeq->group->locked()){
 								int r;
-								if ((r = indexFirstinGroup(currSeq->group))>=0)
+								if ((r = indexFirstVisibleSequenceInGroup(currSeq->group))>=0)
 									startRow=r;
-								if ((r = indexLastinGroup(currSeq->group))>=0)
+								if ((r = indexLastVisibleSequenceInGroup(currSeq->group))>=0)
 									stopRow=r;
 								qDebug() << trace.header() << "SeqEdit::keyPressEvent() group insert " << startRow << "->" << stopRow;
 							}
@@ -916,7 +924,7 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	// FIXME setAutoUpdate(FALSE);
 	
 	rowNum = numRows();
-	setNumRows(rowNum+1);
+	if (s->visible) setNumRows(rowNum+1);
 	rowLength = FLAGSWIDTH + LABELWIDTH + sequenceLength;
 	
 	// numCols() is initialized to zero so the following will
@@ -926,7 +934,7 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	// Now we update the new cells
 	// repainting only this line
 	
-	if (loadingSequences_) return;
+	if (loadingSequences_ || !s->visible) return; // defer repaints until loading has finished and no repaint if not visible
 	
 	for (unsigned int i=0;i<FLAGSWIDTH;i++)
 		updateCell(rowNum,i);
@@ -1004,12 +1012,12 @@ void SeqEdit::checkLength(){
 	// addSequence() and clearSequence()
 	// All we need to do is find the longest row ..
 	QList<Sequence *> &seq = project_->sequences.sequences();
-	if (project_->sequences.sequences().size()==0){
+	if (project_->sequences.visibleSize()==0){
 		maxLength=0;
 		setNumRows(0);
 	}
  	else{
-		setNumRows(project_->sequences.sequences().size());
+		setNumRows(project_->sequences.visibleSize());
 		maxLength=seq.at(0)->residues.length();
 		for (i=0;i<seq.count();i++)
 			if (seq.at(i)->residues.length() > maxLength)
@@ -1021,20 +1029,29 @@ void SeqEdit::checkLength(){
   
 }
 
-int SeqEdit::indexFirstinGroup(SequenceGroup *sg)
+
+int SeqEdit::indexFirstVisibleSequenceInGroup(SequenceGroup *sg)
 {
-	for (int s=0;s<project_->sequences.size();s++){
-		if (sg==project_->sequences.sequences().at(s)->group)
-			return s;
+	int visIndex=0;
+	for (int s=0;s<project_->sequences.size();s++){ // checked OK
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (sg==seq->group && seq->visible)
+			return visIndex;
+		if (seq->visible)
+			visIndex++;
 	}
 	return -1;
 }
 
-int SeqEdit::indexLastinGroup(SequenceGroup *sg)
+int SeqEdit::indexLastVisibleSequenceInGroup(SequenceGroup *sg)
 {
-	for (int s=project_->sequences.size()-1;s>=0;s--){
-		if (sg==project_->sequences.sequences().at(s)->group)
+	int visIndex=project_->sequences.visibleSize()-1;
+	for (int s=project_->sequences.size()-1;s>=0;s--){ // checked OK
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (sg==seq->group && seq->visible)
 			return s;
+		if (seq->visible)
+			visIndex--;
 	}
 	return -1;
 }

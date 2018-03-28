@@ -53,6 +53,8 @@ class Sequences:public QObject
 		int size(){return sequences_.size();}
 		int visibleSize();
 		void clear();
+		Sequence * visibleAt(int);
+		int visibleToActual(int);
 		
 		Sequence * add(QString,QString,QString,QString,bool );
 		void  append(Sequence *);
