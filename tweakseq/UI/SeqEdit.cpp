@@ -394,7 +394,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	int w = r.width();
 	int h = r.height();
 	
-	if (col==0 && !currSeq->hidden){
+	if (col==0 && currSeq->visible){
 		if (currSeq->group != NULL){
 			if (currSeq->group->locked()){
 				txtColor.setRgb(255,0,0);
@@ -411,7 +411,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	
 	// If the cell is highlighted then do it
 	
-	if (selectingResidues_ && !currSeq->hidden){
+	if (selectingResidues_ && currSeq->visible){
 	txtColor.setRgb(255,255,255);
 		if (selAnchorRow <= selDragRow){ // dragging top to bottom
 			if (selAnchorCol <= selDragCol){ // left to right
@@ -450,7 +450,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	
 	//  Draw cell content (text
 	
-	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH && !currSeq->hidden){ 
+	if (col >= FLAGSWIDTH && col < LABELWIDTH+FLAGSWIDTH && currSeq->visible){ 
 		// Set colour of text
 		if (currSeq->group != NULL)
 			txtColor=currSeq->group->textColour();
@@ -512,7 +512,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 		}
 	}
 	
-	if ((!cellSelected) && (cwflags.unicode() & EXCLUDE_CELL) && !currSeq->hidden ){
+	if ((!cellSelected) && (cwflags.unicode() & EXCLUDE_CELL) && currSeq->visible ){
 		//txtColor.setRgb(128,128,128);
 		//p->fillRect(0,0,w,h,txtColor);
 		p->setPen(QColor(240,240,16));
@@ -520,7 +520,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 		p->drawLine(w-2,2,2,h-2);
 	}
 	
-	if (!currSeq->hidden){
+	if (currSeq->visible){
 		p->setPen(txtColor);
 		p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 	}

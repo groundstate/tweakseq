@@ -51,6 +51,7 @@ class Sequences:public QObject
 		
 		bool isEmpty();
 		int size(){return sequences_.size();}
+		int visibleSize();
 		void clear();
 		
 		Sequence * add(QString,QString,QString,QString,bool );

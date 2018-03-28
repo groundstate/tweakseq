@@ -36,7 +36,7 @@ Sequence::Sequence()
 {
 }
 
-Sequence::Sequence(QString l,QString r,QString c,QString f,bool hide){
+Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis){
 	label = l;
 	while (label.length()<LABELWIDTH) // FIXME this should be done elsewhere
 		label.append(" ");
@@ -44,7 +44,7 @@ Sequence::Sequence(QString l,QString r,QString c,QString f,bool hide){
 	comment=c;
 	group=NULL;
 	source=f;
-	hidden=hide;
+	visible=vis;
 	//cerr << "Residues " << r.latin1() << endl;
 }
 

@@ -37,7 +37,7 @@ class Sequence
 {
 	public:
 		Sequence();
-		Sequence(QString,QString,QString c=QString(),QString f=QString(),bool hide=false);
+		Sequence(QString,QString,QString c=QString(),QString f=QString(),bool vis=true);
 		~Sequence();
 		// comment is for a longer comment
 		QString label,residues,comment;
@@ -49,7 +49,7 @@ class Sequence
 		void remove(int,int);
 		void insert(QString,int);
 		
-		bool hidden;
+		bool visible;
 		
 		SequenceGroup *group;
 		

@@ -396,7 +396,7 @@ void Project::hideNonSelectedGroupMembers()
 	for (int s=0; s<selGroup->size();s++){
 		Sequence *seq = selGroup->itemAt(s);
 		if (!sequenceSelection->contains(seq)){
-			seq->hidden=true;
+			seq->visible=false;
 		}
 	}
 }
@@ -418,7 +418,7 @@ void Project::unhideAllGroupMembers()
 	
 	for (int s=0; s<selGroup->size();s++){
 		Sequence *seq = selGroup->itemAt(s);
-		seq->hidden = false;
+		seq->visible = true;
 	}
 }
 		
@@ -474,7 +474,7 @@ bool Project::save(QString &fpathname)
 		XMLHelper::addElement(saveDoc,se,"comment",seq->comment);		
 		XMLHelper::addElement(saveDoc,se,"residues",seq->filter());
 		XMLHelper::addElement(saveDoc,se,"source",seq->source);
-		XMLHelper::addElement(saveDoc,se,"hidden",(seq->hidden?"yes":"no"));
+		XMLHelper::addElement(saveDoc,se,"visible",(seq->visible?"yes":"no"));
 		QList<int> x = seq->exclusions();
 		QString xs="";
 		for (int xi=0;xi<x.size()-1;xi+=2){
@@ -547,7 +547,7 @@ void Project::load(QString &fname)
 		QDomNode sNode = nl.item(i);
 		
 		QString sName,sComment,sResidues,sSrc;
-		bool sHidden = false;
+		bool sVisible = true;
 		
 		QDomElement elem = sNode.firstChildElement();
 		QList<int> exclusions;
@@ -560,8 +560,8 @@ void Project::load(QString &fname)
 				sResidues = elem.text().trimmed();
 			else if (elem.tagName() == "source")
 				sSrc = elem.text().trimmed();
-			else if (elem.tagName() == "hidden")
-				sHidden = XMLHelper::stringToBool(elem.text().trimmed());
+			else if (elem.tagName() == "visible")
+				sVisible = XMLHelper::stringToBool(elem.text().trimmed());
 			else if (elem.tagName() == "exclusions"){
 				QStringList sl = elem.text().trimmed().split(',');
 				for (int sli=0;sli<sl.size();sli++){
@@ -576,7 +576,7 @@ void Project::load(QString &fname)
 			}
 			elem=elem.nextSiblingElement();
 		}
-		Sequence *seq = sequences.add(sName,sResidues,sComment,sSrc,sHidden);
+		Sequence *seq = sequences.add(sName,sResidues,sComment,sSrc,sVisible);
 		for (int x=0;x<exclusions.size()-1;x+=2)
 			seq->exclude(exclusions.at(x),exclusions.at(x+1));
 				 
