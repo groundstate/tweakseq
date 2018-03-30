@@ -108,6 +108,7 @@ private:
 	
 	int indexFirstVisibleSequenceInGroup(SequenceGroup *);
 	int indexLastVisibleSequenceInGroup(SequenceGroup *);
+	int indexVisibleSequence(Sequence *);
 	
 	Project *project_;
 	bool readOnly_;

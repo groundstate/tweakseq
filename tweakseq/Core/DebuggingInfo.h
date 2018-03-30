@@ -41,24 +41,28 @@ class DebuggingInfo
 			n=name;
 			ton=false;
 			tidon=false;
+			fnameon=false;
 		}
 		
 		void showTimestamp(bool on){ton=on;}
 		void showThread(bool on){tidon=on;}
+		void showFunctionName(bool on){fnameon=on;}
 		
-		QString header()
+		QString header(const char *fnname=NULL)
 		{
 			QString ret(n);
-			if (ton)
-			{
+			ret = ret + " ";
+			if (fnameon && fnname != NULL){
+				ret.append(fnname);
+			}
+			if (ton){
 				struct timeval tv;
 				gettimeofday(&tv,NULL);
 				QString tod;
 				tod.sprintf("::%d.%06d",(int) tv.tv_sec,(int) tv.tv_usec);
 				ret.append(tod);
 			}
-			if (tidon)
-			{
+			if (tidon){
 				QString tid = QString("::")+QString::number(pthread_self());
 				ret.append(tid);
 			}
@@ -69,7 +73,7 @@ class DebuggingInfo
 	private:
 		
 		QString n;
-		bool ton,tidon;
+		bool ton,tidon,fnameon;
 };
 
 extern DebuggingInfo trace;

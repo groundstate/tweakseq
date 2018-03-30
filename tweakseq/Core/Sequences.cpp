@@ -53,7 +53,6 @@ int Sequences::visibleSize()
 			if ((sequences_.at(i)->visible)) 
 				nvis++;
 		}
-		qDebug() << trace.header() << "vis = " << nvis << " tot seq = " << sequences_.size();
 		return nvis;
 }
 
@@ -152,12 +151,18 @@ void Sequences::replaceResidues(QString newResidues,int pos)
 
 void  Sequences::addInsertions(int startSequence,int stopSequence,int startPos,int nInsertions)
 {
-	qDebug() << trace.header() << startSequence << " " << stopSequence << " " << startPos << " " << nInsertions;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << startSequence << " " << stopSequence << " " << startPos << " " << nInsertions;
 	QString ins(nInsertions,'-');
 	for (int s=startSequence; s<=stopSequence; s++){
 		sequences_.at(s)->residues.insert(startPos,ins);
 	}
 	emit changed();
+}
+
+void  Sequences::addInsertions(Sequence *seq,int startPos,int nInsertions)
+{
+	QString ins(nInsertions,'-');
+	seq->residues.insert(startPos,ins);
 }
 
 // Mainly used for removing insertions

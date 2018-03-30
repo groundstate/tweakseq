@@ -26,6 +26,7 @@
 
 #include "ResidueSelection.h"
 #include "Sequence.h"
+#include "SequenceGroup.h"
 
 ResidueSelection::ResidueSelection()
 {
@@ -70,3 +71,19 @@ ResidueGroup * ResidueSelection::itemAt(int index)
 {
 	return sel_.at(index);
 }
+
+QList<SequenceGroup *> ResidueSelection::uniqueSequenceGroups()
+{
+	QList<SequenceGroup *> sgl;
+	for (int s=0;s<sel_.size();s++){
+		ResidueGroup *rg = sel_.at(s);
+		Sequence *seq = rg->sequence;
+		if (seq->group){
+			if (!sgl.contains(seq->group)){
+				sgl.append(seq->group);
+			}
+		}
+	}
+	return sgl;
+}
+

@@ -66,7 +66,9 @@ void myMessageOutput(QtMsgType type, const char *msg)
 int main(int argc, char **argv){
 	
 	char c;
-	trace.showTimestamp(true);
+	trace.showTimestamp(false);
+	trace.showFunctionName(true);
+	
 	//trace.showThread(true);
 
 	while ((c=getopt(argc,argv,"tbfow")) != EOF)
@@ -83,7 +85,7 @@ int main(int argc, char **argv){
 	}
 	qInstallMsgHandler(myMessageOutput);
 	
-	qDebug() << trace.header()  << "Application starting ...";
+	qDebug() << trace.header(__PRETTY_FUNCTION__)  << "application starting ...";
 	
 	Application a(argc, argv);
 	if (a.configure()){

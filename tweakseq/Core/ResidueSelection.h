@@ -31,6 +31,7 @@
 #include <QObject>
 
 class Sequence;
+class SequenceGroup;
 
 class ResidueGroup
 {
@@ -70,6 +71,8 @@ class ResidueSelection:public QObject
 		bool empty(){return sel_.size() == 0;}
 		int  size(){return sel_.size();}
 		ResidueGroup * itemAt(int);
+		
+		QList<SequenceGroup *> uniqueSequenceGroups();
 		
 	signals:
 		

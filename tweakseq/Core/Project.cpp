@@ -55,7 +55,7 @@ extern Application *app;
 
 Project::Project()
 {
-	qDebug() << trace.header() << "Project::Project()";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	init();
 	connect(&sequences,SIGNAL(changed()),this,SLOT(sequencesChanged()));
 }
@@ -71,7 +71,7 @@ Project::~Project()
 
 void Project::setMainWindow(SeqEditMainWin *mainwin)
 {
-	qDebug() << trace.header() << "Project::setMainWindow";
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	mainWindow_=mainwin;
 	//connect(mainWindow_, SIGNAL(byebye()), this,SLOT(mainWindowClosed()));
 	connect(residueSelection,SIGNAL(changed()),mainWindow_,SLOT(residueSelectionChanged()));
@@ -105,7 +105,7 @@ QString Project::getResidues(int i,int maskFlags)
 	QString r;
 	int j,k=0;
 	
-	qDebug() << trace.header() << "Project::getSequence()" << i << " " << maskFlags;
+	qDebug() << trace.header(__PRETTY_FUNCTION__)  << i << " " << maskFlags;
 	// Return NULL if the index is out of range
 	if ( i > sequences.sequences().count()-1)
 		return NULL;
@@ -140,7 +140,7 @@ QString Project::getResidues(int i,int maskFlags)
 
 QString Project::getLabelAt(int i)
 {
-	qDebug() << trace.header() << "Project::getLabel() " << i;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << i;
 	// Return NULL if the index is out of range
 	if (i<0 || i > sequences.size()-1)
 		return NULL;
@@ -151,7 +151,7 @@ QString Project::getLabelAt(int i)
 
 void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<SequenceGroup *> &newGroups)
 {
-	qDebug() << trace.header() << " Project::setAlignment";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	// Clear the selections because they will be meaningless post alignment
 	emit loadingSequences(true);
 	residueSelection->clear();
@@ -248,13 +248,13 @@ bool Project::groupSelectedSequences(QColor gcol){
 		}
 		// If only part of a group is selected then this is bad
 		if (selcnt > 0 && selcnt != sg->size()){
-			qDebug() << trace.header() << "Project::groupSelectedSequences() failed";
+			qDebug() << trace.header() << "failed";
 			return false;
 		}
 		
 		if (contained){
 			selgroups.append(sg);
-			qDebug() << trace.header() << "Project::groupSelectedSequences() group selected for merging";  
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "group selected for merging";  
 		}
 	}
 	
@@ -273,7 +273,7 @@ bool Project::groupSelectedSequences(QColor gcol){
 		Sequence *seq = sequenceSelection->itemAt(s);
 		sg->addSequence(seq);
 	}
-	qDebug() << trace.header() << "Project::groupSelectedSequences() new group ";
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "new group ";
 	dirty_=true;
 	return true;
 }
@@ -285,11 +285,26 @@ bool Project::ungroupSelectedSequences()
 	for ( int s=0;s<sequenceSelection->size();s++){
 		Sequence *seq = sequenceSelection->itemAt(s);
 		if (seq->group){
-			for (int g=0;g<sequenceGroups.size();g++){
-				sequenceGroups.at(g)->removeSequence(seq); // this also removes the parent group form the sequence
-			}
+			SequenceGroup *sg = seq->group; // save this, cos removing it from the groups sets ptr to NULL
+			seq->group->removeSequence(seq); // this also removes the parent group from the sequence
+			// if we have now removed all of the visible sequences in the group, make the hidden sequences
+			// visible again
+			sg->enforceVisibility();
 		}
 	}
+	// Remove any empty groups
+	int g=0;
+	while (g<sequenceGroups.size()){
+		SequenceGroup *sg = sequenceGroups.at(g);
+		if (sg->size() == 0){
+			sequenceGroups.removeOne(sg);
+			qDebug() << trace.header(__PRETTY_FUNCTION__)  << " removing empty group";
+			delete sg;
+		}
+		else
+			g++;
+	}
+	
 	dirty_=true;
 	return true;
 }
@@ -324,7 +339,7 @@ void Project::lockSelectedGroups(bool lock){
 	// First, check for an ungrouped sequence because this is fatal
 	for (int s=0;s<sequenceSelection->size();s++){
 		if (sequenceSelection->itemAt(s)->group == NULL){
-			qDebug() << trace.header() << "Project::lockSelectedGroups() ungrouped sequence in the selection";
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << " ungrouped sequence in the selection";
 			return;
 		}
 	}
@@ -340,7 +355,7 @@ void Project::lockSelectedGroups(bool lock){
 		}
 		if (contained){
 			selgroups.append(sg);
-			qDebug() << trace.header() << "Project::lockSelectedGroups() group in selection"; 
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << " group in selection"; 
 		}	
 	}
 	
@@ -351,7 +366,7 @@ void Project::lockSelectedGroups(bool lock){
 
 void Project::addGroupToSelection(SequenceGroup *selg)
 {
-	qDebug() << trace.header() << "Project::addGroupToSelection ";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	for (int g=0;g<sequenceGroups.size();g++){
 		SequenceGroup *sg = sequenceGroups.at(g);
 		if (selg==sg){
@@ -377,7 +392,7 @@ bool Project::cutSelection()
 
 void Project::hideNonSelectedGroupMembers()
 {
-	qDebug() << trace.header() << "Project::hideNonSelectedGroupMembers ";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	
 	// FIXME This duplicates what's in the UI 
 	// Check the selection
@@ -517,7 +532,7 @@ bool Project::save(QString &fpathname)
 
 void Project::load(QString &fname)
 {
-	qDebug() << trace.header() << "Project::load()" << fname;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << fname;
 	QFileInfo fi(fname);
 	path_=fi.path();
 	name_=fi.fileName();
@@ -732,7 +747,7 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 				sequences.sequences().at(snew)->residues = newseqs.at(snew);
 			}
 			else{
-				qDebug() << trace.header() << " Project::readNewAlignment missed " << newlabels.at(snew); 
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << " missed " << newlabels.at(snew); 
 			}
 		}
 	}
@@ -835,7 +850,7 @@ void Project::init()
 
 void Project::readAlignmentToolSettings(QDomDocument &doc)
 {
-	qDebug() << trace.header() << "Project::readAlignmentToolSettings";
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	
 	if (muscleTool_){
 		muscleTool_->readSettings(doc);

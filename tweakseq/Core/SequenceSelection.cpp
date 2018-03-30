@@ -43,7 +43,7 @@ SequenceSelection::~SequenceSelection()
 
 void SequenceSelection::set(Sequence *s)
 {
-	qDebug() << trace.header() << "SequenceSelection::set";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	sel_.clear();
 	sel_.append(s);
 	emit changed();
@@ -51,7 +51,7 @@ void SequenceSelection::set(Sequence *s)
 
 void SequenceSelection::toggle(Sequence *s)
 {
-	qDebug() << trace.header() << "SequenceSelection::toggle";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	// If it's there, remove it
 	if (sel_.contains(s)){
 		sel_.removeOne(s);
@@ -59,13 +59,13 @@ void SequenceSelection::toggle(Sequence *s)
 	// else add it
 	else
 		sel_.append(s);
-	qDebug() << trace.header() << "SequenceSelection::toggle - size now " << sel_.size();;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << " - size now " << sel_.size();;
 	emit changed();
 }
 
 void SequenceSelection::clear()
 {
-	qDebug() << trace.header() << "SequenceSelection::clear";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	sel_.clear();
 	emit changed();
 }
@@ -83,6 +83,15 @@ Sequence * SequenceSelection::itemAt(int i)
 	return sel_.at(i);
 	
 }
+
+QList<SequenceGroup *> SequenceSelection::uniqueGroups()
+{
+	QList<SequenceGroup *> sgl;
+	// FIXME
+	return sgl;
+}
+	
+
 
 // Sort the selection into visual order (sqeeunces may have been selected in a random order)
 // This is necessary for eg insertion of aligned sequences after aligning the Selection

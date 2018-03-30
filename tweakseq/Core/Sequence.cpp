@@ -105,7 +105,7 @@ QList<int> Sequence::exclusions()
 
 void Sequence::remove(int start,int n)
 {
-	qDebug() << trace.header() << "Sequence::remove";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	residues.remove(start,n);
 }
 

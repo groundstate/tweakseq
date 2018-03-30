@@ -664,7 +664,7 @@ void SeqEditMainWin::editGroupSequences()
 void SeqEditMainWin::editUngroupSequences()
 {
 	statusBar()->clearMessage();
-	// Groups the current selection of sequences
+	// Ungroups the current selection of sequences
 	if (!project_->ungroupSelectedSequences())
 		statusBar()->showMessage("Ungrouping unsuccessful");
 	se->viewport()->repaint();
@@ -858,6 +858,8 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 	cm->addAction(ungroupSequencesAction);
 	cm->addAction(lockAction);
 	cm->addAction(unlockAction);
+	cm->addAction(hideNonSelectedGroupMembersAction);
+	cm->addAction(unhideAllGroupMembersAction);
 	cm->addSeparator();
 
 	cm->addAction(excludeAction);

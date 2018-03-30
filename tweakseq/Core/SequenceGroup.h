@@ -49,6 +49,8 @@ class SequenceGroup
 		bool locked(){return locked_;}
 		void lock(bool l){locked_=l;}
 
+		void enforceVisibility();
+		
 		// UI stuff
 		QColor & textColour(){return textColour_;}
 		void setTextColour(QColor c){textColour_=c;}

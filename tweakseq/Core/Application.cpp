@@ -132,7 +132,7 @@ bool Application::configure()
 
 Project * Application::createProject()
 {
-	qDebug() << trace.header() << "Application::createProject()";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	Project *p = new Project();
 	openProjects_.append(p);
 	return p;
@@ -212,12 +212,12 @@ void Application::cleanup()
 
 void Application::projectClosed(Project *p)
 {
-	qDebug() << trace.header() << "Application::projectClosed()";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	// Remove from the list
 	openProjects_.removeOne(p);
 	// FIXME If all projects closed then byebye
 	if (openProjects_.isEmpty()){
-		qDebug() << trace.header() << "Application::projectClosed() all closed";
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << " all closed";
 	}
 }
 
@@ -236,12 +236,12 @@ void Application::readSettings()
 {
 	QFile defs(applicationSettingsFile_);
 	if (defs.exists()){
-		qDebug() << trace.header() << "Application::readSettings() reading " << applicationSettingsFile_;
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << " reading " << applicationSettingsFile_;
 		if ( !defs.open( IO_ReadOnly ) )
 			return;
 		QString err; int errlineno,errcolno;
 		if ( !defaultSettings_->setContent(&defs,true,&err,&errlineno,&errcolno ) ){	
-			qDebug() << trace.header() << " Application::init() error at line " << errlineno;
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << " error at line " << errlineno;
 			defs.close();
 			return;
 		}

@@ -31,6 +31,7 @@
 #include <QObject>
 
 class Sequence;
+class SequenceGroup;
 
 class SequenceSelection:public QObject
 {
@@ -49,6 +50,7 @@ class SequenceSelection:public QObject
 		int  size(){return sel_.size();}
 		Sequence * itemAt(int);
 		
+		QList<SequenceGroup *> uniqueGroups();
 		void order();
 		
 	signals:

@@ -24,6 +24,8 @@
 // THE SOFTWARE.
 //
 
+#include <QtDebug>
+#include "DebuggingInfo.h"
 
 #include "Sequence.h"
 #include "SequenceGroup.h"
@@ -54,6 +56,7 @@ void SequenceGroup::removeSequence(Sequence *s)
 		return;
 	s->group = NULL; // out of the club :-)
 	seqs_.removeAll(s);
+	// the group may be empty now but we don't delete it here - maybe we have cleared it only temporarily
 }
 
 bool SequenceGroup::contains(Sequence *s)
@@ -73,6 +76,23 @@ Sequence * SequenceGroup::itemAt(int i)
 void SequenceGroup::clear()
 {
 	seqs_.clear();
+}
+
+void SequenceGroup::enforceVisibility()
+{
+	// After removing sequences, none may be visible - so if there are no visible sequences,
+	// make them visible again
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
+	
+	for (int s=0;s<seqs_.size();s++){
+		if (seqs_.at(s)->visible)
+			return; // nothing more to do
+	}
+
+	// None visible, so make all visible
+	for (int s=0;s<seqs_.size();s++)
+		seqs_.at(s)->visible=true;
+	
 }
 
 		

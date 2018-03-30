@@ -109,5 +109,5 @@ void Muscle::getVersion()
 		if (version_.size() >= 1)
 			version_=sl.at(1);
 	}
-	qDebug() << trace.header() << name_ << " " << version_;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << name_ << " " << version_;
 }

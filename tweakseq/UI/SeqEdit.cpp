@@ -339,7 +339,7 @@ void SeqEdit::updateViewport(){
 // Do any cleanup needed after loading a project
 void SeqEdit::postLoadTidy(){
 	
-	qDebug() << trace.header() << "SeqEdit::postLoadTidy() ";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	// Determine the last group colour used so that currGroupColour_ can be set correctly
 	int maxCol =0;
 	for (int s=0;s<project_->sequences.size();s++){ // checked OK
@@ -388,7 +388,6 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 	QColor txtColor;
 	int cellSelected=FALSE;
 	
-	QList<Sequence *> &seq=project_->sequences.sequences();
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 	
 	QRect r=cellGeometry(row,col);
@@ -661,11 +660,11 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 		{
 			leftDown_=false; // have finished selection
 			if (selectingResidues_){
-				qDebug() << trace.header() << selAnchorRow << " " << selAnchorCol << " " << selDragRow << " " << selDragCol;
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << selAnchorRow << " " << selAnchorCol << " " << selDragRow << " " << selDragCol;
 				int startRow=selAnchorRow,stopRow=selDragRow,startCol=selAnchorCol-(FLAGSWIDTH+LABELWIDTH),stopCol=selDragCol-(FLAGSWIDTH+LABELWIDTH);
 				if (stopRow < startRow) swap_int(&startRow,&stopRow);
 				if (stopCol < startCol) swap_int(&startCol,&stopCol);
-				qDebug() << trace.header() << startRow << " " << startCol << " " << stopRow << " " << stopCol;
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << startCol << " " << stopRow << " " << stopCol;
 				QList<ResidueGroup *> resSel;
 				// startRow and stopRow are for the visible sequences but we need to loop over the hidden ones too
 				startRow = project_->sequences.visibleToActual(startRow);
@@ -740,7 +739,7 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 			for (int row=startRow;row<=stopRow;row++)
 				for (int col=FLAGSWIDTH; col < LABELWIDTH+FLAGSWIDTH; col ++)
 					updateCell(row,col);
-			qDebug() << trace.header() << seqSelectionAnchor_ << " " << seqSelectionDrag_ ;
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << seqSelectionAnchor_ << " " << seqSelectionDrag_ ;
 		}
 		return;
 	}
@@ -834,7 +833,7 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 				}
 			}
 			break;
-		case Qt::Key_Space:
+		case Qt::Key_Space: // add insertions
 			if (selectingResidues_){
 				
 				// Check that selection is only one column wide - if not
@@ -843,19 +842,47 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 					return;
 				else{
 					if (startRow > stopRow) swap_int(&startRow,&stopRow);
-					Sequence *currSeq = project_->sequences.sequences().at(startRow);
-					if (startRow == stopRow){ // only one cell is selected but if it's in a group select the whole group	
-						if (currSeq->group != NULL){
-							if (currSeq->group->locked()){
-								int r;
-								if ((r = indexFirstVisibleSequenceInGroup(currSeq->group))>=0)
-									startRow=r;
-								if ((r = indexLastVisibleSequenceInGroup(currSeq->group))>=0)
-									stopRow=r;
-								qDebug() << trace.header() << "SeqEdit::keyPressEvent() group insert " << startRow << "->" << stopRow;
+			
+					// The residue selection is contiguous but we could have selected part of a group at the beginning or end of the
+					// selection. The members of the group are not necessarily contiguous however.
+					// So create a list of all rows in which insertions will be made
+					// First, find all of the unique groups in the selection
+					
+					QList<SequenceGroup *> sgl = project_->residueSelection->uniqueSequenceGroups();
+					qDebug() << trace.header(__PRETTY_FUNCTION__) << "unique groups " << sgl.count(); 
+					
+					QList<Sequence *> insSeqs;
+					
+					// Add all of the sequences in each group to the list of sequences receiving insertions
+					int firstVisibleLockedSequence = startRow;
+					int lastVisibleLockedSequence= stopRow;
+					
+					for (int g=0;g<sgl.count();g++){
+						SequenceGroup *sg = sgl.at(g);
+						if (sg->locked()){
+							for (int s=0;s<sg->size();s++){
+								Sequence *seq = sg->itemAt(s);
+								insSeqs.append(seq); // this adds non-visible sequences too
+								if (seq->visible){
+									row = indexVisibleSequence(seq);
+									if (row >= 0){
+										if (row < firstVisibleLockedSequence) firstVisibleLockedSequence = row;
+										if (row > lastVisibleLockedSequence)  lastVisibleLockedSequence= row;
+									}
+								}
 							}
 						}
+						qDebug() << trace.header(__PRETTY_FUNCTION__) << insSeqs.size() << " seqs to insert in"; 
 					}
+					
+					// Now add in the rest of the selection to the list of sequences receiving insertions
+					for (row=startRow;row<=stopRow;++row){
+						Sequence *seq = project_->sequences.visibleAt(row);
+						if (!insSeqs.contains(seq))
+							insSeqs.append(seq);
+					}
+					qDebug() << trace.header(__PRETTY_FUNCTION__) << insSeqs.size() << " total seqs to insert in"; 
+				
 					// Is there a numeric argument to the insertion
 					if (!(numStr.isEmpty())){
 						stopCol=startCol+numStr.toInt()-1;
@@ -875,19 +902,20 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 					// Increase the size of the displayed area 
 					setNumCols(numCols()+stopCol-startCol+1);
 					
-					for (row=startRow;row<=stopRow;++row){
-						// FIXME check group
-						if (project_->sequences.sequences().at(row)->group != currSeq->group) continue;
-		
+					for (int s=0;s<insSeqs.size();s++){
 						if (postInsert)
-							project_->sequences.addInsertions(row,row,startCol-LABELWIDTH-FLAGSWIDTH+1,stopCol-startCol+1);
+							project_->sequences.addInsertions(insSeqs.at(s),startCol-LABELWIDTH-FLAGSWIDTH+1,stopCol-startCol+1);
 						else
-							project_->sequences.addInsertions(row,row,startCol-LABELWIDTH-FLAGSWIDTH,stopCol-startCol+1);
-	
-						checkLength();
+							project_->sequences.addInsertions(insSeqs.at(s),startCol-LABELWIDTH-FLAGSWIDTH,stopCol-startCol+1);	
+					}
+					
+					checkLength();
+					if (firstVisibleLockedSequence  < startRow) startRow = firstVisibleLockedSequence;
+					if (lastVisibleLockedSequence   > stopRow)   stopRow = lastVisibleLockedSequence;
+					for (row=startRow;row<=stopRow;++row){
 						for (col=startCol;col< numCols();col++)
 							updateCell(row,col);
-					}	// end of for loop
+					}	
 				//emit alignmentChanged();
 				} // end of if ... else
 			} // end of if
@@ -956,7 +984,7 @@ void SeqEdit::sequencesCleared()
 
 void SeqEdit::loadingSequences(bool loading)
 {
-	qDebug() << trace.header() << "SeqEdit::loadingSequences " << loading;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << loading;
 	loadingSequences_= loading;
 	if (!loadingSequences_)
 		updateViewport();
@@ -1049,9 +1077,22 @@ int SeqEdit::indexLastVisibleSequenceInGroup(SequenceGroup *sg)
 	for (int s=project_->sequences.size()-1;s>=0;s--){ // checked OK
 		Sequence *seq = project_->sequences.sequences().at(s);
 		if (sg==seq->group && seq->visible)
-			return s;
+			return visIndex;
 		if (seq->visible)
 			visIndex--;
+	}
+	return -1;
+}
+
+int SeqEdit::indexVisibleSequence(Sequence *seq)
+{
+	int visIndex=0;
+	for (int s=0;s<project_->sequences.size();s++){ 
+		Sequence *tmpseq = project_->sequences.sequences().at(s);
+		if (tmpseq==seq)
+			return visIndex;
+		if (tmpseq->visible)
+			visIndex++;
 	}
 	return -1;
 }

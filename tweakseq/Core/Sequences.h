@@ -64,6 +64,7 @@ class Sequences:public QObject
 		void  move(int,int);
 		void  replaceResidues(QString ,int pos);
 		void  addInsertions(int,int,int,int);
+		void  addInsertions(Sequence *,int,int);
 		void  removeResidues(int,int,int,int);
 		
 	signals:

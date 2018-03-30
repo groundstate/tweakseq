@@ -107,6 +107,6 @@ void ClustalO::getVersion()
 		version_ = QString(getver.readAll());
 		version_=version_.trimmed();
 	}
-	qDebug() << trace.header() << name_ << " " << version_;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << name_ << " " << version_;
 }
 
