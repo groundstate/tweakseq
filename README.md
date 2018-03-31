@@ -34,5 +34,9 @@ A group can be locked. When locked, insertions apply to all members of the group
 Members of a group can be hidden by selecting the group members that you want to display and then
 selecting the 'Hide non-selected' menu item. 
 This is useful to reduce the number of sequences displayed.
-When locked, insertions are applied to hidden sequences group too.
+When locked, insertions are also applied to hidden sequences.
 
+
+Alignment
+---------
+ClustalO and MUSCLE are supported.

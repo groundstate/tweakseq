@@ -35,6 +35,8 @@
 
 #include "Version.h"
 
+#include "Clipboard.h"
+
 class AboutDialog;
 class Project;
 
@@ -51,6 +53,7 @@ class Application : public QApplication
 		QDomDocument & defaultSettings(){return *defaultSettings_;}
 		
 		bool configure();
+		Clipboard& clipboard(){return clipboard_;}
 		
 		void showAboutDialog(QWidget *);
 		void showHelp(QString);
@@ -79,6 +82,8 @@ class Application : public QApplication
 		void init();
 		void readSettings();
 		void writeSettings();
+		
+		Clipboard clipboard_;
 		
 		QString appDirPath_;
 		QString applicationSettingsFile_;

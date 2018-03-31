@@ -236,12 +236,18 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 
 }
 
-void SeqEdit::cutSelection()
+void SeqEdit::cutSelectedResidues()
 {
-	project_->cutSelection(); 
+	project_->cutSelectedResidues(); 
 	if (project_->residueSelection->empty()){ // FIXME residues only
 		selectingResidues_=false;
 	}
+	updateViewport();
+}
+
+void SeqEdit::cutSelectedSequences()
+{
+	project_->cutSelectedSequences();
 	updateViewport();
 }
 
@@ -560,7 +566,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 	if ((clickedCol < LABELWIDTH+FLAGSWIDTH) && (clickedCol >= FLAGSWIDTH))
 	{
 		Sequence *selSeq =  project_->sequences.visibleAt(clickedRow);
-		qDebug() << trace.header() << "Selected " << selSeq->label;
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << "selected " << selSeq->label;
 		// Remove any residue selection
 		selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
 		selectingResidues_=false;
@@ -592,6 +598,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 				break;
 				
 			}
+			
 			default:
 				break;
 		}
@@ -650,6 +657,8 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 }
 
 void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
+	
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	
 	if (readOnly_) return;
 	

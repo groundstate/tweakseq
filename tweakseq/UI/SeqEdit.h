@@ -57,7 +57,8 @@ public:
 	void undoEdit();
 	void redoEdit();
 	
-	void cutSelection();
+	void cutSelectedResidues();
+	void cutSelectedSequences();
 	void excludeSelection();
 	void removeExcludeSelection();
 

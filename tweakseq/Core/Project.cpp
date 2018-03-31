@@ -378,9 +378,9 @@ void Project::addGroupToSelection(SequenceGroup *selg)
 	dirty_=true;
 }
 
-bool Project::cutSelection()
+bool Project::cutSelectedResidues()
 {
-	// FIXME only works with a residue selection
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	for (int rg=0;rg<residueSelection->size();rg++){
 		ResidueGroup *resGroup = residueSelection->itemAt(rg);
 		resGroup->sequence->remove(resGroup->start,resGroup->stop-resGroup->start+1);
@@ -389,6 +389,27 @@ bool Project::cutSelection()
 	return true;
 }
 
+bool Project::cutSelectedSequences()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	QList<Sequence*> &seqs = sequences.sequences();
+	int s=0;
+	
+	while (s<seqs.size()){
+		if (sequenceSelection->contains(seqs.at(s))){
+			seqs.takeAt(s);
+		}
+		else
+			s++;
+	}
+	QList<Sequence *> cutSeqs;
+	for (int s=0;s<sequenceSelection->size();s++){
+		cutSeqs.append(sequenceSelection->itemAt(s));
+	}
+	// Now we have to expand any wholly selected groups
+	app->clipboard().setSequences(cutSeqs);
+	return true;
+}
 
 void Project::hideNonSelectedGroupMembers()
 {

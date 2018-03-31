@@ -99,7 +99,9 @@ class Project:public QObject
 		void addGroupToSelection(SequenceGroup *);
 		bool canToggleLock();
 		void lockSelectedGroups(bool);
-		bool cutSelection();
+		bool cutSelectedResidues();
+		bool cutSelectedSequences();
+		
 		void hideNonSelectedGroupMembers();
 		void unhideAllGroupMembers();
 		

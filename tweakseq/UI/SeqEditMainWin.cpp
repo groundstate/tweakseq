@@ -61,6 +61,7 @@
 #include "Application.h"
 #include "AlignmentTool.h"
 #include "AlignmentToolDlg.h"
+#include "Clipboard.h"
 #include "ClustalFile.h"
 #include "ClustalO.h"
 #include "FASTAFile.h"
@@ -567,6 +568,7 @@ void SeqEditMainWin::setupEditActions()
 {
 	if (se->isReadOnly()){
 		cutAction->setEnabled(false);
+		pasteAction->setEnabled(false);
 		undoAction->setEnabled(false);
 		redoAction->setEnabled(false);
 		groupSequencesAction->setEnabled(false);
@@ -580,7 +582,8 @@ void SeqEditMainWin::setupEditActions()
 		return;
 	}
 	
-	cutAction->setEnabled(project_->residueSelection->isInsertionsOnly());
+	cutAction->setEnabled(project_->residueSelection->isInsertionsOnly() || (!project_->sequenceSelection->empty()));
+	pasteAction->setEnabled(project_->sequenceSelection->size()==1 && (!app->clipboard().isEmpty()));
 	
 	if (project_->undoStack().canUndo()){
 		undoAction->setEnabled(true);
@@ -647,8 +650,22 @@ void SeqEditMainWin::editRedo()
 
 void SeqEditMainWin::editCut()
 {
-	se->cutSelection();
+	if (project_->residueSelection->isInsertionsOnly())
+		se->cutSelectedResidues();
+	else if (!project_->sequenceSelection->empty())
+		se->cutSelectedSequences();
 	cutAction->setEnabled(false);
+}
+
+void SeqEditMainWin::editPaste()
+{
+	QList<Sequence *> &seqs = app->clipboard().sequences();
+	Sequence *selSeq = project_->sequenceSelection->itemAt(0); // only one item
+	for (int s=0;s<seqs.size();s++){
+		project_->sequences.insert(seqs.at(s),selSeq);
+	}
+	pasteAction->setEnabled(false);
+	se->viewport()->repaint();
 }
 
 void SeqEditMainWin::editGroupSequences()
@@ -852,6 +869,7 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 	cm->addSeparator();
 	
 	cm->addAction(cutAction);
+	cm->addAction(pasteAction);
 	cm->addSeparator();
 	
 	cm->addAction(groupSequencesAction);
@@ -977,6 +995,12 @@ void SeqEditMainWin::createActions()
 	addAction(cutAction);
 	connect(cutAction, SIGNAL(triggered()), this, SLOT(editCut()));
 	cutAction->setEnabled(false);
+	
+	pasteAction = new QAction( tr("Paste"), this);
+	pasteAction->setStatusTip(tr("Paste"));
+	addAction(pasteAction);
+	connect(pasteAction, SIGNAL(triggered()), this, SLOT(editPaste()));
+	pasteAction->setEnabled(false);
 	
 	groupSequencesAction = new QAction( tr("Group sequences"), this);
 	groupSequencesAction->setStatusTip(tr("Group the selected sequences"));
@@ -1123,6 +1147,7 @@ void SeqEditMainWin::createMenus()
 	editMenu->addSeparator();
 	
 	editMenu->addAction(cutAction);
+	editMenu->addAction(pasteAction);
 	editMenu->addSeparator();
 	
 	editMenu->addAction(groupSequencesAction);

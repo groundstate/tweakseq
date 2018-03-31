@@ -124,6 +124,19 @@ void Sequences::insert(QString,QString,int)
 	emit changed();
 }
 
+void  Sequences::insert(Sequence *seq,Sequence *after,bool preInsert)
+{
+	int s;
+	for (s=0;s<sequences_.size();s++){
+		if (sequences_.at(s) == after)
+			break;
+	}
+	if (s<sequences_.size()){
+		sequences_.insert(s+1,seq); // postInsert
+	}
+}
+
+
 void  Sequences::replace(QString oldLabel,QString newLabel,QString newResidues)
 {
 	int i;

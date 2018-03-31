@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+// Copyright (c) 2000-2018  Michael J. Wouters, Merridee A. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,58 +25,31 @@
 //
 
 
-#ifndef __SEQUENCES_H_
-#define __SEQUENCES_H_
+#include "Clipboard.h"
+#include "Sequence.h"
 
-#include <QObject>
-#include <QList>
-#include <QString>
-
-class Sequence;
-class SequenceGroup;
-
-class Sequences:public QObject
+Clipboard::Clipboard()
 {
-	Q_OBJECT
-	
-	public:
-		
-		Sequences();
-		~Sequences();
-		
-		QList<Sequence *> & sequences(){return sequences_;} 
-		
-		int getIndex(QString label);
-		QString getLabelAt(int);
-		
-		bool isEmpty();
-		int size(){return sequences_.size();}
-		int visibleSize();
-		void clear();
-		Sequence * visibleAt(int);
-		int visibleToActual(int);
-		
-		Sequence * add(QString,QString,QString,QString,bool );
-		void  append(Sequence *);
-		void  remove(QString);
-		void  insert(QString,QString,int);
-		void  insert(Sequence *,Sequence *,bool preInsert=false);
-		void  replace(QString,QString,QString);
-		void  move(int,int);
-		void  replaceResidues(QString ,int pos);
-		void  addInsertions(int,int,int,int);
-		void  addInsertions(Sequence *,int,int);
-		void  removeResidues(int,int,int,int);
-		
-	signals:
-		
-		void sequenceAdded(Sequence *);
-		void cleared();
-		void changed();
-		
-	private:
-		
-		QList<Sequence *> sequences_;
-};
+}
 
-#endif
+void Clipboard::clear()
+{
+	sequences_.clear();
+	emit changed();
+}
+
+void Clipboard::setSequences(QList<Sequence *> &s)
+{
+	sequences_=s;
+	emit changed();
+}
+
+QList<Sequence *> & Clipboard::sequences()
+{
+	return sequences_;
+}
+
+bool Clipboard::isEmpty()
+{
+	return (sequences_.size()==0);
+}

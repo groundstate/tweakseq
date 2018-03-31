@@ -10,6 +10,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/AlignmentTool.h \
 								 include/AlignmentToolDlg.h \
 								 include/Application.h \
+								 include/Clipboard.h \
 								 include/ClustalFile.h \
 								 include/ClustalO.h \
 								 include/DebuggingInfo.h \
@@ -35,6 +36,7 @@ HEADERS       =  include/AboutDialog.h \
 								 
 SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/Application.cpp \
+									Core/Clipboard.cpp \
 									Core/ClustalFile.cpp \
 									Core/ClustalO.cpp \
 									Core/FASTAFile.cpp \
