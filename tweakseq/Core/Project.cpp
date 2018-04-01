@@ -394,20 +394,71 @@ bool Project::cutSelectedSequences()
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	QList<Sequence*> &seqs = sequences.sequences();
 	int s=0;
+	QList<Sequence *> cutSeqs;
+	// Building the list of cut sequences this way orders the selection in
+	// the correct order, recognizing that the selection may be in random order
+	for (s=0;s<seqs.size();s++){
+		if (sequenceSelection->contains(seqs.at(s)))
+			cutSeqs.append(seqs.at(s));
+	}
 	
-	while (s<seqs.size()){
-		if (sequenceSelection->contains(seqs.at(s))){
-			seqs.takeAt(s);
+	// Now we have to check whether any groups have been selected and include any
+	// non-visible items in the right order
+	QList<SequenceGroup *> sgl =  sequenceSelection->uniqueGroups();
+	for (int g = 0; g < sgl.size(); g++){
+		SequenceGroup *sg = sgl.at(g);
+		bool groupSelected=true;
+		for (s=0; s< sg->size(); s++){
+			Sequence *seq = sg->itemAt(s);
+			if (seq->visible && !sequenceSelection->contains(seq)){
+				groupSelected=false;
+				break;
+			}
 		}
+		if (groupSelected){
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "group cut : size = " << sg->size();
+			// Create the ordered list of sequences in the group
+			QList<Sequence *> groupSeqs;
+			for (s=0;s<seqs.size();s++){
+				if (sg->contains(seqs.at(s))){
+					groupSeqs.append(seqs.at(s));
+				}
+			}
+			// Now remove the visible group members from the list of cut sequences
+			s=0;
+			while (s<cutSeqs.size()){
+				Sequence *seq = cutSeqs.at(s);
+				if (sg->contains(seq))
+					cutSeqs.takeAt(s);
+				else
+					s++;
+			}
+			for (s=0;s<groupSeqs.size();s++) // Don't try to insert in the 'right' place
+				cutSeqs.append(groupSeqs.at(s));
+		}
+		else{
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "group not cut";
+		}
+	}
+	
+	// Order the cut sequences (again)
+	// This is easier than trying to insert in the right place
+	
+	QList<Sequence *> orderedCutSeqs;
+	for (s=0;s<seqs.size();s++){
+		Sequence *seq = seqs.at(s);
+		if (cutSeqs.contains(seq))
+			orderedCutSeqs.append(seq);
+	}
+	// Now that there is a complete list of cut sequences, remove them
+	s=0;
+	while (s<seqs.size()){
+		if (orderedCutSeqs.contains(seqs.at(s)))
+			seqs.takeAt(s);
 		else
 			s++;
 	}
-	QList<Sequence *> cutSeqs;
-	for (int s=0;s<sequenceSelection->size();s++){
-		cutSeqs.append(sequenceSelection->itemAt(s));
-	}
-	// Now we have to expand any wholly selected groups
-	app->clipboard().setSequences(cutSeqs);
+	app->clipboard().setSequences(orderedCutSeqs);
 	return true;
 }
 

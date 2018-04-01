@@ -124,7 +124,7 @@ void Sequences::insert(QString,QString,int)
 	emit changed();
 }
 
-void  Sequences::insert(Sequence *seq,Sequence *after,bool preInsert)
+void  Sequences::insert(Sequence *seq,Sequence *after,bool postInsert)
 {
 	int s;
 	for (s=0;s<sequences_.size();s++){

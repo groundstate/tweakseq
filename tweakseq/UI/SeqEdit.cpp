@@ -598,7 +598,14 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 				break;
 				
 			}
-			
+			case Qt::RightButton:
+			{
+				 // If a context menu is being requested for a non-selected item
+				 // make it the new selection
+					if (!project_->sequenceSelection->contains(selSeq)){
+						project_->sequenceSelection->set(selSeq);
+					}
+			}
 			default:
 				break;
 		}

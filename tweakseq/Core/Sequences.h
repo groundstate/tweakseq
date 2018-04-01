@@ -60,7 +60,7 @@ class Sequences:public QObject
 		void  append(Sequence *);
 		void  remove(QString);
 		void  insert(QString,QString,int);
-		void  insert(Sequence *,Sequence *,bool preInsert=false);
+		void  insert(Sequence *,Sequence *,bool postInsert=true);
 		void  replace(QString,QString,QString);
 		void  move(int,int);
 		void  replaceResidues(QString ,int pos);

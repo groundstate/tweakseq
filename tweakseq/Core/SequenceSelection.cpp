@@ -27,6 +27,7 @@
 #include <QtDebug>
 #include "DebuggingInfo.h"
 
+#include "Sequence.h"
 #include "SequenceSelection.h"
 
 //
@@ -87,7 +88,13 @@ Sequence * SequenceSelection::itemAt(int i)
 QList<SequenceGroup *> SequenceSelection::uniqueGroups()
 {
 	QList<SequenceGroup *> sgl;
-	// FIXME
+	for (int s=0;s<sel_.size();s++){
+		Sequence *seq = sel_.at(s);
+		if (NULL != seq->group){
+			if (!sgl.contains(seq->group))
+				sgl.append(seq->group);
+		}
+	}
 	return sgl;
 }
 	

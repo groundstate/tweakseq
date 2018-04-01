@@ -663,6 +663,7 @@ void SeqEditMainWin::editPaste()
 	Sequence *selSeq = project_->sequenceSelection->itemAt(0); // only one item
 	for (int s=0;s<seqs.size();s++){
 		project_->sequences.insert(seqs.at(s),selSeq);
+		selSeq = seqs.at(s); // so that we insert after the last insertion
 	}
 	pasteAction->setEnabled(false);
 	se->viewport()->repaint();
