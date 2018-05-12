@@ -146,7 +146,7 @@ QString Project::getLabelAt(int i)
 		return NULL;
 	else
 		// strip white space from the end of the string
-		return (sequences.sequences().at(i)->label).stripWhiteSpace(); 
+		return (sequences.sequences().at(i)->label).trimmed(); 
 }
 
 void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<SequenceGroup *> &newGroups)
@@ -543,7 +543,7 @@ bool Project::save(QString &fpathname)
 	
 	QFileInfo fi(path_,name_);
 	QFile f(fi.filePath());
-	f.open(IO_WriteOnly);
+	f.open(QIODevice::WriteOnly);
 	QTextStream ts(&f);
 	
 	QDomElement el = saveDoc.createElement("version");
@@ -613,7 +613,7 @@ void Project::load(QString &fname)
 	QDomDocument doc;
 	
 	QFile file(fname);
-	if ( !file.open( IO_ReadOnly ) )
+	if ( !file.open(QIODevice::ReadOnly ) )
 		return ;
 	QString err; int errlineno,errcolno;
 	if ( !doc.setContent( &file,true,&err,&errlineno,&errcolno ) )
@@ -944,7 +944,7 @@ int Project::getSeqIndex(QString l)
 	// Get the index of the sequence with label l
 	// Returns -1 if no match
 	int i=0;
-	QString t=l.stripWhiteSpace();// TO DO why is this here ?
+	QString t=l.trimmed();// TO DO why is this here ?
 	while ((i<sequences.sequences().size()) && (getLabelAt(i) != t)) i++;
 	if (i==sequences.sequences().size())
 		return -1;

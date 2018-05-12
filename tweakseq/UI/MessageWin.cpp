@@ -30,7 +30,7 @@
 MessageWin::MessageWin(QWidget *parent)
 	:QTextEdit(parent){
 	
-	setReadOnly(TRUE);
+	setReadOnly(true);
 	
 };
 

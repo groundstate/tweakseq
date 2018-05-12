@@ -52,10 +52,6 @@
 
 #include <iostream>
 
-#include <Q3GridView> // FIXME
-#include <Q3DragObject>
-#include <Q3TextDrag>
-#include <Q3ImageDrag>
 
 #include <QPainter>
 #include <QColor>
@@ -67,7 +63,7 @@
 #include "MessageWin.h"
 #include "Project.h"
 #include "ResidueSelection.h"
-#include "SeqEdit.h"
+#include "SequenceEditor.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
@@ -108,31 +104,31 @@ static int groupColours[N_GROUP_COLOURS][3]
 
 // -----------------------------------------------------------------------------
 //
-// SeqEdit - the sequence editing widget
+// SequenceEditor - the sequence editing widget
 //
 // -----------------------------------------------------------------------------
 
 //
-// SeqEdit - public members
+// SequenceEditor - public members
 //
 
-SeqEdit::SeqEdit(Project *project,QWidget *parent)
-	:Q3GridView(parent)
+SequenceEditor::SequenceEditor(Project *project,QWidget *parent)
+	:QWidget(parent)
 {
-	qDebug() << trace.header() << "Creating SeqEdit";
+	qDebug() << trace.header() << "Creating SequenceEditor";
 	init();
 	project_=project;
 	
 	setFocusPolicy( Qt::StrongFocus );              // we accept keyboard focus
 	setBackgroundRole( QPalette::Base ); 
-	viewport()->setMouseTracking(true);
+	setMouseTracking(true);
 	//QPalette pal = palette();
 	//pal.setColor(QPalette::Background, Qt::black);
 	//setAutoFillBackground(true);
 	//setPalette(pal);
 	QColor bcolour;
 	bcolour.setRgb(0,0,0);
-	setPaletteBackgroundColor(bcolour); // FIXME         
+	//setPaletteBackgroundColor(bcolour); // FIXME         
 	setNumCols(0);                      
 	setNumRows(0);
 	
@@ -165,11 +161,11 @@ SeqEdit::SeqEdit(Project *project,QWidget *parent)
 	
 }
 
-SeqEdit::~SeqEdit()
+SequenceEditor::~SequenceEditor()
 {
 }
 
-void SeqEdit::setProject(Project *newProject)
+void SequenceEditor::setProject(Project *newProject)
 {
 	// init() resets project_ to NULL so do anything related to the old project before calling init()
 	disconnectSignals();
@@ -192,7 +188,7 @@ void SeqEdit::setProject(Project *newProject)
 }
 
 
-QChar SeqEdit::cellContent(int row, int col, int maskFlags )
+QChar SequenceEditor::cellContent(int row, int col, int maskFlags )
 {
 	
 	QChar pChar;
@@ -236,7 +232,7 @@ QChar SeqEdit::cellContent(int row, int col, int maskFlags )
 
 }
 
-void SeqEdit::cutSelectedResidues()
+void SequenceEditor::cutSelectedResidues()
 {
 	project_->cutSelectedResidues(); 
 	if (project_->residueSelection->empty()){ // FIXME residues only
@@ -245,15 +241,15 @@ void SeqEdit::cutSelectedResidues()
 	updateViewport();
 }
 
-void SeqEdit::cutSelectedSequences()
+void SequenceEditor::cutSelectedSequences()
 {
 	project_->cutSelectedSequences();
 	updateViewport();
 }
 
-void SeqEdit::excludeSelection()
+void SequenceEditor::excludeSelection()
 {
-	qDebug() << trace.header() << "SeqEdit::excludeSelection()";
+	qDebug() << trace.header() << "SequenceEditor::excludeSelection()";
 	
 	int startRow=selAnchorRow,stopRow=selDragRow,
 			startCol=selAnchorCol,stopCol=selDragCol,row,col;
@@ -272,17 +268,17 @@ void SeqEdit::excludeSelection()
 		for (row=startRow;row<=stopRow;row++)
 			// Update past the deletion point only
 			for (col=startCol;col<=stopCol;col++){
-				setCellMark(row,col,TRUE);
+				setCellMark(row,col,true);
 				updateCell(row,col);
 			}
 		update();	
 	}
 }
 
-void SeqEdit::removeExcludeSelection()
+void SequenceEditor::removeExcludeSelection()
 {
 	// Selected cells that are marked are unmarked
-	qDebug() << trace.header() << "SeqEdit::removeExcludeSelection()";
+	qDebug() << trace.header() << "SequenceEditor::removeExcludeSelection()";
 	
 	int startRow=selAnchorRow,stopRow=selDragRow,
 			startCol=selAnchorCol,stopCol=selDragCol,row,col;
@@ -301,7 +297,7 @@ void SeqEdit::removeExcludeSelection()
 		for (row=startRow;row<=stopRow;row++)
 			// Update past the deletion point only
 			for (col=startCol;col<=stopCol;col++){
-			  setCellMark(row,col,FALSE);
+			  setCellMark(row,col,false);
 				updateCell(row,col);
 			}// of for (col=)
 		update();
@@ -310,10 +306,10 @@ void SeqEdit::removeExcludeSelection()
 	
 }
 
-void SeqEdit::setCellMark(int row,int col,int on)
+void SequenceEditor::setCellMark(int row,int col,int on)
 {
 	// TO DO - make portable the OR
-	qDebug() << trace.header() << "SeqEdit::setCellMark() row=" << row << " col=" << col << " on=" << on;
+	qDebug() << trace.header() << "SequenceEditor::setCellMark() row=" << row << " col=" << col << " on=" << on;
 	QList<Sequence *> &seq = project_->sequences.sequences();
 	
 	if (on)
@@ -324,26 +320,95 @@ void SeqEdit::setCellMark(int row,int col,int on)
 			seq.at(row)->residues[col-(LABELWIDTH+FLAGSWIDTH)].unicode() & (~EXCLUDE_CELL);
 }
 
-QColor SeqEdit::getSequenceGroupColour(){
+QColor SequenceEditor::getSequenceGroupColour(){
 	currGroupColour_++;
 	if (currGroupColour_ == N_GROUP_COLOURS+1)
 		currGroupColour_=1;
 	return QColor(groupColours[currGroupColour_-1][0],groupColours[currGroupColour_-1][1],groupColours[currGroupColour_-1][2]);
 }
 
-void SeqEdit::updateViewport(){
+void SequenceEditor::updateViewport(){
 	checkLength();
-	this->viewport()->repaint();
+	this->repaint();
 }
 	
 
+
+// QGridView public functions
+
+int SequenceEditor::contentsX()
+{
+	return 0;
+}
+
+int SequenceEditor::contentsY()
+{
+	return 0;
+}
+
+	
+int SequenceEditor::columnAt ( int x ) const
+{
+	return 0;
+}
+
+void SequenceEditor::ensureCellVisible ( int row, int column )
+{
+}
+
+QSize SequenceEditor::gridSize () const
+{
+	return QSize();
+}
+
+int SequenceEditor::numCols () const
+{
+	return 0;
+}
+
+int SequenceEditor::numRows () const
+{
+	return 0;
+}
+
+void SequenceEditor::repaintCell ( int row, int column, bool erase )
+{
+}
+
+int SequenceEditor::rowAt ( int y ) const
+{
+	return 0;
+}
+
+void SequenceEditor::setCellHeight ( int )
+{
+}
+
+void SequenceEditor::setCellWidth ( int )
+{
+}
+
+void SequenceEditor::setNumCols ( int )
+{
+}
+
+void SequenceEditor::setNumRows ( int )
+{
+}
+
+void SequenceEditor::updateCell ( int row, int column )
+{
+}
+
+
+	
 
 //
 // Public slots
 //
 
 // Do any cleanup needed after loading a project
-void SeqEdit::postLoadTidy(){
+void SequenceEditor::postLoadTidy(){
 	
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	// Determine the last group colour used so that currGroupColour_ can be set correctly
@@ -366,7 +431,7 @@ void SeqEdit::postLoadTidy(){
 	currGroupColour_=maxCol+1;
 }
 
-void SeqEdit::setEditorFont(const QFont &f)
+void SequenceEditor::setEditorFont(const QFont &f)
 {
 	int w;
 	int h;
@@ -381,18 +446,23 @@ void SeqEdit::setEditorFont(const QFont &f)
 	setCellWidth((int) (w*HPADDING));                        
 	setCellHeight((int) (h*VPADDING)); 
 	setFont(ftmp);
-	this->viewport()->repaint();
+	this->repaint();
 }
 
 //
-// SeqEdit - protected members
+// SequenceEditor - protected members
 //
 
-void SeqEdit::paintCell( QPainter* p, int row, int col )
+QRect SequenceEditor::cellGeometry ( int row, int column )
+{
+	return QRect();
+}
+
+void SequenceEditor::paintCell( QPainter* p, int row, int col )
 {
 	QChar c,cwflags;
 	QColor txtColor;
-	int cellSelected=FALSE;
+	int cellSelected=false;
 	
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 	
@@ -424,14 +494,14 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 				if (row >= selAnchorRow && row <= selDragRow && 
 					col >= selAnchorCol && col<=selDragCol){
 						p->fillRect(0,0,w,h,txtColor);
-						cellSelected=TRUE;
+						cellSelected=true;
 					}
 			}
 			else{
 				if (row >= selAnchorRow && row <= selDragRow && 
 					col <= selAnchorCol && col>=selDragCol){
 						p->fillRect(0,0,w,h,txtColor);
-						cellSelected=TRUE;
+						cellSelected=true;
 					}
 			}
 		}
@@ -440,14 +510,14 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 				if (row <= selAnchorRow && row >= selDragRow && 
 					col >= selAnchorCol && col<=selDragCol){
 						p->fillRect(0,0,w,h,txtColor);
-						cellSelected=TRUE;
+						cellSelected=true;
 					}
 			}
 			else{
 				if (row <= selAnchorRow && row >= selDragRow && 
 					col <= selAnchorCol && col>=selDragCol){
 						p->fillRect(0,0,w,h,txtColor);
-						cellSelected=TRUE;
+						cellSelected=true;
 					}
 			}
 		}
@@ -475,7 +545,7 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 		}
 	}
 	else{
-		switch (c.toAscii()){
+		switch (c.toLatin1()){
 			case 'D': case 'E': case 'S': case 'T':// red 
 				txtColor.setRgb(255,0,0);
 				break; 
@@ -533,9 +603,9 @@ void SeqEdit::paintCell( QPainter* p, int row, int col )
 
 }
 
-void SeqEdit::mousePressEvent( QMouseEvent* e )
+void SequenceEditor::mousePressEvent( QMouseEvent* e )
 {
-	// Handles mouse press events for the SeqEdit widget.
+	// Handles mouse press events for the SequenceEditor widget.
   // The current cell marker is set to the cell the mouse is clicked in.
 	
 	if (readOnly_) return;
@@ -610,7 +680,7 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 				break;
 		}
 		
-		this->viewport()->repaint();
+		this->repaint();
 		return;
 		
 	}
@@ -660,10 +730,10 @@ void SeqEdit::mousePressEvent( QMouseEvent* e )
 			break;
 		default:break;
 	}
-	this->viewport()->repaint();
+	this->repaint();
 }
 
-void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
+void SequenceEditor::mouseReleaseEvent( QMouseEvent* e ){
 	
 	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	
@@ -708,7 +778,7 @@ void SeqEdit::mouseReleaseEvent( QMouseEvent* e ){
 }
 
 
-void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
+void SequenceEditor::contentsMouseMoveEvent(QMouseEvent *ev)
 {
 	
 	QPoint clickedPos;
@@ -792,7 +862,7 @@ void SeqEdit::contentsMouseMoveEvent(QMouseEvent *ev)
 	}
 }
 
-void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
+void SequenceEditor::mouseDoubleClickEvent(QMouseEvent *e){
 	// Double clicking on a group member selects the whole group
 	
 	if (readOnly_) return;
@@ -825,11 +895,11 @@ void SeqEdit::mouseDoubleClickEvent(QMouseEvent *e){
 			project_->addGroupToSelection(selseq->group);
 		}
 	}
-	this->viewport()->repaint();
+	this->repaint();
 }
 
 
-void SeqEdit::keyPressEvent( QKeyEvent* e )
+void SequenceEditor::keyPressEvent( QKeyEvent* e )
 {
 	if (readOnly_) return;
 	
@@ -940,17 +1010,17 @@ void SeqEdit::keyPressEvent( QKeyEvent* e )
 	 
 }
 
-void SeqEdit::focusInEvent( QFocusEvent* )
+void SequenceEditor::focusInEvent( QFocusEvent* )
 {
-	// Handles focus reception events for the SeqEdit widget.
+	// Handles focus reception events for the SequenceEditor widget.
 	// Repaint only the current cell; to avoid flickering
 	// updateCell( curRow, curCol );               // draw current cell
 }    
 
 
-void SeqEdit::focusOutEvent( QFocusEvent* )
+void SequenceEditor::focusOutEvent( QFocusEvent* )
 {
-	// Handles focus loss events for the SeqEdit widget.
+	// Handles focus loss events for the SequenceEditor widget.
 	// Repaint only the current cell; to avoid flickering
 	// updateCell( curRow, curCol );               // draw current cell
 }    
@@ -959,7 +1029,7 @@ void SeqEdit::focusOutEvent( QFocusEvent* )
 //
 //
 //
-void SeqEdit::sequenceAdded(Sequence *s)
+void SequenceEditor::sequenceAdded(Sequence *s)
 {
 
 	int rowNum,rowLength;
@@ -989,16 +1059,16 @@ void SeqEdit::sequenceAdded(Sequence *s)
 	for (int i=0;i<sequenceLength;i++)
 		updateCell(rowNum,i+LABELWIDTH+FLAGSWIDTH);
 
-	this->viewport()->repaint();
+	this->repaint();
 }
 
-void SeqEdit::sequencesCleared()
+void SequenceEditor::sequencesCleared()
 {
 	setNumRows(0);
 	setNumCols(0);
 }
 
-void SeqEdit::loadingSequences(bool loading)
+void SequenceEditor::loadingSequences(bool loading)
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << loading;
 	loadingSequences_= loading;
@@ -1007,10 +1077,10 @@ void SeqEdit::loadingSequences(bool loading)
 }
 
 //
-// SeqEdit - private members
+// SequenceEditor - private members
 //
 
-void SeqEdit::init()
+void SequenceEditor::init()
 {
 	project_=NULL;
 	readOnly_=false;
@@ -1018,7 +1088,7 @@ void SeqEdit::init()
 	loadingSequences_=false;
 	
 	selectingResidues_ = false;
-	draggingSequence = FALSE;
+	draggingSequence = false;
 	draggedSeq=NULL;
 	selAnchorRow=selAnchorCol=selDragRow=selDragCol=-1; 
 	
@@ -1030,14 +1100,14 @@ void SeqEdit::init()
 	currGroupColour_=0;
 }
 
-void SeqEdit::connectSignals()
+void SequenceEditor::connectSignals()
 {
 	connect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
 	connect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
 }
 
-void SeqEdit::disconnectSignals()
+void SequenceEditor::disconnectSignals()
 {
 	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
@@ -1045,7 +1115,7 @@ void SeqEdit::disconnectSignals()
 }
 
 
-void SeqEdit::checkLength(){
+void SequenceEditor::checkLength(){
 	// The size of the region displayed needs to be checked after some
 	// operations e.g. insert, delete so that we are not showing large 
 	// blank areas in the display and so that the end of the slider takes
@@ -1074,7 +1144,7 @@ void SeqEdit::checkLength(){
 }
 
 
-int SeqEdit::indexFirstVisibleSequenceInGroup(SequenceGroup *sg)
+int SequenceEditor::indexFirstVisibleSequenceInGroup(SequenceGroup *sg)
 {
 	int visIndex=0;
 	for (int s=0;s<project_->sequences.size();s++){ // checked OK
@@ -1087,7 +1157,7 @@ int SeqEdit::indexFirstVisibleSequenceInGroup(SequenceGroup *sg)
 	return -1;
 }
 
-int SeqEdit::indexLastVisibleSequenceInGroup(SequenceGroup *sg)
+int SequenceEditor::indexLastVisibleSequenceInGroup(SequenceGroup *sg)
 {
 	int visIndex=project_->sequences.visibleSize()-1;
 	for (int s=project_->sequences.size()-1;s>=0;s--){ // checked OK
@@ -1100,7 +1170,7 @@ int SeqEdit::indexLastVisibleSequenceInGroup(SequenceGroup *sg)
 	return -1;
 }
 
-int SeqEdit::indexVisibleSequence(Sequence *seq)
+int SequenceEditor::indexVisibleSequence(Sequence *seq)
 {
 	int visIndex=0;
 	for (int s=0;s<project_->sequences.size();s++){ 

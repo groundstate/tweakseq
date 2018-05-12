@@ -75,7 +75,7 @@ bool FASTAFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comme
 		s = ts.readLine().trimmed();
 		//qDebug() << trace.header() << "line:" << s;
 		if (s.size() == 0) continue; // skip empty line
-		char firstChar = s.at(0).toAscii(); // guaranteed to be valid 
+		char firstChar = s.at(0).toLatin1(); // guaranteed to be valid 
 		switch (parseState)
 		{
 			case SEEKING_COMMENT:

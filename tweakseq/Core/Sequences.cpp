@@ -193,7 +193,7 @@ int Sequences::getIndex(QString label)
 	// Get the index of the sequence with label l
 	// Returns -1 if no match
 	int i=0;
-	QString t=label.stripWhiteSpace();// TO DO why is this here ?
+	QString t=label.trimmed();// TO DO why is this here ?
 	while ((i<sequences_.count()) && (getLabelAt(i) != t)) i++;
 	if (i==sequences_.count())
 		return -1;
@@ -207,6 +207,6 @@ QString Sequences::getLabelAt(int i)
 		return QString(); // Return NULL if the index is out of range
 	else
 		// strip white space from the end of the string
-		return (sequences_.at(i)->label).stripWhiteSpace(); 
+		return (sequences_.at(i)->label).trimmed(); 
 }
 

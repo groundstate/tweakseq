@@ -19,7 +19,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/Muscle.h \
 								 include/Project.h \
 								 include/ResidueSelection.h \
-								 include/SeqEdit.h \
+								 include/SequenceEditor.h \
 								 include/SeqEditMainWin.h \
 								 include/SeqPreview.h \
 								 include/SeqPreviewDlg.h \
@@ -57,7 +57,7 @@ SOURCES				+=  Core/UndoCommand/UndoCommand.cpp \
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/AlignmentToolDlg.cpp \
 									UI/MessageWin.cpp \
-									UI/SeqEdit.cpp \
+									UI/SequenceEditor.cpp \
 									UI/SeqEditMainWin.cpp \
 									UI/SeqPreview.cpp \
 									UI/SeqPreviewDlg.cpp \
@@ -65,8 +65,7 @@ SOURCES       +=  UI/AboutDialog.cpp \
 
 RESOURCES = UI/Resources/application.qrc
 									
-QT           += core gui xml qt3support
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT           += core gui xml widgets printsupport
 
 #DEFINES      += QT_NO_DEBUG_OUTPUT 
 

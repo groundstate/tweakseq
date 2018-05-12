@@ -24,10 +24,10 @@
 // THE SOFTWARE.
 //
 
-#ifndef __SEQ_EDIT_H_
-#define __SEQ_EDIT_H_
+#ifndef __SEQUENCE_EDITOR_H_
+#define __SEQUENCE_EDITOR_H_
 
-#include <Q3GridView> // FIXME
+#include <QWidget> 
 #include <QList>
 #include <QStack>
 
@@ -41,15 +41,15 @@ class Project;
 class Sequence;
 class SequenceGroup;
 
-class SeqEdit:public Q3GridView
+class SequenceEditor:public QWidget
 {
 
 Q_OBJECT
 
 public:
 	
-	SeqEdit(Project *,QWidget *parent);
-	~SeqEdit();
+	SequenceEditor(Project *,QWidget *parent);
+	~SequenceEditor();
 	void setProject(Project *);
 	
 	QChar cellContent(int,int,int );
@@ -70,6 +70,23 @@ public:
 	void setReadOnly(bool readOnly){readOnly_=readOnly;}
 	bool isReadOnly(){return readOnly_;}
 	
+	int contentsX();
+	int contentsY();
+	
+	QRect 	cellGeometry ( int row, int column );
+	int 	columnAt ( int x ) const;
+	void 	ensureCellVisible ( int row, int column );
+	QSize 	gridSize () const;
+	int 	numCols () const;
+	int 	numRows () const;
+	void 	repaintCell ( int row, int column, bool erase = true );
+	int 	rowAt ( int y ) const;
+	virtual void 	setCellHeight ( int );
+	virtual void 	setCellWidth ( int );
+	virtual void 	setNumCols ( int );
+	virtual void 	setNumRows ( int );
+	void 	updateCell ( int row, int column );
+
 public slots:
 	
 	void postLoadTidy();

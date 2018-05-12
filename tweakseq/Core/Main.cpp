@@ -45,20 +45,22 @@ static bool traceOn=false;
 static bool warningOn=false;
 static bool benchmarkOn=false;
 
-void myMessageOutput(QtMsgType type, const char *msg)
+void myMessageOutput(QtMsgType type, const QMessageLogContext &, const QString & msg)
 {
 	switch (type) {
 		case QtDebugMsg:
-				if (traceOn)   fprintf(stderr,"%s\n",msg);
+				if (traceOn)   qDebug() << msg;
 				break;
 		case QtWarningMsg:
-				if (warningOn) fprintf(stderr,"%s\n",msg);
+				if (warningOn) qWarning() << msg;
 				break;
 		case QtCriticalMsg:
-				fprintf(stderr,"%s\n",msg);
+				qCritical() << msg;
+				break;
+		case QtInfoMsg:
 				break;
 		case QtFatalMsg:
-				fprintf(stderr,"%s\n",msg);
+				qFatal(msg.toLocal8Bit().data());
 				abort();
 	}
 }
@@ -83,7 +85,7 @@ int main(int argc, char **argv){
 			break;
 		}
 	}
-	qInstallMsgHandler(myMessageOutput);
+	qInstallMessageHandler(myMessageOutput);
 	
 	qDebug() << trace.header(__PRETTY_FUNCTION__)  << "application starting ...";
 	

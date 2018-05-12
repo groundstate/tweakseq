@@ -118,7 +118,7 @@ void SeqPreview::paintEvent(QPaintEvent *)
 		for (int col=0;col<r.size();col++){
 			QChar ch = r.at(col);
 			
-			switch (ch.toAscii()){
+			switch (ch.toLatin1()){
 				case 'D': case 'E': case 'S': case 'T':// red 
 					txtColor.setRgb(255,0,0);
 					break; 

@@ -35,9 +35,9 @@
 
 #include <iostream>
 
-#include <Q3PaintDeviceMetrics> // FIXME
 
 #include <QColor>
+#include <QCloseEvent>
 #include <QDateTime>
 #include <QFile>
 #include <QFileDialog>
@@ -48,6 +48,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QPrinter>
+#include <QPrintDialog>
 #include <QProcess>
 #include <QSet>
 #include <QStatusBar>
@@ -69,7 +70,7 @@
 #include "Muscle.h"
 #include "Project.h"
 #include "ResidueSelection.h"
-#include "SeqEdit.h"
+#include "SequenceEditor.h"
 #include "SeqPreviewDlg.h"
 #include "SeqEditMainWin.h"
 #include "Sequence.h"
@@ -113,9 +114,9 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	// TO DO ought to check that creation of widget does not fail because
 	// of lack of memory
 	
-	split = new QSplitter(Qt::Vertical,this,"sew_split");
+	split = new QSplitter(Qt::Vertical,this);
 	split->setMouseTracking(true);
-	se = new SeqEdit(project_,split);
+	se = new SequenceEditor(project_,split);
 	
 	mw = new MessageWin(split);
 	
@@ -129,12 +130,12 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	centralWidget()->setMouseTracking(true);
 	
 	printer = new QPrinter();
-	printer->setFullPage(TRUE);
+	printer->setFullPage(true);
 	
 	setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(this,SIGNAL(customContextMenuRequested ( const QPoint & )),this,SLOT(createContextMenu(const QPoint &)));
 	
-	statusBar()->message("Ready");
+	statusBar()->showMessage("Ready");
 
 }
 
@@ -371,19 +372,23 @@ void SeqEditMainWin::filePrint(){
 	leftMargin=20;
 	rightMargin=20;
 	
-	if (printer->setup(this)){
-		statusBar()->message("Printing ...");
+	QPrintDialog printDialog(printer,this);
+	
+	if (printDialog.exec()==QDialog::Accepted){
+		statusBar()->showMessage("Printing ...");
 		
 		QPainter p;
 		p.begin(printer);
 		p.setFont(mainFont);
 		QFontMetrics fm = p.fontMetrics();
-		Q3PaintDeviceMetrics metrics(printer);
-		QSize m = printer->margins();
+	
+		int lMargin = printer->paperRect().left() - printer->pageRect().left();
+		int tMargin = printer->paperRect().top() - printer->pageRect().top();
+		QSize m(lMargin,tMargin);
 		
 		// Calculate the available vertical space for writing the sequences
 		
-		int vSpace = metrics.height()-2*m.height()-fm.height()-headerSpc-
+		int vSpace = printer->height()-2*m.height()-fm.height()-headerSpc-
 			topMargin-bottomMargin;
 		
 		// We want to divide this up so that sequence blocks are not broken
@@ -419,7 +424,7 @@ void SeqEditMainWin::filePrint(){
 		// At a guess, W is the widest character we might want to print
 		int cw=fm.width('W');
 		// We'll allow a 10 character column for the sequence name
-		int rw=metrics.width() - 2*m.width()-leftMargin-rightMargin - 10*cw;
+		int rw=printer->width() - 2*m.width()-leftMargin-rightMargin - 10*cw;
 		wrap=rw/(10*cw); // BUG for weird font/paper choices might not get 10/line
 		wrap*=10;
 		
@@ -472,16 +477,16 @@ void SeqEditMainWin::filePrint(){
 			// Project name   Creation date  Page numbering
 			y=m.height()+topMargin+fm.ascent();
 			x=resX0;
-			p.drawText(x,y,caption()+ " " + QDate::currentDate().toString(),-1);
+			p.drawText(QPoint(x,y),windowTitle()+ " " + QDate::currentDate().toString());
 		  tmp.sprintf("%i/%i",pg,numPages);
-			p.drawText(metrics.width()-m.width()-leftMargin-fm.width(tmp),y,tmp,-1);
+			p.drawText(QPoint(printer->width()-m.width()-leftMargin-fm.width(tmp),y),tmp);
 				
-			p.drawRect(m.width(),m.height(),metrics.width()-2*m.width(),
-				metrics.height()-2*m.height());
+			p.drawRect(m.width(),m.height(),printer->width()-2*m.width(),
+				printer->height()-2*m.height());
 		
 			p.drawRect(m.width()+leftMargin,m.height()+topMargin,
-				metrics.width()-2*m.width()-leftMargin-rightMargin,
-				metrics.height()-2*m.height()-topMargin-bottomMargin);
+				printer->width()-2*m.width()-leftMargin-rightMargin,
+				printer->height()-2*m.height()-topMargin-bottomMargin);
 			
 		  y+= headerSpc;
 			
@@ -519,14 +524,14 @@ void SeqEditMainWin::filePrint(){
 				for (k=1;k<=nTicks;k++){
 					x+=cw*10;
 					tmp.sprintf("%i",k*10+resCnt);
-					p.drawText(x,yt,tmp,-1);
+					p.drawText(QPoint(x,yt),tmp);
 				}
 				p.setFont(mainFont);	
 				for (j=0;j<project_->sequences.size();j++){
 					// Print the sequence name
 					x=seqNameX0;
 					yt+=fm.height();
-					p.drawText(x,yt,project_->getLabelAt(j),-1); // TO DO bounding rect
+					p.drawText(QPoint(x,yt),project_->getLabelAt(j)); // TO DO bounding rect
 					// Print the residues
 					tmp=project_->getResidues(j,KEEP_FLAGS);
 					x=resX0;
@@ -550,10 +555,10 @@ void SeqEditMainWin::filePrint(){
 			
 	  } // while (blocksDone < nBlocks)
 		p.end();
-		statusBar()->message("Printing completed",2000);
+		statusBar()->showMessage("Printing completed",2000);
 	} // if printer->setup(this)
 	else
-		statusBar()->message("Printing cancelled",2000);
+		statusBar()->showMessage("Printing cancelled",2000);
 }
 
 void SeqEditMainWin::fileClose(){
@@ -639,7 +644,7 @@ void SeqEditMainWin::editUndo()
 {
 	project_->undoStack().undo();
 	setupEditActions(); // need this so that keyboard accelerators are enabled/disabled
-	se->viewport()->repaint();
+	se->repaint();
 }
 
 void SeqEditMainWin::editRedo()
@@ -666,7 +671,7 @@ void SeqEditMainWin::editPaste()
 		selSeq = seqs.at(s); // so that we insert after the last insertion
 	}
 	pasteAction->setEnabled(false);
-	se->viewport()->repaint();
+	se->repaint();
 }
 
 void SeqEditMainWin::editGroupSequences()
@@ -676,7 +681,7 @@ void SeqEditMainWin::editGroupSequences()
 	if (!project_->groupSelectedSequences(se->getSequenceGroupColour())){
 		statusBar()->showMessage("Grouping unsuccessful");
 	}
-	se->viewport()->repaint();
+	se->repaint();
 }
 
 void SeqEditMainWin::editUngroupSequences()
@@ -685,17 +690,17 @@ void SeqEditMainWin::editUngroupSequences()
 	// Ungroups the current selection of sequences
 	if (!project_->ungroupSelectedSequences())
 		statusBar()->showMessage("Ungrouping unsuccessful");
-	se->viewport()->repaint();
+	se->repaint();
 }
 
 void SeqEditMainWin::editLock(){
 	project_->lockSelectedGroups(true);
-	se->viewport()->repaint();
+	se->repaint();
 }
 
 void SeqEditMainWin::editUnlock(){
 	project_->lockSelectedGroups(false);
-	se->viewport()->repaint();
+	se->repaint();
 }
 
 void SeqEditMainWin::editHideNonSelectedGroupMembers()
@@ -708,7 +713,7 @@ void SeqEditMainWin::editHideNonSelectedGroupMembers()
 void SeqEditMainWin::editUnhideAllGroupMembers(){
 	project_->unhideAllGroupMembers();
 	se->updateViewport();
-	se->viewport()->repaint();
+	se->repaint();
 }
 	
 void SeqEditMainWin::editExclude(){
@@ -1183,7 +1188,7 @@ void SeqEditMainWin::createMenus()
 	settingsMenu->addSeparator();
 	settingsMenu->addAction(settingsSaveAppDefaultsAction);
 	
-	menuBar()->insertSeparator();
+	menuBar()->addSeparator();
 	
 	helpMenu = menuBar()->addMenu(tr("&Help"));
 	helpMenu->addAction(helpAction);
@@ -1292,7 +1297,7 @@ void SeqEditMainWin::printRes( QPainter* p,QChar r,int x,int y)
 	oldPen = p->pen();
 	rNoFlags = r.unicode() & REMOVE_FLAGS;
 	
-	switch (rNoFlags.toAscii()){
+	switch (rNoFlags.toLatin1()){
 		case 'D': case 'E': case 'S': case 'T':// red 
 			txtColor.setRgb(255,0,0);
 			break; 
@@ -1317,7 +1322,7 @@ void SeqEditMainWin::printRes( QPainter* p,QChar r,int x,int y)
 	}
 	
 	p->setPen(txtColor);
-	p->drawText( x, y, r,-1);
+	p->drawText( QPoint(x, y), r);
 	
 	if (r.unicode() & EXCLUDE_CELL){
 		txtColor.setRgb(255,0,0);

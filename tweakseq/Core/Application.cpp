@@ -99,7 +99,7 @@ bool Application::configure()
 	
 	QFileInfo fi(applicationSettingsFile_);
 	QFile f(fi.filePath());
-	f.open(IO_WriteOnly);
+	f.open(QIODevice::WriteOnly);
 	QTextStream ts(&f);
 	
 	QDomElement el = saveDoc.createElement("version");
@@ -148,7 +148,7 @@ void Application::saveDefaultSettings(Project *project)
 	
 	QFileInfo fi(applicationSettingsFile_);
 	QFile f(fi.filePath());
-	f.open(IO_WriteOnly);
+	f.open(QIODevice::WriteOnly);
 	QTextStream ts(&f);
 	
 	QDomElement el = saveDoc.createElement("version");
@@ -237,7 +237,7 @@ void Application::readSettings()
 	QFile defs(applicationSettingsFile_);
 	if (defs.exists()){
 		qDebug() << trace.header(__PRETTY_FUNCTION__) << " reading " << applicationSettingsFile_;
-		if ( !defs.open( IO_ReadOnly ) )
+		if ( !defs.open(QIODevice::ReadOnly ) )
 			return;
 		QString err; int errlineno,errcolno;
 		if ( !defaultSettings_->setContent(&defs,true,&err,&errlineno,&errcolno ) ){	
