@@ -19,7 +19,9 @@ HEADERS       =  include/AboutDialog.h \
 								 include/Muscle.h \
 								 include/Project.h \
 								 include/ResidueSelection.h \
-								 include/SequenceEditor.h \
+								 include/SeqEditor.h \
+								 include/SeqResidueView.h \
+								 include/SeqInfoView.h \
 								 include/SeqEditMainWin.h \
 								 include/SeqPreview.h \
 								 include/SeqPreviewDlg.h \
@@ -57,7 +59,9 @@ SOURCES				+=  Core/UndoCommand/UndoCommand.cpp \
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/AlignmentToolDlg.cpp \
 									UI/MessageWin.cpp \
-									UI/SequenceEditor.cpp \
+									UI/SeqInfoView.cpp \
+									UI/SeqResidueView.cpp \
+									UI/SeqEditor.cpp \
 									UI/SeqEditMainWin.cpp \
 									UI/SeqPreview.cpp \
 									UI/SeqPreviewDlg.cpp \

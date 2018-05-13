@@ -39,7 +39,7 @@ class QToolBar;
 
 class MessageWin;
 class Project;
-class SequenceEditor;
+class SeqEditor;
 class SequenceGroup;
 
 class SeqEditMainWin: public QMainWindow
@@ -53,7 +53,7 @@ public:
 	
 	void doAlignment();
 	
-	SequenceEditor *se;
+	SeqEditor *se;
 	
 	void postLoadTidy();
 	void writeSettings(QDomDocument &,QDomElement &);

@@ -50,6 +50,7 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QProcess>
+#include <QScrollArea>
 #include <QSet>
 #include <QStatusBar>
 #include <QSplitter>
@@ -70,7 +71,7 @@
 #include "Muscle.h"
 #include "Project.h"
 #include "ResidueSelection.h"
-#include "SequenceEditor.h"
+#include "SeqEditor.h"
 #include "SeqPreviewDlg.h"
 #include "SeqEditMainWin.h"
 #include "Sequence.h"
@@ -109,15 +110,12 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	createMenus();
 	createToolBars();
 
-	// Hmm what to do about number of columns
-	// TO DO This needs to be resizeable
 	// TO DO ought to check that creation of widget does not fail because
 	// of lack of memory
 	
 	split = new QSplitter(Qt::Vertical,this);
-	split->setMouseTracking(true);
-	se = new SequenceEditor(project_,split);
 	
+	se = new SeqEditor(project_,split);
 	mw = new MessageWin(split);
 	
 	createStatusBar(); // need to connect to ther widgets so do this here
@@ -127,7 +125,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	split->setSizes(wsizes);
 	
 	setCentralWidget(split);
-	centralWidget()->setMouseTracking(true);
+	//centralWidget()->setMouseTracking(true);
 	
 	printer = new QPrinter();
 	printer->setFullPage(true);
@@ -772,7 +770,7 @@ void SeqEditMainWin::alignmentReadyReadStdErr()
 
 void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus exitStatus)
 {
-	qDebug() << trace.header() << "SeqEditMainWin::alignmentFinished()";
+	qDebug() << trace.header() << "SeqEditMainWin::alignmentFinished() exitCode=" << exitCode;
 	
 	QFile f(alignmentFileOut_->fileName());
 	if (alignmentProc_->state() == QProcess::NotRunning && f.exists()){
