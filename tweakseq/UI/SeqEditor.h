@@ -29,6 +29,7 @@
 
 #include <QWidget>
 
+class QResizeEvent;
 class QScrollArea;
 class QScrollBar;
 class QSplitter;
@@ -67,6 +68,10 @@ class SeqEditor:public QWidget
 		void postLoadTidy();
 		void loadingSequences(bool);
 		void setEditorFont(const QFont &); // this is a slot so that QFontDialog can be used for interactive preview
+	
+	protected:
+	
+		virtual void resizeEvent(QResizeEvent *);
 		
 	private slots:
 		
@@ -81,7 +86,8 @@ class SeqEditor:public QWidget
 		void init();
 		void connectSignals();
 		void disconnectSignals();
-	
+		void updateScrollBars();
+		
 		QSplitter *splitter_;
 		QScrollBar *hscroller_,*vscroller_;
 		QScrollArea *seqInfoScrollArea_;

@@ -106,6 +106,9 @@ SeqEditor::SeqEditor(Project *project,QWidget *parent):QWidget(parent)
 	resize(400,600);
 	
 	connectSignals();
+	
+	updateScrollBars();
+	
 }
 
 SeqEditor::~SeqEditor()
@@ -180,6 +183,7 @@ void SeqEditor::loadingSequences(bool loading)
 	loadingSequences_= loading;
 	if (!loadingSequences_){
 		updateViewport();
+		updateScrollBars();
 	}
 }
 	
@@ -200,6 +204,11 @@ void SeqEditor::setEditorFont(const QFont &f)
 	seqResidueView_->setViewFont(f);
 }
 
+void SeqEditor::resizeEvent(QResizeEvent *)
+{
+	updateScrollBars();
+}
+
 
 //
 // Private slots
@@ -211,7 +220,8 @@ void  SeqEditor::horizSliderMoved(int)
 
 void  SeqEditor::vertSliderMoved(int value)
 {
-	//qDebug() << value;
+	QScrollBar *sb = seqInfoScrollArea_->verticalScrollBar();
+	sb->setValue(value);
 }
 
 		
@@ -226,7 +236,7 @@ void SeqEditor::sequenceAdded(Sequence *s)
 	}
 	
 	if (!loadingSequences_){
-		vscroller_->setRange(0,numRows_-1);
+		updateScrollBars();
 	}
 }
 
@@ -271,4 +281,16 @@ void SeqEditor::disconnectSignals()
 	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
 	disconnect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
+}
+
+void SeqEditor::updateScrollBars()
+{
+	QScrollBar *sb = seqInfoScrollArea_->verticalScrollBar();
+	//qDebug() << trace.header(__PRETTY_FUNCTION__) << sb->minimum() << " " << sb->maximum() << " " << sb->pageStep() << " " << sb->singleStep();	
+	//qDebug() << trace.header(__PRETTY_FUNCTION__) << seqInfoView_->height();
+	vscroller_->setMinimum(sb->minimum());
+	vscroller_->setMaximum(sb->maximum());
+	vscroller_->setSingleStep(sb->singleStep());
+	vscroller_->setPageStep(sb->pageStep());
+	vscroller_->setValue(sb->value());
 }
