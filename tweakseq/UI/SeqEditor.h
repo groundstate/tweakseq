@@ -49,7 +49,7 @@ class SeqEditor:public QWidget
 		~SeqEditor();
 		void setProject(Project *);
 	
-		void setReadOnly(bool readOnly){readOnly_=readOnly;}
+		void setReadOnly(bool readOnly);
 		bool isReadOnly(){return readOnly_;}
 		
 		const QFont &editorFont(){return font();}
@@ -78,6 +78,8 @@ class SeqEditor:public QWidget
 		void horizSliderMoved(int);
 		void vertSliderMoved(int);
 		
+		void wheelScrolled();
+		
 		void sequenceAdded(Sequence *);
 		void sequencesCleared();
 		
@@ -99,7 +101,7 @@ class SeqEditor:public QWidget
 		bool loadingSequences_;
 		
 		int numRows_,numCols_;
-		int rowHeight_;
+		int rowHeight_,columnWidth_;
 };
 
 #endif

@@ -52,6 +52,11 @@ void SeqResidueView::setProject(Project *project)
 	project_=project;
 }
 
+void SeqResidueView::setReadOnly(bool readOnly)
+{
+	readOnly_=readOnly;
+}
+
 void SeqResidueView::setViewFont(const QFont &f)
 {
 	setFont(f);
@@ -85,4 +90,5 @@ void SeqResidueView::paintEvent(QPaintEvent *pev)
 void SeqResidueView::init()
 {
 	project_=NULL;
+	readOnly_=true;
 }

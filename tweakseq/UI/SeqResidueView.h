@@ -40,6 +40,7 @@ class SeqResidueView: public QWidget
 		
 		SeqResidueView(Project *,QWidget *);
 		void setProject(Project *);
+		void setReadOnly(bool);
 		
 		void setViewFont(const QFont &f);
 		
@@ -54,6 +55,8 @@ class SeqResidueView: public QWidget
 	private:
 		
 		void init();
+		
 		Project *project_;
+		bool readOnly_;
 };
 #endif

@@ -30,8 +30,11 @@
 #include <QWidget>
 
 class QFont;
-class Qpainter;
+class QKeyEvent;
+class QMouseEvent;
+class QPainter;
 class QPaintEvent;
+class QWheelEvent;
 
 class Project;
 
@@ -49,7 +52,13 @@ class SeqInfoView: public QWidget
 		void setViewFont(const QFont &f);
 		void setRowPadding(double);
 		
+		bool setReadOnly(bool);
+		
 		void updateViewport();
+	
+	signals:
+		
+		void wheelScrolled();
 		
 	public slots:
 		
@@ -58,17 +67,34 @@ class SeqInfoView: public QWidget
 	protected:
 	
 		void paintEvent(QPaintEvent *);
+			
+		void mousePressEvent( QMouseEvent* );
+		void mouseReleaseEvent( QMouseEvent* );
+		void mouseMoveEvent(QMouseEvent *);
+		void mouseDoubleClickEvent(QMouseEvent *);
+		
+		void wheelEvent(QWheelEvent *);
+		
+		void keyPressEvent( QKeyEvent* );
 	
 	private:
 	
 		void init();
 		void paintRow(QPainter *p,int row);
+		int rowAt(int);
+		int columnAt(int);
 		
 		Project *project_;
 		
+		bool readOnly_;
+		
 		int numRows_;
-		double rowPadding_;
-		double rowHeight_;
+		double rowPadding_,columnPadding_;
+		double rowHeight_,columnWidth_;
 		int flagsWidth_,labelWidth_;
+		
+		int selAnchorRow_,selAnchorCol_,selDragRow_,selDragCol_;
+		int seqSelectionAnchor_,seqSelectionDrag_;
+		bool leftDown_;
 };
 #endif

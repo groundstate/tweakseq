@@ -39,6 +39,7 @@
 #include "SeqResidueView.h"
 
 #define ROW_PADDING 1.3
+#define COLUMN_PADDING 1.3
 
 #define N_GROUP_COLOURS 10
 
@@ -105,6 +106,8 @@ SeqEditor::SeqEditor(Project *project,QWidget *parent):QWidget(parent)
 	
 	resize(400,600);
 	
+	connect(seqInfoView_,SIGNAL(wheelScrolled()),this,SLOT(wheelScrolled()));
+	
 	connectSignals();
 	
 	updateScrollBars();
@@ -133,6 +136,12 @@ void SeqEditor::setProject(Project * project)
 	
 }
 
+void SeqEditor::setReadOnly(bool readOnly)
+{
+	readOnly_=readOnly;
+	seqInfoView_->setReadOnly(readOnly_);
+	seqResidueView_->setReadOnly(readOnly_);
+}
 
 
 QColor SeqEditor::getSequenceGroupColour()
@@ -198,6 +207,7 @@ void SeqEditor::setEditorFont(const QFont &f)
 	int w = fm.width('W');
 	int h = fm.width('W');
 	rowHeight_ = (int)(h*ROW_PADDING);
+	columnWidth_ = (int)(w*COLUMN_PADDING);
 	setFont(ftmp); 
 
 	seqInfoView_->setViewFont(f);
@@ -224,6 +234,10 @@ void  SeqEditor::vertSliderMoved(int value)
 	sb->setValue(value);
 }
 
+void SeqEditor::wheelScrolled()
+{
+	updateScrollBars();
+}
 		
 void SeqEditor::sequenceAdded(Sequence *s)
 {
@@ -246,7 +260,7 @@ void SeqEditor::sequencesCleared()
 	numRows_=0;
 	seqInfoView_->sequencesCleared();
 	seqResidueView_->sequencesCleared();
-	vscroller_->setRange(0,0);
+	updateScrollBars();
 }
 
 		
@@ -266,7 +280,7 @@ void SeqEditor::init()
 	numCols_= 0; // columns in the Residue View
 	
 	rowHeight_=16;
-	
+	columnWidth_=16;
 }
 
 void SeqEditor::connectSignals()
