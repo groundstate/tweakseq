@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,75 +24,11 @@
 // THE SOFTWARE.
 //
 
-#include <QtDebug>
-#include "DebuggingInfo.h"
+#ifndef __UTILITY_H_
+#define __UTILITY_H_
 
-#include <QFont>
-#include <QPainter>
-#include <QPaintEvent>
+void swap_int(int *a,int *b);
+int find_smallest_int(int a,int b,int c);
+int find_largest_int(int a,int b,int c);
 
-#include "SeqResidueView.h"
-
-//
-// Public members
-//
-
-SeqResidueView::SeqResidueView(Project *project,QWidget *parent): QWidget(parent)
-{
-	setContentsMargins(0,0,0,0);
-	
-	init();
-	project_=project;
-}
-
-void SeqResidueView::setProject(Project *project)
-{
-	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	init();
-	project_=project;
-}
-
-void SeqResidueView::setReadOnly(bool readOnly)
-{
-	readOnly_=readOnly;
-}
-
-void SeqResidueView::setViewFont(const QFont &f)
-{
-	setFont(f);
-	repaint();
-}
-
-void SeqResidueView::updateViewport()
-{
-}
-
-//
-// Public slots
-//
-
-void SeqResidueView::sequencesCleared()
-{
-
-}
-
-//
-// Protected members
-//
-
-void SeqResidueView::paintEvent(QPaintEvent *pev)
-{
-	QPainter p(this);
-	p.fillRect(pev->rect(),QColor(0,0,0));
-}
-
-
-//
-// Private members
-//
-
-void SeqResidueView::init()
-{
-	project_=NULL;
-	readOnly_=true;
-}
+#endif

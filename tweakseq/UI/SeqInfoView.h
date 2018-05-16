@@ -52,13 +52,14 @@ class SeqInfoView: public QWidget
 		void setViewFont(const QFont &f);
 		void setRowPadding(double);
 		
-		bool setReadOnly(bool);
+		void setReadOnly(bool);
 		
 		void updateViewport();
 	
 	signals:
 		
 		void wheelScrolled();
+		void info(const QString &);
 		
 	public slots:
 		
@@ -81,6 +82,7 @@ class SeqInfoView: public QWidget
 	
 		void init();
 		void paintRow(QPainter *p,int row);
+		
 		int rowAt(int);
 		int columnAt(int);
 		
@@ -93,6 +95,9 @@ class SeqInfoView: public QWidget
 		double rowHeight_,columnWidth_;
 		int flagsWidth_,labelWidth_;
 		
+		QString lastInfo_;
+		
+		bool selectingSequences_;
 		int selAnchorRow_,selAnchorCol_,selDragRow_,selDragCol_;
 		int seqSelectionAnchor_,seqSelectionDrag_;
 		bool leftDown_;

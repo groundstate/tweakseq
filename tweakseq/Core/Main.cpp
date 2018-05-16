@@ -49,7 +49,7 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &, const QString &
 {
 	switch (type) {
 		case QtDebugMsg:
-				if (traceOn)   qDebug() << msg;
+				if (traceOn)   qDebug().noquote() << msg;
 				break;
 		case QtWarningMsg:
 				if (warningOn) qWarning() << msg;
@@ -87,7 +87,7 @@ int main(int argc, char **argv){
 	}
 	qInstallMessageHandler(myMessageOutput);
 	
-	qDebug() << trace.header(__PRETTY_FUNCTION__)  << "application starting ...";
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "application starting ...";
 	
 	Application a(argc, argv);
 	if (a.configure()){

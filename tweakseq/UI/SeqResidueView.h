@@ -44,6 +44,8 @@ class SeqResidueView: public QWidget
 		
 		void setViewFont(const QFont &f);
 		
+		void updateViewport();
+		
 	public slots:
 		
 		void sequencesCleared();

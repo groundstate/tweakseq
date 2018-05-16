@@ -69,6 +69,10 @@ class SeqEditor:public QWidget
 		void loadingSequences(bool);
 		void setEditorFont(const QFont &); // this is a slot so that QFontDialog can be used for interactive preview
 	
+	signals:
+	
+		void info(const QString &);
+		
 	protected:
 	
 		virtual void resizeEvent(QResizeEvent *);
@@ -82,6 +86,8 @@ class SeqEditor:public QWidget
 		
 		void sequenceAdded(Sequence *);
 		void sequencesCleared();
+	
+		void postInfo(const QString &);
 		
 	private:
 	
@@ -102,6 +108,9 @@ class SeqEditor:public QWidget
 		
 		int numRows_,numCols_;
 		int rowHeight_,columnWidth_;
+		
+		int currGroupColour_;
+		
 };
 
 #endif

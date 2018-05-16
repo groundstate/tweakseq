@@ -34,6 +34,7 @@
 
 #include "Project.h"
 #include "Sequence.h"
+#include "SequenceGroup.h"
 #include "SeqEditor.h"
 #include "SeqInfoView.h"
 #include "SeqResidueView.h"
@@ -107,7 +108,7 @@ SeqEditor::SeqEditor(Project *project,QWidget *parent):QWidget(parent)
 	resize(400,600);
 	
 	connect(seqInfoView_,SIGNAL(wheelScrolled()),this,SLOT(wheelScrolled()));
-	
+	connect(seqInfoView_,SIGNAL(info(const QString &)),this,SLOT(postInfo(const QString &)));
 	connectSignals();
 	
 	updateScrollBars();
@@ -146,15 +147,16 @@ void SeqEditor::setReadOnly(bool readOnly)
 
 QColor SeqEditor::getSequenceGroupColour()
 {
-	return QColor();
+	currGroupColour_++;
+	if (currGroupColour_ == N_GROUP_COLOURS+1)
+		currGroupColour_=1;
+	return QColor(groupColours[currGroupColour_-1][0],groupColours[currGroupColour_-1][1],groupColours[currGroupColour_-1][2]);
 }
 
 void SeqEditor::updateViewport()
 {
-	vscroller_->setRange(0,numRows_-1);
-	vscroller_->setPageStep((int) (splitter_->height()/rowHeight_));
 	seqInfoView_->updateViewport();
-	qDebug() << seqInfoScrollArea_->verticalScrollBar()->maximum() << " " << seqInfoScrollArea_->verticalScrollBar()->pageStep();
+	seqResidueView_->updateViewport();
 }
 
 
@@ -184,6 +186,24 @@ void SeqEditor::removeExcludeSelection()
 void SeqEditor::postLoadTidy()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	// Determine the last group colour used so that currGroupColour_ can be set correctly
+	int maxCol =0;
+	for (int s=0;s<project_->sequences.size();s++){ // checked OK
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (seq->group != NULL){
+			QColor gcol = seq->group->textColour();
+			
+			for (int c=0;c<N_GROUP_COLOURS;c++){
+				if (gcol.red() == groupColours[c][0] && gcol.green() == groupColours[c][1] && gcol.blue() == groupColours[c][2]){
+					if (c>maxCol){
+						maxCol=c;
+						break;
+					}
+				}
+			}
+		}
+	}
+	currGroupColour_=maxCol+1;
 }
 
 void SeqEditor::loadingSequences(bool loading)
@@ -263,6 +283,10 @@ void SeqEditor::sequencesCleared()
 	updateScrollBars();
 }
 
+void SeqEditor::postInfo(const QString & msg)
+{
+	emit info(msg);
+}
 		
 //
 // Private members
@@ -281,6 +305,8 @@ void SeqEditor::init()
 	
 	rowHeight_=16;
 	columnWidth_=16;
+	
+	currGroupColour_=0;
 }
 
 void SeqEditor::connectSignals()

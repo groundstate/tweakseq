@@ -40,6 +40,7 @@
 #include "SequenceGroup.h"
 #include "SeqInfoView.h"
 #include "SequenceSelection.h"
+#include "Utility.h"
 
 #define FLAGS_WIDTH 4
 #define LABEL_WIDTH 16
@@ -56,6 +57,7 @@ SeqInfoView::SeqInfoView(Project *project,QWidget *parent): QWidget(parent)
 	project_=project;
 	
 	setMinimumSize(100,400);
+	setMouseTracking(true);
 }
 
 void SeqInfoView::setProject(Project *project)
@@ -90,7 +92,7 @@ void SeqInfoView::setViewFont(const QFont &f)
 	repaint();
 }
 
-bool SeqInfoView::setReadOnly(bool readOnly)
+void SeqInfoView::setReadOnly(bool readOnly)
 {
 	readOnly_=readOnly;
 }
@@ -164,6 +166,8 @@ void SeqInfoView::mousePressEvent( QMouseEvent *ev )
 	selAnchorRow_=selAnchorCol_=selDragRow_=selDragCol_=-1;
 	project_->residueSelection->clear(); // FIXME better done with a signal ?
 		
+	selectingSequences_=true;
+	
 	switch (ev->button()){
 		case Qt::LeftButton:
 		{
@@ -206,16 +210,119 @@ void SeqInfoView::mousePressEvent( QMouseEvent *ev )
 		
 }
 
-void SeqInfoView::mouseReleaseEvent( QMouseEvent* )
+void SeqInfoView::mouseReleaseEvent( QMouseEvent *ev )
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
+	
+	if (readOnly_) return;
+	
+	switch (ev->button()){
+		case Qt::LeftButton:
+		{
+			leftDown_=false; // have finished selection
+			if (selectingSequences_){
+				selectingSequences_=false;
+				int startRow = seqSelectionAnchor_,stopRow=seqSelectionDrag_;
+				if (stopRow < startRow) swap_int(&startRow,&stopRow);
+				startRow = project_->sequences.visibleToActual(startRow);
+				stopRow  = project_->sequences.visibleToActual(stopRow);
+				for (int r=startRow;r<=stopRow;r++){
+					project_->sequenceSelection->toggle(project_->sequences.sequences().at(r));
+				}
+			}
+			break;
+		}
+		default:break;
+	}
 }
 
-void SeqInfoView::mouseMoveEvent(QMouseEvent *)
+void SeqInfoView::mouseMoveEvent(QMouseEvent *ev)
 {
+	QPoint clickedPos;
+	int col,row,currRow,currCol;
+	int startRow,stopRow,startCol,stopCol;
+	int clickedRow;
+	
+	if (numRows_== 0) return; // so we don't have to guard against null pointers
+	
+	clickedPos = ev->pos();              		
+	clickedRow=rowAt( clickedPos.y() + contentsRect().y());
+	
+	// clamp to bounds
+	if (clickedRow < 0){
+		if (clickedPos.y() >=0) // clamp to bottom
+			clickedRow = numRows_ -1;
+		else // clamp to top
+			clickedRow = 0;
+	}
+	
+	if (clickedRow >= numRows_)
+		clickedRow = numRows_ -1;
+	
+	// show the label of the sequence we are moving over
+	Sequence *currSeq = project_->sequences.visibleAt(clickedRow);
+	if (currSeq->label != lastInfo_){
+		lastInfo_ = currSeq->label;
+		emit info(lastInfo_);
+	}
+	
+	if (readOnly_) return;
+	
+	if (selectingSequences_ && leftDown_){
+		if (seqSelectionDrag_ != clickedRow){
+			currRow = clickedRow;
+			startRow =  find_smallest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
+			stopRow  =  find_largest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
+			seqSelectionDrag_=currRow;
+			// don't need to translate visible to actual here
+			//for (int row=startRow;row<=stopRow;row++)
+			//	for (int col=FLAGSWIDTH; col < LABELWIDTH+FLAGSWIDTH; col ++)
+			//		updateCell(row,col);
+			//qDebug() << trace.header(__PRETTY_FUNCTION__) << seqSelectionAnchor_ << " " << seqSelectionDrag_ ;
+			//for (int row=startRow;row<=stopRow;row++)
+			//	updateRow(row);
+			repaint();
+		}
+	}
+	
+	
 }
 
-void SeqInfoView::mouseDoubleClickEvent(QMouseEvent *)
+void SeqInfoView::mouseDoubleClickEvent(QMouseEvent *ev)
 {
+	// Double clicking on a group member selects the whole group
+	
+	if (readOnly_) return;
+	
+	QList<Sequence *> &seq = project_->sequences.sequences();
+	
+	if (seq.count() == 0) return;
+	
+	QPoint clickedPos;
+	int clickedRow,clickedCol;
+	
+	clickedPos = ev->pos();		
+	clickedRow=rowAt( clickedPos.y() + contentsRect().y());
+	clickedCol=columnAt( clickedPos.x() + contentsRect().x());
+
+	// If we clicked outside the editing area ... well ... do nothing
+	if ((clickedRow < 0) || (clickedRow > project_->sequences.visibleSize() -1) || (clickedCol < 0 )){
+		switch (ev->button()){
+			case Qt::LeftButton:
+				break;
+			default:break;
+		} // end switch (e->button
+		return;
+	}
+
+	if (clickedCol >= FLAGS_WIDTH){
+		Sequence *selseq = project_->sequences.visibleAt(clickedRow);
+		if (selseq->group){
+			project_->sequenceSelection->clear();
+			project_->addGroupToSelection(selseq->group);
+		}
+	}
+	this->repaint();
 }
 
 // Need to know about wheel events so that we can update the global scrollbars
@@ -251,10 +358,12 @@ void SeqInfoView::init()
 	flagsWidth_=0;
 	labelWidth_=0;
 	
+	selectingSequences_=false;
 	selAnchorRow_=selAnchorCol_=selDragRow_=selDragCol_=-1; 
 	seqSelectionAnchor_=seqSelectionDrag_=-1;
 	leftDown_=false;
 	
+	lastInfo_="";
 }
 
 void SeqInfoView::paintRow(QPainter *p,int row)
@@ -263,6 +372,19 @@ void SeqInfoView::paintRow(QPainter *p,int row)
 	
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 	
+	if (project_->sequenceSelection->contains(currSeq)) // highlight if selectde
+		p->fillRect(flagsWidth_, rowHeight_*row, labelWidth_,rowHeight_,QColor(128,128,128));
+	
+	// The selection isn't filled until the mouse is released
+	// so a possible selection event has to be handled on the fly
+	if (selectingSequences_ && leftDown_){
+		int startRow = seqSelectionAnchor_;
+		int stopRow  = seqSelectionDrag_;
+		if (startRow > stopRow) swap_int(&startRow,&stopRow);
+		if (row >= startRow && row <=stopRow)
+			p->fillRect(flagsWidth_, rowHeight_*row, labelWidth_,rowHeight_,QColor(128,128,128));
+	}
+		
 	if (currSeq->group != NULL){
 		if (currSeq->group->locked()){
 			txtColor.setRgb(255,0,0);
