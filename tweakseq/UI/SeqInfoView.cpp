@@ -89,6 +89,7 @@ void SeqInfoView::setViewFont(const QFont &f)
 	labelWidth_=w*LABEL_WIDTH;
 	
 	setFixedWidth(flagsWidth_ + labelWidth_);
+	setFixedHeight(numRows_*rowHeight_);
 	repaint();
 }
 
@@ -226,6 +227,9 @@ void SeqInfoView::mouseReleaseEvent( QMouseEvent *ev )
 				if (stopRow < startRow) swap_int(&startRow,&stopRow);
 				startRow = project_->sequences.visibleToActual(startRow);
 				stopRow  = project_->sequences.visibleToActual(stopRow);
+				// FIXME this fails to select the group when startRow and stopRow define a complete group visually but are not the
+				// beginning and end of the group - then the sequences outside are missed
+				// Check if everything in [startRow,stopRow] forms a subgroup
 				for (int r=startRow;r<=stopRow;r++){
 					project_->sequenceSelection->toggle(project_->sequences.sequences().at(r));
 				}
@@ -267,6 +271,10 @@ void SeqInfoView::mouseMoveEvent(QMouseEvent *ev)
 	}
 	
 	if (readOnly_) return;
+	
+	if (leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
+		ensureRowVisible(clickedRow);
+	}	
 	
 	if (selectingSequences_ && leftDown_){
 		if (seqSelectionDrag_ != clickedRow){
@@ -373,7 +381,7 @@ void SeqInfoView::paintRow(QPainter *p,int row)
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 	
 	if (project_->sequenceSelection->contains(currSeq)) // highlight if selectde
-		p->fillRect(flagsWidth_, rowHeight_*row, labelWidth_,rowHeight_,QColor(128,128,128));
+		p->fillRect(flagsWidth_, rowHeight_*row, labelWidth_,rowHeight_,QColor(128,128,128)); // add one to fill properly
 	
 	// The selection isn't filled until the mouse is released
 	// so a possible selection event has to be handled on the fly
@@ -399,6 +407,10 @@ void SeqInfoView::paintRow(QPainter *p,int row)
 	
 	p->setPen(txtColor);
 	p->drawText( flagsWidth_, rowHeight_*row, labelWidth_,rowHeight_,Qt::AlignLeft, currSeq->label);
+	
+	txtColor.setRgb(255,255,255);
+	p->setPen(txtColor);
+	p->drawText( columnWidth_*1, rowHeight_*row,columnWidth_*3,rowHeight_, Qt::AlignLeft, QString::number(row));
 	
 }
 

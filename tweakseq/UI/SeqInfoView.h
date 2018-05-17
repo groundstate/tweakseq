@@ -60,6 +60,7 @@ class SeqInfoView: public QWidget
 		
 		void wheelScrolled();
 		void info(const QString &);
+		void ensureRowVisible(int);
 		
 	public slots:
 		
@@ -92,7 +93,7 @@ class SeqInfoView: public QWidget
 		
 		int numRows_;
 		double rowPadding_,columnPadding_;
-		double rowHeight_,columnWidth_;
+		int rowHeight_,columnWidth_;
 		int flagsWidth_,labelWidth_;
 		
 		QString lastInfo_;

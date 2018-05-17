@@ -108,6 +108,7 @@ SeqEditor::SeqEditor(Project *project,QWidget *parent):QWidget(parent)
 	resize(400,600);
 	
 	connect(seqInfoView_,SIGNAL(wheelScrolled()),this,SLOT(wheelScrolled()));
+	connect(seqInfoView_,SIGNAL(ensureRowVisible(int)),this,SLOT(ensureRowVisible(int)));
 	connect(seqInfoView_,SIGNAL(info(const QString &)),this,SLOT(postInfo(const QString &)));
 	connectSignals();
 	
@@ -230,7 +231,7 @@ void SeqEditor::setEditorFont(const QFont &f)
 	columnWidth_ = (int)(w*COLUMN_PADDING);
 	setFont(ftmp); 
 
-	seqInfoView_->setViewFont(f);
+	seqInfoView_->setViewFont(f); // generates a resizEvent(), updating the scrollbars
 	seqResidueView_->setViewFont(f);
 }
 
@@ -258,7 +259,13 @@ void SeqEditor::wheelScrolled()
 {
 	updateScrollBars();
 }
-		
+
+void SeqEditor::ensureRowVisible(int row)
+{
+	int start,stop;
+	//seqInfoView_->visibleRows(&start,&stop);
+}
+
 void SeqEditor::sequenceAdded(Sequence *s)
 {
 
@@ -326,6 +333,7 @@ void SeqEditor::disconnectSignals()
 void SeqEditor::updateScrollBars()
 {
 	QScrollBar *sb = seqInfoScrollArea_->verticalScrollBar();
+	sb->setSingleStep(rowHeight_);
 	//qDebug() << trace.header(__PRETTY_FUNCTION__) << sb->minimum() << " " << sb->maximum() << " " << sb->pageStep() << " " << sb->singleStep();	
 	//qDebug() << trace.header(__PRETTY_FUNCTION__) << seqInfoView_->height();
 	vscroller_->setMinimum(sb->minimum());

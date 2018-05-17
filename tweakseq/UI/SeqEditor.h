@@ -83,6 +83,7 @@ class SeqEditor:public QWidget
 		void vertSliderMoved(int);
 		
 		void wheelScrolled();
+		void ensureRowVisible(int);
 		
 		void sequenceAdded(Sequence *);
 		void sequencesCleared();
