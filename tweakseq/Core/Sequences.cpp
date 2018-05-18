@@ -39,6 +39,27 @@ Sequences::~Sequences()
 {
 }
 
+int Sequences::index(Sequence *seq)
+{
+	for (int s=0;s<sequences_.size();s++){
+		if (sequences_.at(s) == seq)
+			return s;
+	}
+	return -1;
+}
+
+int Sequences::visibleIndex(Sequence *seq)
+{
+	if (!(seq->visible)) return -1;
+	int visIndex=0;
+	for (int i=0;i<sequences_.size();i++){
+		if (seq == sequences_.at(i))
+			return visIndex;
+		if (sequences_.at(i)->visible)
+			visIndex++;
+	}
+	return -1;
+}
 
 bool Sequences::isEmpty()
 {
@@ -48,12 +69,12 @@ bool Sequences::isEmpty()
 // Returns size() - number of hidden sequences
 int Sequences::visibleSize()
 {
-		int nvis=0;
-		for (int i=0;i<sequences_.size();i++){
-			if ((sequences_.at(i)->visible)) 
-				nvis++;
-		}
-		return nvis;
+	int nvis=0;
+	for (int i=0;i<sequences_.size();i++){
+		if ((sequences_.at(i)->visible)) 
+			nvis++;
+	}
+	return nvis;
 }
 
 void Sequences::clear()
@@ -87,12 +108,25 @@ int Sequences::visibleToActual(int pos)
 	int visIndex=0;
 	for (int i=0;i<sequences_.size();i++){
 		Sequence *seq = sequences_.at(i);
-		if (visIndex == pos)
+		if (visIndex == pos && seq->visible)
 			return i;
 		if (seq->visible)
 			visIndex++;
 	}
 	return 0; // FIXME
+}
+
+// Check whether the group defined by [start,stop] belongs to a contiguous subgroup
+bool Sequences::isSubGroup(int start,int stop)
+{
+	if (sequences_.at(start)->group == NULL || sequences_.at(start)->group == NULL) 
+		return false;
+	SequenceGroup *sg = sequences_.at(start)->group;
+	for (int s=start;s<=stop;s++){
+		if (sequences_.at(s)->group !=sg)
+			return false;
+	}
+	return true;
 }
 
 Sequence * Sequences::add(QString l,QString s,QString c,QString f,bool h)

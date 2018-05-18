@@ -42,6 +42,7 @@ class SequenceSelection:public QObject
 		~SequenceSelection();
 	
 		void set(Sequence *);
+		void add(Sequence *);
 		void toggle(Sequence *);
 		void clear();
 		bool contains(Sequence *);

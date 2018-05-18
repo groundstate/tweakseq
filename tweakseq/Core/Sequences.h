@@ -46,6 +46,9 @@ class Sequences:public QObject
 		
 		QList<Sequence *> & sequences(){return sequences_;} 
 		
+		int index(Sequence *);
+		int visibleIndex(Sequence *);
+		
 		int getIndex(QString label);
 		QString getLabelAt(int);
 		
@@ -55,6 +58,8 @@ class Sequences:public QObject
 		void clear();
 		Sequence * visibleAt(int);
 		int visibleToActual(int);
+		
+		bool isSubGroup(int,int);
 		
 		Sequence * add(QString,QString,QString,QString,bool );
 		void  append(Sequence *);

@@ -30,6 +30,11 @@
 #include "Sequence.h"
 #include "SequenceGroup.h"
 
+//
+// Sequences can be added in any order to a group and ARE NOT ORDERED
+// Keeping them ordered seems too complicated
+//
+
 SequenceGroup::SequenceGroup()
 {
 	locked_=false;

@@ -225,13 +225,35 @@ void SeqInfoView::mouseReleaseEvent( QMouseEvent *ev )
 				selectingSequences_=false;
 				int startRow = seqSelectionAnchor_,stopRow=seqSelectionDrag_;
 				if (stopRow < startRow) swap_int(&startRow,&stopRow);
+				int visStart = startRow,visStop=stopRow;
 				startRow = project_->sequences.visibleToActual(startRow);
 				stopRow  = project_->sequences.visibleToActual(stopRow);
-				// FIXME this fails to select the group when startRow and stopRow define a complete group visually but are not the
-				// beginning and end of the group - then the sequences outside are missed
-				// Check if everything in [startRow,stopRow] forms a subgroup
+				
+				// Find all groups which are in the raw selection
+				QList<SequenceGroup *> groups;
+				for (int r=visStart;r<=visStop;r++){
+					int rr = project_->sequences.visibleToActual(r);
+					SequenceGroup *sg = project_->sequences.sequences().at(rr)->group;
+					if (sg){
+						if (!(groups.contains(sg)))
+							groups.append(sg);
+					}
+				}
+				
+				// If all visible members of a group are in the selection, select the whole group
+				for (int g=0;g<groups.size();g++){
+					SequenceGroup *sg = groups.at(g);
+					for (int s=0;s<sg->size();s++){
+						Sequence *seq = sg->itemAt(s);
+						if (seq->visible){
+							int index = project_->sequences.visibleIndex(seq);
+							qDebug() << seq->label << " visible at " << index;
+						}
+					}
+				}
+				// otherwise, select only the visible members
 				for (int r=startRow;r<=stopRow;r++){
-					project_->sequenceSelection->toggle(project_->sequences.sequences().at(r));
+					project_->sequenceSelection->add(project_->sequences.sequences().at(r));
 				}
 			}
 			break;
