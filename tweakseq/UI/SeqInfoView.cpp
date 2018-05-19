@@ -241,19 +241,40 @@ void SeqInfoView::mouseReleaseEvent( QMouseEvent *ev )
 				}
 				
 				// If all visible members of a group are in the selection, select the whole group
+				bool cleared = false;
 				for (int g=0;g<groups.size();g++){
 					SequenceGroup *sg = groups.at(g);
-					for (int s=0;s<sg->size();s++){
+					int s;
+					for (s=0;s<sg->size();s++){
 						Sequence *seq = sg->itemAt(s);
 						if (seq->visible){
 							int index = project_->sequences.visibleIndex(seq);
-							qDebug() << seq->label << " visible at " << index;
+							qDebug() << trace.header(__PRETTY_FUNCTION__) << "checking group:" << seq->label << " visible at " << index;
+							if (index < visStart || index > visStop) break; // not in selection, so bail out
 						}
 					}
+					// At least sequence must have been visible and tested so we can't have got here
+					// without one test at least
+					if (s==sg->size()){
+						qDebug() << trace.header(__PRETTY_FUNCTION__) << "group selected";
+						if (!cleared){
+							project_->sequenceSelection->clear();
+							cleared=true;
+						}
+						for (s=0;s<sg->size();s++)
+							project_->sequenceSelection->add(sg->itemAt(s));
+					}
 				}
-				// otherwise, select only the visible members
+				// Hidden members are part of groups and will have been added to the selection
+				// in the previous step.
+				// Select only the visible members in this step (duplicates will be skipped by add() )
+				if (!cleared){
+					project_->sequenceSelection->clear();
+					cleared=true;
+				}
 				for (int r=startRow;r<=stopRow;r++){
-					project_->sequenceSelection->add(project_->sequences.sequences().at(r));
+					if (project_->sequences.sequences().at(r)->visible)
+						project_->sequenceSelection->add(project_->sequences.sequences().at(r));
 				}
 			}
 			break;
