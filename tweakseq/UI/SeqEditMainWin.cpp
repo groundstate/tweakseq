@@ -688,7 +688,7 @@ void SeqEditMainWin::editUngroupSequences()
 	// Ungroups the current selection of sequences
 	if (!project_->ungroupSelectedSequences())
 		statusBar()->showMessage("Ungrouping unsuccessful");
-	se->repaint();
+	se->updateViewport(); // number of rows may have changed because of unhiding
 }
 
 void SeqEditMainWin::editLock(){
@@ -724,8 +724,7 @@ void SeqEditMainWin::editRemoveExclude(){
 
 void SeqEditMainWin::editReadOnly(){
 	
-	readOnlyAction->setChecked(!readOnlyAction->isChecked());
-	
+	se->setReadOnly(readOnlyAction->isChecked());
 }
 
 void SeqEditMainWin::setupAlignmentMenu()

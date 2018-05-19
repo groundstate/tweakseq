@@ -55,7 +55,8 @@ class SeqInfoView: public QWidget
 		void setReadOnly(bool);
 		
 		void updateViewport();
-	
+		void visibleRows(int *,int *);
+		
 	signals:
 		
 		void wheelScrolled();

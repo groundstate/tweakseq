@@ -82,8 +82,8 @@ void SeqInfoView::setViewFont(const QFont &f)
 	QFontMetrics fm(f);
 	int h = fm.width('W'); // a wide character
 	int w = h;
-	rowHeight_= h*rowPadding_;
-	columnWidth_=w*columnPadding_;
+	rowHeight_= (int) h*rowPadding_;
+	columnWidth_= (int) w*columnPadding_;
 	
 	flagsWidth_=columnWidth_*FLAGS_WIDTH;
 	labelWidth_=w*LABEL_WIDTH;
@@ -100,8 +100,18 @@ void SeqInfoView::setReadOnly(bool readOnly)
 		
 void SeqInfoView::updateViewport()
 {
-	qDebug() << numRows_;
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	numRows_= project_->sequences.visibleSize();
 	setFixedHeight(rowHeight_*numRows_);
+	repaint();
+}
+
+void SeqInfoView::visibleRows(int *start,int *stop)
+{
+	QRect br = visibleRegion().boundingRect();
+	*start = br.y()/rowHeight_;
+	*stop  = (br.y()+br.height())/rowHeight_;
+	qDebug() << *start << " " << *stop;
 }
 
 //
@@ -186,6 +196,7 @@ void SeqInfoView::mousePressEvent( QMouseEvent *ev )
 					break;
 				case Qt::ControlModifier:
 					project_->sequenceSelection->toggle(selSeq);
+					selectingSequences_=false;
 					break;
 				default:
 					break;

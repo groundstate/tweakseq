@@ -27,6 +27,8 @@
 #include <QtDebug>
 #include "DebuggingInfo.h"
 
+#include <cmath>
+
 #include <QBoxLayout>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -156,8 +158,11 @@ QColor SeqEditor::getSequenceGroupColour()
 
 void SeqEditor::updateViewport()
 {
+	numRows_=project_->sequences.visibleSize();
 	seqInfoView_->updateViewport();
 	seqResidueView_->updateViewport();
+	updateScrollBars();
+	
 }
 
 
@@ -167,6 +172,9 @@ void SeqEditor::cutSelectedResidues()
 
 void SeqEditor::cutSelectedSequences()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	project_->cutSelectedSequences();
+	updateViewport();
 }
 
 void SeqEditor::excludeSelection()
@@ -262,8 +270,20 @@ void SeqEditor::wheelScrolled()
 
 void SeqEditor::ensureRowVisible(int row)
 {
-	int start,stop;
-	//seqInfoView_->visibleRows(&start,&stop);
+	QScrollBar *sb = seqInfoScrollArea_->verticalScrollBar();
+	qDebug() << seqInfoView_->visibleRegion().boundingRect();
+	int startRow,stopRow;
+	seqInfoView_->visibleRows(&startRow,&stopRow);
+	if (row<startRow){
+		int newval = rowHeight_*rint((sb->value()-rowHeight_)/((double) rowHeight_));
+		sb->setValue(newval);
+		updateScrollBars();
+	}
+	else if (row > stopRow){
+		int newval = rowHeight_*rint((sb->value()+rowHeight_)/((double) rowHeight_));
+		sb->setValue(newval);
+		updateScrollBars();
+	}
 }
 
 void SeqEditor::sequenceAdded(Sequence *s)

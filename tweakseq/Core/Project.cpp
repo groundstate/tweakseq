@@ -280,16 +280,22 @@ bool Project::groupSelectedSequences(QColor gcol){
 
 bool Project::ungroupSelectedSequences()
 {
+	// Make everything in the selection visible so that we don't lose the non-visible items after ungrouping
+	// If a full group has been selected, then all its members are presumed to be in the selection
+	for ( int s=0;s<sequenceSelection->size();s++)
+		sequenceSelection->itemAt(s)->visible=true;
+	
 	// Any grouped sequence that is in the selection is removed from its group
 	// If this leaves only one sequence in the group, this is OK
 	for ( int s=0;s<sequenceSelection->size();s++){
 		Sequence *seq = sequenceSelection->itemAt(s);
 		if (seq->group){
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "ungrouping " << seq->label;
 			SequenceGroup *sg = seq->group; // save this, cos removing it from the groups sets ptr to NULL
 			seq->group->removeSequence(seq); // this also removes the parent group from the sequence
 			// if we have now removed all of the visible sequences in the group, make the hidden sequences
 			// visible again
-			sg->enforceVisibility();
+			sg->enforceVisibility(); // some redundancy here because we have already made fully selected sequence visible
 		}
 	}
 	// Remove any empty groups
@@ -297,7 +303,7 @@ bool Project::ungroupSelectedSequences()
 	while (g<sequenceGroups.size()){
 		SequenceGroup *sg = sequenceGroups.at(g);
 		if (sg->size() == 0){
-			sequenceGroups.removeOne(sg);
+			sequenceGroups.removeOne(sg); // FIXME memory leak
 			qDebug() << trace.header(__PRETTY_FUNCTION__)  << " removing empty group";
 			delete sg;
 		}
