@@ -24,94 +24,105 @@
 // THE SOFTWARE.
 //
 
-#ifndef __SEQ_EDITOR_H_
-#define __SEQ_EDITOR_H_
+#ifndef __SEQUENCE_EDITOR_H_
+#define __SEQUENCE_EDITOR_H_
 
 #include <QWidget>
 
-class QResizeEvent;
-class QScrollArea;
-class QScrollBar;
-class QSplitter;
+class QFont;
+class QKeyEvent;
+class QMouseEvent;
+class QPainter;
+class QPaintEvent;
+class QWheelEvent;
 
 class Project;
-class Sequence;
-class SeqInfoView;
-class SeqResidueView;
 
-class SeqEditor:public QWidget
+
+class SequenceEditor: public QWidget
 {
 	Q_OBJECT
 	
 	public:
-	
-		SeqEditor(Project *,QWidget *parent);
-		~SeqEditor();
+		
+		SequenceEditor(Project*,QWidget *);
 		void setProject(Project *);
-	
-		void setReadOnly(bool readOnly);
-		bool isReadOnly(){return readOnly_;}
+		
+		void setNumRows(int);
 		
 		const QFont &editorFont(){return font();}
 		
 		QColor getSequenceGroupColour();
 		
+		void setReadOnly(bool);
+		bool isReadOnly(){return readOnly_;}
+		
 		void cutSelectedResidues();
 		void cutSelectedSequences();
 		void excludeSelection();
 		void removeExcludeSelection();
-
+		
+		void setRowPadding(double);
+		
 		void updateViewport();
-	
+		void visibleRows(int *,int *);
+		
+	signals:
+		
+		void wheelScrolled();
+		void info(const QString &);
+		void ensureRowVisible(int);
+		
 	public slots:
-	
+		
+		void sequencesCleared();
+
 		void postLoadTidy();
 		void loadingSequences(bool);
 		void setEditorFont(const QFont &); // this is a slot so that QFontDialog can be used for interactive preview
-	
-	signals:
-	
-		void info(const QString &);
 		
 	protected:
 	
-		virtual void resizeEvent(QResizeEvent *);
+		void paintEvent(QPaintEvent *);
+			
+		void mousePressEvent( QMouseEvent* );
+		void mouseReleaseEvent( QMouseEvent* );
+		void mouseMoveEvent(QMouseEvent *);
+		void mouseDoubleClickEvent(QMouseEvent *);
 		
-	private slots:
+		void wheelEvent(QWheelEvent *);
 		
-		void horizSliderMoved(int);
-		void vertSliderMoved(int);
-		
-		void wheelScrolled();
-		void ensureRowVisible(int);
-		
-		void sequenceAdded(Sequence *);
-		void sequencesCleared();
+		void keyPressEvent( QKeyEvent* );
 	
-		void postInfo(const QString &);
-		
 	private:
 	
 		void init();
+		
 		void connectSignals();
 		void disconnectSignals();
-		void updateScrollBars();
 		
-		QSplitter *splitter_;
-		QScrollBar *hscroller_,*vscroller_;
-		QScrollArea *seqInfoScrollArea_;
-		SeqInfoView *seqInfoView_;
-		SeqResidueView *seqResidueView_;
-
+		void paintRow(QPainter *p,int row);
+		
+		int rowAt(int);
+		int columnAt(int);
+		
 		Project *project_;
+		
 		bool readOnly_;
-		bool loadingSequences_;
 		
 		int numRows_,numCols_;
+		double rowPadding_,columnPadding_;
 		int rowHeight_,columnWidth_;
+		int flagsWidth_,labelWidth_;
 		
 		int currGroupColour_;
 		
+		QString lastInfo_;
+		
+		bool loadingSequences_;
+		bool selectingSequences_;
+		int  selAnchorRow_,selAnchorCol_,selDragRow_,selDragCol_;
+		int  seqSelectionAnchor_,seqSelectionDrag_;
+		bool leftDown_;
 };
-
 #endif

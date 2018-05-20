@@ -36,6 +36,7 @@
 #include <iostream>
 
 
+#include <QBoxLayout>
 #include <QColor>
 #include <QCloseEvent>
 #include <QDateTime>
@@ -50,7 +51,7 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QProcess>
-#include <QScrollArea>
+#include <QScrollBar>
 #include <QSet>
 #include <QStatusBar>
 #include <QSplitter>
@@ -71,7 +72,7 @@
 #include "Muscle.h"
 #include "Project.h"
 #include "ResidueSelection.h"
-#include "SeqEditor.h"
+#include "SequenceEditor.h"
 #include "SeqPreviewDlg.h"
 #include "SeqEditMainWin.h"
 #include "Sequence.h"
@@ -110,15 +111,18 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	createMenus();
 	createToolBars();
 
-	// TO DO ought to check that creation of widget does not fail because
-	// of lack of memory
-	
 	split = new QSplitter(Qt::Vertical,this);
 	
-	se = new SeqEditor(project_,split);
+	QWidget *w = new QWidget(split);
+	QBoxLayout *hl = new QBoxLayout(QBoxLayout::LeftToRight,w);
+	se = new SequenceEditor(project_,w);
+	hl->addWidget(se);
+	vscroller_ = new QScrollBar(Qt::Vertical,w);
+	hl->addWidget(vscroller_);
+	
 	mw = new MessageWin(split);
 	
-	createStatusBar(); // need to connect to ther widgets so do this here
+	createStatusBar(); // need to connect to other widgets so do this here
 	
 	QList<int> wsizes;
 	wsizes.append(600);wsizes.append(200);

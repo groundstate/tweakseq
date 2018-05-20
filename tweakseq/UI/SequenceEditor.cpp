@@ -38,45 +38,74 @@
 #include "ResidueSelection.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
-#include "SeqInfoView.h"
+#include "SequenceEditor.h"
 #include "SequenceSelection.h"
 #include "Utility.h"
 
 #define FLAGS_WIDTH 4
 #define LABEL_WIDTH 16
 
+#define N_GROUP_COLOURS 10
+
+// Colours chose for maximum  contrast for Kenneth Kelly's sequence
+static int groupColours[N_GROUP_COLOURS][3]
+{
+	{241,191,21}, // 82,  yellow
+	{247,118,11}, // 48,  orange
+	{153,198,249}, // 180, light blue
+	{200,177,139}, // 90,  buff
+	{35,234,165}, // 139, green
+	{244,131,205}, // 247, purplish pink
+	{245,144,128}, // 26,  yellowish pink
+	{255,190,80}, // 67,  orange yellow (should be 66
+	{235,221,33}, // 97   greenish yellow
+	{167,220,38} // 115  yellow green
+};
+
 //
 // Public members
 //
 
-SeqInfoView::SeqInfoView(Project *project,QWidget *parent): QWidget(parent)
+SequenceEditor::SequenceEditor(Project *project,QWidget *parent): QWidget(parent)
 {
 	setContentsMargins(0,0,0,0);
 	
 	init();
 	project_=project;
 	
-	setMinimumSize(100,400);
 	setMouseTracking(true);
+	
+	setMinimumSize(400,600);
+	
+	connectSignals();
 }
 
-void SeqInfoView::setProject(Project *project)
+void SequenceEditor::setProject(Project *project)
 {
+	disconnectSignals();
+	
 	init();
 	project_=project;
+	
+	connectSignals();
+	
+	// Set scrollers to initial position
+	//hscroller_->setValue(0);
+	//vscroller_->setValue(0);
+	
 }
 
-void SeqInfoView::setNumRows(int num)
+void SequenceEditor::setNumRows(int num)
 {
 	numRows_=num;
 }
 
-void SeqInfoView::setRowPadding(double p)
+void SequenceEditor::setRowPadding(double p)
 {
 	rowPadding_=p;
 }
 
-void SeqInfoView::setViewFont(const QFont &f)
+void SequenceEditor::setEditorFont(const QFont &f)
 {
 	setFont(f); // presumption is that the requested font is available
 	QFontMetrics fm(f);
@@ -88,25 +117,54 @@ void SeqInfoView::setViewFont(const QFont &f)
 	flagsWidth_=columnWidth_*FLAGS_WIDTH;
 	labelWidth_=w*LABEL_WIDTH;
 	
-	setFixedWidth(flagsWidth_ + labelWidth_);
-	setFixedHeight(numRows_*rowHeight_);
+	//setFixedWidth(flagsWidth_ + labelWidth_);
+	//setFixedHeight(numRows_*rowHeight_);
 	repaint();
 }
 
-void SeqInfoView::setReadOnly(bool readOnly)
+void SequenceEditor::setReadOnly(bool readOnly)
 {
 	readOnly_=readOnly;
 }
-		
-void SeqInfoView::updateViewport()
+
+
+
+QColor SequenceEditor::getSequenceGroupColour()
+{
+	currGroupColour_++;
+	if (currGroupColour_ == N_GROUP_COLOURS+1)
+		currGroupColour_=1;
+	return QColor(groupColours[currGroupColour_-1][0],groupColours[currGroupColour_-1][1],groupColours[currGroupColour_-1][2]);
+}
+
+void SequenceEditor::updateViewport()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	numRows_= project_->sequences.visibleSize();
-	setFixedHeight(rowHeight_*numRows_);
+	//setFixedHeight(rowHeight_*numRows_);
 	repaint();
 }
 
-void SeqInfoView::visibleRows(int *start,int *stop)
+void SequenceEditor::cutSelectedResidues()
+{
+}
+
+void SequenceEditor::cutSelectedSequences()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	project_->cutSelectedSequences();
+	updateViewport();
+}
+
+void SequenceEditor::excludeSelection()
+{
+}
+
+void SequenceEditor::removeExcludeSelection()
+{
+}
+
+void SequenceEditor::visibleRows(int *start,int *stop)
 {
 	QRect br = visibleRegion().boundingRect();
 	*start = br.y()/rowHeight_;
@@ -118,16 +176,49 @@ void SeqInfoView::visibleRows(int *start,int *stop)
 // Public slots
 //
 
-void SeqInfoView::sequencesCleared()
+void SequenceEditor::sequencesCleared()
 {
 	numRows_=0;
+}
+
+void SequenceEditor::postLoadTidy()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	// Determine the last group colour used so that currGroupColour_ can be set correctly
+	int maxCol =0;
+	for (int s=0;s<project_->sequences.size();s++){ // checked OK
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (seq->group != NULL){
+			QColor gcol = seq->group->textColour();
+			
+			for (int c=0;c<N_GROUP_COLOURS;c++){
+				if (gcol.red() == groupColours[c][0] && gcol.green() == groupColours[c][1] && gcol.blue() == groupColours[c][2]){
+					if (c>maxCol){
+						maxCol=c;
+						break;
+					}
+				}
+			}
+		}
+	}
+	currGroupColour_=maxCol+1;
+}
+
+void SequenceEditor::loadingSequences(bool loading)
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << loading;
+	loadingSequences_= loading;
+	if (!loadingSequences_){
+		updateViewport();
+		//updateScrollBars();
+	}
 }
 
 //
 // Protected members
 //
 
-void SeqInfoView::paintEvent(QPaintEvent *pev)
+void SequenceEditor::paintEvent(QPaintEvent *pev)
 {
 	QPainter p(this);
 
@@ -138,7 +229,7 @@ void SeqInfoView::paintEvent(QPaintEvent *pev)
 	}
 }
 
-void SeqInfoView::mousePressEvent( QMouseEvent *ev )
+void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 {
 	
 	if (readOnly_) return;
@@ -149,7 +240,7 @@ void SeqInfoView::mousePressEvent( QMouseEvent *ev )
 	
 	QPoint clickedPos;
 	int clickedRow,clickedCol;
-	int col,row,startRow,stopRow,startCol,stopCol;
+	//int col,row,startRow,stopRow,startCol,stopCol;
 	
 	clickedPos = ev->pos();		
 	clickedRow=rowAt( clickedPos.y() + contentsRect().y());
@@ -222,7 +313,7 @@ void SeqInfoView::mousePressEvent( QMouseEvent *ev )
 		
 }
 
-void SeqInfoView::mouseReleaseEvent( QMouseEvent *ev )
+void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	
@@ -294,7 +385,7 @@ void SeqInfoView::mouseReleaseEvent( QMouseEvent *ev )
 	}
 }
 
-void SeqInfoView::mouseMoveEvent(QMouseEvent *ev)
+void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 {
 	QPoint clickedPos;
 	int col,row,currRow,currCol;
@@ -350,7 +441,7 @@ void SeqInfoView::mouseMoveEvent(QMouseEvent *ev)
 	
 }
 
-void SeqInfoView::mouseDoubleClickEvent(QMouseEvent *ev)
+void SequenceEditor::mouseDoubleClickEvent(QMouseEvent *ev)
 {
 	// Double clicking on a group member selects the whole group
 	
@@ -388,13 +479,13 @@ void SeqInfoView::mouseDoubleClickEvent(QMouseEvent *ev)
 }
 
 // Need to know about wheel events so that we can update the global scrollbars
-void SeqInfoView::wheelEvent(QWheelEvent *ev)
+void SequenceEditor::wheelEvent(QWheelEvent *ev)
 {
 	ev->ignore(); // the event will be handled by the parent QScrollArea
 	emit wheelScrolled();
 }
 		
-void SeqInfoView::keyPressEvent( QKeyEvent* )
+void SequenceEditor::keyPressEvent( QKeyEvent* )
 {
 }
 
@@ -403,13 +494,14 @@ void SeqInfoView::keyPressEvent( QKeyEvent* )
 // Private members
 //
 
-void SeqInfoView::init()
+void SequenceEditor::init()
 {
 	project_=NULL;
 	
 	readOnly_=false;
 	
 	numRows_=0;
+	numCols_=0;
 	
 	rowPadding_=1.3;
 	rowHeight_=16;
@@ -420,15 +512,33 @@ void SeqInfoView::init()
 	flagsWidth_=0;
 	labelWidth_=0;
 	
+	loadingSequences_=false;
 	selectingSequences_=false;
 	selAnchorRow_=selAnchorCol_=selDragRow_=selDragCol_=-1; 
 	seqSelectionAnchor_=seqSelectionDrag_=-1;
 	leftDown_=false;
 	
 	lastInfo_="";
+	
+	currGroupColour_=0;
+	
 }
 
-void SeqInfoView::paintRow(QPainter *p,int row)
+void SequenceEditor::connectSignals()
+{
+	connect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
+	connect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
+}
+
+void SequenceEditor::disconnectSignals()
+{
+	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
+	disconnect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
+}
+
+void SequenceEditor::paintRow(QPainter *p,int row)
 {
 	QColor txtColor;
 	
@@ -468,12 +578,12 @@ void SeqInfoView::paintRow(QPainter *p,int row)
 	
 }
 
-int SeqInfoView::rowAt(int ypos)
+int SequenceEditor::rowAt(int ypos)
 {
 	return (int) (ypos/rowHeight_);
 }
 
-int SeqInfoView::columnAt(int xpos)
+int SequenceEditor::columnAt(int xpos)
 {
 	// The return result only makes sense for the FLAGS area
 	return (int) (xpos/columnWidth_);

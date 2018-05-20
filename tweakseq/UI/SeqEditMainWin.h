@@ -33,13 +33,14 @@
 class QDomDocument;
 class QDomElement;
 class QPrinter;
+class QScrollBar;
 class QSplitter;
 class QTemporaryFile;
 class QToolBar;
 
 class MessageWin;
 class Project;
-class SeqEditor;
+class SequenceEditor;
 class SequenceGroup;
 
 class SeqEditMainWin: public QMainWindow
@@ -53,7 +54,7 @@ public:
 	
 	void doAlignment();
 	
-	SeqEditor *se;
+	SequenceEditor *se;
 	
 	void postLoadTidy();
 	void writeSettings(QDomDocument &,QDomElement &);
@@ -158,8 +159,9 @@ private:
 	QAction *testAction;
 	
 	QToolBar *seqEditTB;
-	MessageWin *mw;
+	QScrollBar *vscroller_,*hscroller_;
 	QSplitter *split;
+	MessageWin *mw;
 	
 	QPrinter *printer;	
 	
