@@ -67,7 +67,7 @@ bool Sequences::isEmpty()
 }
 
 // Returns size() - number of hidden sequences
-int Sequences::visibleSize()
+int Sequences::numVisible()
 {
 	int nvis=0;
 	for (int i=0;i<sequences_.size();i++){

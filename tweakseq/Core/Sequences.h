@@ -54,7 +54,7 @@ class Sequences:public QObject
 		
 		bool isEmpty();
 		int size(){return sequences_.size();}
-		int visibleSize();
+		int numVisible();
 		void clear();
 		Sequence * visibleAt(int);
 		int visibleToActual(int);

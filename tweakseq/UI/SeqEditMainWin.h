@@ -123,6 +123,8 @@ private slots:
 	
 	void createContextMenu(const QPoint &);
 	
+	void updateScrollBars(int,int,int,int,int,int);
+	
 private:
 
 	void init();

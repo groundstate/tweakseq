@@ -114,12 +114,20 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	split = new QSplitter(Qt::Vertical,this);
 	
 	QWidget *w = new QWidget(split);
-	QBoxLayout *hl = new QBoxLayout(QBoxLayout::LeftToRight,w);
+	QBoxLayout *vl = new QBoxLayout(QBoxLayout::TopToBottom,w);
+	QBoxLayout *hl = new QBoxLayout(QBoxLayout::LeftToRight);
+	vl->addLayout(hl);
 	se = new SequenceEditor(project_,w);
 	hl->addWidget(se);
+	// Units of the vscroller are ROWS
 	vscroller_ = new QScrollBar(Qt::Vertical,w);
 	hl->addWidget(vscroller_);
 	
+	// Units of the hscroller are CELLS (residues)
+	// The hscroller does not control the leftmost information field
+	hscroller_ = new QScrollBar(Qt::Horizontal,w);
+	vl->addWidget(hscroller_);
+		
 	mw = new MessageWin(split);
 	
 	createStatusBar(); // need to connect to other widgets so do this here
@@ -136,6 +144,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	
 	setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(this,SIGNAL(customContextMenuRequested ( const QPoint & )),this,SLOT(createContextMenu(const QPoint &)));
+	connect(se,SIGNAL(viewExtentsChanged(int,int,int,int,int,int)),this,SLOT(updateScrollBars(int,int,int,int,int,int)));
 	
 	statusBar()->showMessage("Ready");
 
@@ -359,7 +368,7 @@ void SeqEditMainWin::filePrint(){
 	int blocksDone=0;
 	int x,y,yt,i,j,k;
 	int nTicks;
-	int maxLength;
+	int maxLength=0;
 	int blocksToDo=0;
 	
 	QString tmp;
@@ -771,7 +780,7 @@ void SeqEditMainWin::alignmentReadyReadStdErr()
 	mw->addMessage(msg,MessageWin::Error);
 }
 
-void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus exitStatus)
+void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus)
 {
 	qDebug() << trace.header() << "SeqEditMainWin::alignmentFinished() exitCode=" << exitCode;
 	
@@ -894,6 +903,16 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 	delete cm;
 }
 
+void SeqEditMainWin::updateScrollBars(int startRow,int stopRow,int numRows,int,int,int)
+{
+	// Triggered by resizeEvent() in SequenceEditor, ...
+	int nvis = stopRow - startRow + 1;
+	vscroller_->setMinimum(0);
+	vscroller_->setPageStep(nvis);
+	vscroller_->setMaximum(numRows-nvis);
+	
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " << numRows;
+}
 
 void SeqEditMainWin::sequenceSelectionChanged()
 {

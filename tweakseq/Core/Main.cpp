@@ -60,7 +60,7 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &, const QString &
 		case QtInfoMsg:
 				break;
 		case QtFatalMsg:
-				qFatal(msg.toLocal8Bit().data());
+				qFatal(msg.toLocal8Bit().constData());
 				abort();
 	}
 }

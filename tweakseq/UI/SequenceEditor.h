@@ -37,7 +37,7 @@ class QPaintEvent;
 class QWheelEvent;
 
 class Project;
-
+class Sequence;
 
 class SequenceEditor: public QWidget
 {
@@ -48,41 +48,40 @@ class SequenceEditor: public QWidget
 		SequenceEditor(Project*,QWidget *);
 		void setProject(Project *);
 		
-		void setNumRows(int);
-		
-		const QFont &editorFont(){return font();}
-		
-		QColor getSequenceGroupColour();
-		
 		void setReadOnly(bool);
 		bool isReadOnly(){return readOnly_;}
+		
+		const QFont &editorFont(){return font();}
+		QColor getSequenceGroupColour();
 		
 		void cutSelectedResidues();
 		void cutSelectedSequences();
 		void excludeSelection();
 		void removeExcludeSelection();
-		
-		void setRowPadding(double);
-		
+	
 		void updateViewport();
 		void visibleRows(int *,int *);
 		
 	signals:
-		
-		void wheelScrolled();
+	
 		void info(const QString &);
+		void viewExtentsChanged(int,int,int,int,int,int);
+		
 		void ensureRowVisible(int);
-		
+	
 	public slots:
-		
+	
+		void sequenceAdded(Sequence *);
 		void sequencesCleared();
 
 		void postLoadTidy();
 		void loadingSequences(bool);
 		void setEditorFont(const QFont &); // this is a slot so that QFontDialog can be used for interactive preview
-		
+	
 	protected:
 	
+		void resizeEvent(QResizeEvent * event);
+		
 		void paintEvent(QPaintEvent *);
 			
 		void mousePressEvent( QMouseEvent* );
@@ -91,29 +90,33 @@ class SequenceEditor: public QWidget
 		void mouseDoubleClickEvent(QMouseEvent *);
 		
 		void wheelEvent(QWheelEvent *);
-		
+	
 		void keyPressEvent( QKeyEvent* );
 	
 	private:
 	
 		void init();
-		
-		void connectSignals();
-		void disconnectSignals();
+		void updateViewExtents();
+	
+		void connectToProject();
+		void disconnectFromProject();
 		
 		void paintRow(QPainter *p,int row);
-		
+	
 		int rowAt(int);
 		int columnAt(int);
 		
 		Project *project_;
-		
+	
 		bool readOnly_;
 		
 		int numRows_,numCols_;
 		double rowPadding_,columnPadding_;
 		int rowHeight_,columnWidth_;
 		int flagsWidth_,labelWidth_;
+		
+		int firstVisibleRow_,lastVisibleRow_;
+		int firstVisibleColumn_,lastVisibleColumn_;
 		
 		int currGroupColour_;
 		

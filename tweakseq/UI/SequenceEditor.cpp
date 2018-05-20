@@ -27,6 +27,8 @@
 #include <QtDebug>
 #include "DebuggingInfo.h"
 
+#include <cmath>
+
 #include <QFont>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -77,32 +79,18 @@ SequenceEditor::SequenceEditor(Project *project,QWidget *parent): QWidget(parent
 	
 	setMinimumSize(400,600);
 	
-	connectSignals();
+	connectToProject();
 }
 
 void SequenceEditor::setProject(Project *project)
 {
-	disconnectSignals();
+	disconnectFromProject();
 	
 	init();
 	project_=project;
 	
-	connectSignals();
+	connectToProject();
 	
-	// Set scrollers to initial position
-	//hscroller_->setValue(0);
-	//vscroller_->setValue(0);
-	
-}
-
-void SequenceEditor::setNumRows(int num)
-{
-	numRows_=num;
-}
-
-void SequenceEditor::setRowPadding(double p)
-{
-	rowPadding_=p;
 }
 
 void SequenceEditor::setEditorFont(const QFont &f)
@@ -117,8 +105,8 @@ void SequenceEditor::setEditorFont(const QFont &f)
 	flagsWidth_=columnWidth_*FLAGS_WIDTH;
 	labelWidth_=w*LABEL_WIDTH;
 	
-	//setFixedWidth(flagsWidth_ + labelWidth_);
-	//setFixedHeight(numRows_*rowHeight_);
+	updateViewExtents();
+	
 	repaint();
 }
 
@@ -140,8 +128,7 @@ QColor SequenceEditor::getSequenceGroupColour()
 void SequenceEditor::updateViewport()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	numRows_= project_->sequences.visibleSize();
-	//setFixedHeight(rowHeight_*numRows_);
+	updateViewExtents();
 	repaint();
 }
 
@@ -166,15 +153,26 @@ void SequenceEditor::removeExcludeSelection()
 
 void SequenceEditor::visibleRows(int *start,int *stop)
 {
-	QRect br = visibleRegion().boundingRect();
-	*start = br.y()/rowHeight_;
-	*stop  = (br.y()+br.height())/rowHeight_;
+	*start = firstVisibleRow_;
+	*stop  = lastVisibleRow_;
 	qDebug() << *start << " " << *stop;
 }
 
 //
 // Public slots
 //
+
+void SequenceEditor::sequenceAdded(Sequence *s)
+{
+	
+	if (s->visible){
+		numRows_=numRows_+1;
+	}
+	
+	if (!loadingSequences_){
+		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
+	}
+}
 
 void SequenceEditor::sequencesCleared()
 {
@@ -210,13 +208,19 @@ void SequenceEditor::loadingSequences(bool loading)
 	loadingSequences_= loading;
 	if (!loadingSequences_){
 		updateViewport();
-		//updateScrollBars();
+		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
 	}
 }
 
 //
 // Protected members
 //
+
+void SequenceEditor::resizeEvent(QResizeEvent *)
+{
+	updateViewExtents();
+	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_); // FIXME
+}
 
 void SequenceEditor::paintEvent(QPaintEvent *pev)
 {
@@ -388,8 +392,10 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 {
 	QPoint clickedPos;
-	int col,row,currRow,currCol;
-	int startRow,stopRow,startCol,stopCol;
+	int currRow;
+	//int col,row,currRow,currCol;
+	int startRow,stopRow;
+	//int startCol,stopCol;
 	int clickedRow;
 	
 	if (numRows_== 0) return; // so we don't have to guard against null pointers
@@ -459,7 +465,7 @@ void SequenceEditor::mouseDoubleClickEvent(QMouseEvent *ev)
 	clickedCol=columnAt( clickedPos.x() + contentsRect().x());
 
 	// If we clicked outside the editing area ... well ... do nothing
-	if ((clickedRow < 0) || (clickedRow > project_->sequences.visibleSize() -1) || (clickedCol < 0 )){
+	if ((clickedRow < 0) || (clickedRow > project_->sequences.numVisible() -1) || (clickedCol < 0 )){
 		switch (ev->button()){
 			case Qt::LeftButton:
 				break;
@@ -481,8 +487,6 @@ void SequenceEditor::mouseDoubleClickEvent(QMouseEvent *ev)
 // Need to know about wheel events so that we can update the global scrollbars
 void SequenceEditor::wheelEvent(QWheelEvent *ev)
 {
-	ev->ignore(); // the event will be handled by the parent QScrollArea
-	emit wheelScrolled();
 }
 		
 void SequenceEditor::keyPressEvent( QKeyEvent* )
@@ -502,6 +506,11 @@ void SequenceEditor::init()
 	
 	numRows_=0;
 	numCols_=0;
+	
+	firstVisibleRow_ = 0;
+	lastVisibleRow_=1;
+	firstVisibleColumn_=0;
+	lastVisibleColumn_=0;
 	
 	rowPadding_=1.3;
 	rowHeight_=16;
@@ -524,14 +533,29 @@ void SequenceEditor::init()
 	
 }
 
-void SequenceEditor::connectSignals()
+void SequenceEditor::updateViewExtents()
+{
+	// round up to catch fractional bits ?
+	lastVisibleRow_ = firstVisibleRow_ + ceil((double)height()/((double) rowHeight_))-1; // zero indexed, so subtract 1
+	
+	int nvis = project_->sequences.numVisible();
+	if (lastVisibleRow_ >= nvis)
+		lastVisibleRow_ = nvis-1; // could be < 0 but next test fixes that
+	
+	if (lastVisibleRow_ < firstVisibleRow_)
+		lastVisibleRow_=firstVisibleRow_;
+	
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << firstVisibleRow_ << " " << lastVisibleRow_;
+}
+
+void SequenceEditor::connectToProject()
 {
 	connect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
 	connect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
 }
 
-void SequenceEditor::disconnectSignals()
+void SequenceEditor::disconnectFromProject()
 {
 	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
@@ -544,7 +568,7 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 	
-	if (project_->sequenceSelection->contains(currSeq)) // highlight if selectde
+	if (project_->sequenceSelection->contains(currSeq)) // highlight if selected
 		p->fillRect(flagsWidth_, rowHeight_*row, labelWidth_,rowHeight_,QColor(128,128,128)); // add one to fill properly
 	
 	// The selection isn't filled until the mouse is released
