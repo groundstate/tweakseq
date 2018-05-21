@@ -78,6 +78,9 @@ class SequenceEditor: public QWidget
 		void loadingSequences(bool);
 		void setEditorFont(const QFont &); // this is a slot so that QFontDialog can be used for interactive preview
 	
+		void setFirstVisibleRow(int);
+		void setFirstVisibleColumn(int);
+		
 	protected:
 	
 		void resizeEvent(QResizeEvent * event);

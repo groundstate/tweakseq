@@ -212,6 +212,19 @@ void SequenceEditor::loadingSequences(bool loading)
 	}
 }
 
+void SequenceEditor::setFirstVisibleRow(int val)
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << val << endl;
+	firstVisibleRow_=val;
+	updateViewExtents();
+	repaint();
+}
+
+void SequenceEditor::setFirstVisibleColumn(int)
+{
+}
+
+		
 //
 // Protected members
 //
@@ -228,7 +241,7 @@ void SequenceEditor::paintEvent(QPaintEvent *pev)
 
 	p.fillRect(pev->rect(),QColor(0,0,0));
 	
-	for (int r=0;r<numRows_;r++){
+	for (int r=firstVisibleRow_;r<=lastVisibleRow_;r++){
 		paintRow(&p,r);
 	}
 }
@@ -251,7 +264,7 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 	clickedCol=columnAt(clickedPos.x() + contentsRect().x());
 	
 	// If we clicked outside the editing area ... well ... do nothing
-	if ((clickedRow < 0) || (clickedRow > seq.count() -1) || clickedCol < 0){
+	if ((clickedRow < 0) || (clickedRow > lastVisibleRow_) || clickedCol < 0){
 		switch (ev->button()){
 			case Qt::LeftButton:
 				break;
@@ -568,8 +581,10 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 	
+	int yrow = rowHeight_*(row-firstVisibleRow_);
+	
 	if (project_->sequenceSelection->contains(currSeq)) // highlight if selected
-		p->fillRect(flagsWidth_, rowHeight_*row, labelWidth_,rowHeight_,QColor(128,128,128)); // add one to fill properly
+		p->fillRect(flagsWidth_, yrow, labelWidth_,rowHeight_,QColor(128,128,128)); // add one to fill properly
 	
 	// The selection isn't filled until the mouse is released
 	// so a possible selection event has to be handled on the fly
@@ -578,14 +593,14 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 		int stopRow  = seqSelectionDrag_;
 		if (startRow > stopRow) swap_int(&startRow,&stopRow);
 		if (row >= startRow && row <=stopRow)
-			p->fillRect(flagsWidth_, rowHeight_*row, labelWidth_,rowHeight_,QColor(128,128,128));
+			p->fillRect(flagsWidth_, yrow, labelWidth_,rowHeight_,QColor(128,128,128));
 	}
 		
 	if (currSeq->group != NULL){
 		if (currSeq->group->locked()){
 			txtColor.setRgb(255,0,0);
 			p->setPen(txtColor);
-			p->drawText( 0, rowHeight_*row, flagsWidth_, rowHeight_, Qt::AlignLeft, "L");
+			p->drawText( 0, yrow, flagsWidth_, rowHeight_, Qt::AlignLeft, "L");
 		}
 		txtColor=currSeq->group->textColour(); // group colour for sequence label
 	}
@@ -594,17 +609,17 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	}
 	
 	p->setPen(txtColor);
-	p->drawText( flagsWidth_, rowHeight_*row, labelWidth_,rowHeight_,Qt::AlignLeft, currSeq->label);
+	p->drawText( flagsWidth_, yrow, labelWidth_,rowHeight_,Qt::AlignLeft, currSeq->label);
 	
 	txtColor.setRgb(255,255,255);
 	p->setPen(txtColor);
-	p->drawText( columnWidth_*1, rowHeight_*row,columnWidth_*3,rowHeight_, Qt::AlignLeft, QString::number(row));
+	p->drawText( columnWidth_*1, yrow,columnWidth_*3,rowHeight_, Qt::AlignLeft, QString::number(row));
 	
 }
 
 int SequenceEditor::rowAt(int ypos)
 {
-	return (int) (ypos/rowHeight_);
+	return (int) (ypos/rowHeight_) + firstVisibleRow_;
 }
 
 int SequenceEditor::columnAt(int xpos)

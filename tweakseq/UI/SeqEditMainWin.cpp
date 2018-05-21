@@ -145,6 +145,8 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(this,SIGNAL(customContextMenuRequested ( const QPoint & )),this,SLOT(createContextMenu(const QPoint &)));
 	connect(se,SIGNAL(viewExtentsChanged(int,int,int,int,int,int)),this,SLOT(updateScrollBars(int,int,int,int,int,int)));
+	connect(vscroller_,SIGNAL(valueChanged(int)),se,SLOT(setFirstVisibleRow(int)));
+	connect(hscroller_,SIGNAL(valueChanged(int)),se,SLOT(setFirstVisibleColumn(int)));
 	
 	statusBar()->showMessage("Ready");
 
