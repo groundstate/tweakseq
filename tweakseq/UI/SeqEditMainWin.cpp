@@ -98,7 +98,7 @@ const char *lockText = "Click this button to add and edit a new"
 SeqEditMainWin::SeqEditMainWin(Project *project)
 	:QMainWindow()
 {
-	qDebug() << trace.header() << "SeqEditMainWin::SeqEditMainWin";
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << " creating";
 	
 	init();
 	project_=project;
@@ -145,6 +145,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(this,SIGNAL(customContextMenuRequested ( const QPoint & )),this,SLOT(createContextMenu(const QPoint &)));
 	connect(se,SIGNAL(viewExtentsChanged(int,int,int,int,int,int)),this,SLOT(updateScrollBars(int,int,int,int,int,int)));
+	
 	connect(vscroller_,SIGNAL(valueChanged(int)),se,SLOT(setFirstVisibleRow(int)));
 	connect(hscroller_,SIGNAL(valueChanged(int)),se,SLOT(setFirstVisibleColumn(int)));
 	
@@ -908,13 +909,15 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 void SeqEditMainWin::updateScrollBars(int startRow,int stopRow,int numRows,int,int,int)
 {
 	// Triggered by resizeEvent() in SequenceEditor, ...
+	
 	int nvis = stopRow - startRow + 1;
 	vscroller_->setMinimum(0);
 	vscroller_->setPageStep(nvis);
 	vscroller_->setMaximum(numRows-nvis);
-	
+	vscroller_->setValue(startRow);
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " << numRows;
 }
+
 
 void SeqEditMainWin::sequenceSelectionChanged()
 {

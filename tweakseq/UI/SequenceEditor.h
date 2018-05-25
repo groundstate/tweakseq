@@ -66,8 +66,6 @@ class SequenceEditor: public QWidget
 	
 		void info(const QString &);
 		void viewExtentsChanged(int,int,int,int,int,int);
-		
-		void ensureRowVisible(int);
 	
 	public slots:
 	
@@ -99,6 +97,7 @@ class SequenceEditor: public QWidget
 	private:
 	
 		void init();
+		void ensureRowVisible(int);
 		void updateViewExtents();
 	
 		void connectToProject();
@@ -130,5 +129,7 @@ class SequenceEditor: public QWidget
 		int  selAnchorRow_,selAnchorCol_,selDragRow_,selDragCol_;
 		int  seqSelectionAnchor_,seqSelectionDrag_;
 		bool leftDown_;
+		
+		int totalWheelRotation_;
 };
 #endif

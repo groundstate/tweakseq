@@ -215,6 +215,7 @@ void SequenceEditor::loadingSequences(bool loading)
 void SequenceEditor::setFirstVisibleRow(int val)
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << val << endl;
+	if (val <0) val=0; // the slider can return -1
 	firstVisibleRow_=val;
 	updateViewExtents();
 	repaint();
@@ -248,6 +249,8 @@ void SequenceEditor::paintEvent(QPaintEvent *pev)
 
 void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 {
+	
+	totalWheelRotation_ = 0;
 	
 	if (readOnly_) return;
 	
@@ -334,6 +337,8 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	
+	totalWheelRotation_ = 0;
+	
 	if (readOnly_) return;
 	
 	switch (ev->button()){
@@ -404,12 +409,15 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 
 void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 {
+
 	QPoint clickedPos;
 	int currRow;
 	//int col,row,currRow,currCol;
 	int startRow,stopRow;
 	//int startCol,stopCol;
 	int clickedRow;
+
+	totalWheelRotation_ = 0;
 	
 	if (numRows_== 0) return; // so we don't have to guard against null pointers
 	
@@ -497,9 +505,23 @@ void SequenceEditor::mouseDoubleClickEvent(QMouseEvent *ev)
 	this->repaint();
 }
 
-// Need to know about wheel events so that we can update the global scrollbars
 void SequenceEditor::wheelEvent(QWheelEvent *ev)
 {
+
+	int nvis = lastVisibleRow_ - firstVisibleRow_ + 1;
+	totalWheelRotation_ += ev->angleDelta().y();
+	int nToScroll = totalWheelRotation_/120;
+	totalWheelRotation_ -= 120*nToScroll;
+	firstVisibleRow_ -= nToScroll;
+	if (firstVisibleRow_< 0)
+		firstVisibleRow_= 0;
+	if (firstVisibleRow_ + nvis -1 >= numRows_)
+		firstVisibleRow_ = numRows_- nvis;
+	lastVisibleRow_ = firstVisibleRow_ + nvis -1;
+	
+	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
+	
+	repaint();
 }
 		
 void SequenceEditor::keyPressEvent( QKeyEvent* )
@@ -544,17 +566,39 @@ void SequenceEditor::init()
 	
 	currGroupColour_=0;
 	
+	totalWheelRotation_=0;
+}
+
+void SequenceEditor::ensureRowVisible(int row)
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << row; 
+	int nvis = lastVisibleRow_ - firstVisibleRow_ + 1;
+	if (row < firstVisibleRow_){
+		firstVisibleRow_ = row;
+		lastVisibleRow_ = firstVisibleRow_+ nvis -1;
+		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
+		repaint();
+	}
+	else if ( row > lastVisibleRow_){
+		lastVisibleRow_=row;
+		firstVisibleRow_ = lastVisibleRow_ - nvis + 1;
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << firstVisibleRow_ << " " << lastVisibleRow_;
+		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
+		repaint();
+	}
 }
 
 void SequenceEditor::updateViewExtents()
 {
 	// round up to catch fractional bits ?
-	lastVisibleRow_ = firstVisibleRow_ + ceil((double)height()/((double) rowHeight_))-1; // zero indexed, so subtract 1
+	int displayableRows=ceil((double)height()/((double) rowHeight_));
+	lastVisibleRow_ = firstVisibleRow_ + displayableRows-1; // zero indexed, so subtract 1
 	
-	int nvis = project_->sequences.numVisible();
-	if (lastVisibleRow_ >= nvis)
-		lastVisibleRow_ = nvis-1; // could be < 0 but next test fixes that
-	
+	numRows_ = project_->sequences.numVisible();
+	if (lastVisibleRow_ >= numRows_){
+		lastVisibleRow_ = numRows_-1; // could be < 0 but next test fixes that
+		//firstVisibleRow_ = lastVisibleRow_ - displayableRows + 1;
+	}
 	if (lastVisibleRow_ < firstVisibleRow_)
 		lastVisibleRow_=firstVisibleRow_;
 	
@@ -580,6 +624,7 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	QColor txtColor;
 	
 	Sequence *currSeq = project_->sequences.visibleAt(row);
+	if (currSeq == NULL) return; // this happens with an empty project
 	
 	int yrow = rowHeight_*(row-firstVisibleRow_);
 	
