@@ -33,6 +33,7 @@
 
 Sequences::Sequences()
 {
+	maxLen_=0;
 }
 
 Sequences::~Sequences()
@@ -85,6 +86,7 @@ void Sequences::clear()
 			seq->group->removeSequence(seq);
 		delete seq;
 	}
+	updateCachedVariables();
 	emit cleared();
 	emit changed();
 }
@@ -116,6 +118,14 @@ int Sequences::visibleToActual(int pos)
 	return 0; // FIXME
 }
 
+int Sequences::maxLength(bool recalculate)
+{
+	if (recalculate){
+	}
+	return maxLen_;
+}
+
+
 // Check whether the group defined by [start,stop] belongs to a contiguous subgroup
 bool Sequences::isSubGroup(int start,int stop)
 {
@@ -129,10 +139,12 @@ bool Sequences::isSubGroup(int start,int stop)
 	return true;
 }
 
-Sequence * Sequences::add(QString l,QString s,QString c,QString f,bool h)
+Sequence * Sequences::add(QString l,QString r,QString c,QString f,bool h)
 {
-	Sequence * newSeq = new Sequence(l,s,c,f,h);
+	Sequence * newSeq = new Sequence(l,r,c,f,h);
 	sequences_.append(newSeq);
+	if (r.length() > maxLen_)
+		maxLen_=r.length();
 	emit sequenceAdded(newSeq);
 	emit changed();
 	return newSeq;
@@ -141,6 +153,9 @@ Sequence * Sequences::add(QString l,QString s,QString c,QString f,bool h)
 void  Sequences::append(Sequence *newSequence)
 {
 	sequences_.append(newSequence);
+	int len = newSequence->residues.length();
+	if (len > maxLen_)
+		maxLen_=len;
 	emit changed();
 	emit sequenceAdded(newSequence);
 }
@@ -168,6 +183,9 @@ void  Sequences::insert(Sequence *seq,Sequence *after,bool postInsert)
 	if (s<sequences_.size()){
 		sequences_.insert(s+1,seq); // postInsert
 	}
+	int len = seq->residues.length();
+	if (len > maxLen_)
+		maxLen_=len;
 }
 
 
@@ -178,6 +196,7 @@ void  Sequences::replace(QString oldLabel,QString newLabel,QString newResidues)
 		remove(oldLabel);
 		insert(newLabel,newResidues,i);
 	}
+	
 	emit changed();
 }
 
@@ -193,6 +212,7 @@ void Sequences::move(int oldPos,int newPos)
 void Sequences::replaceResidues(QString newResidues,int pos)
 {
 	sequences_.at(pos)->residues=newResidues;
+	updateCachedVariables();
 	emit changed();
 }
 
@@ -202,6 +222,9 @@ void  Sequences::addInsertions(int startSequence,int stopSequence,int startPos,i
 	QString ins(nInsertions,'-');
 	for (int s=startSequence; s<=stopSequence; s++){
 		sequences_.at(s)->residues.insert(startPos,ins);
+		int len = sequences_.at(s)->residues.length();
+		if (len > maxLen_)
+			maxLen_=len;
 	}
 	emit changed();
 }
@@ -210,6 +233,9 @@ void  Sequences::addInsertions(Sequence *seq,int startPos,int nInsertions)
 {
 	QString ins(nInsertions,'-');
 	seq->residues.insert(startPos,ins);
+	int len = seq->residues.length();
+	if (len > maxLen_)
+		maxLen_=len;
 }
 
 // Mainly used for removing insertions
@@ -218,6 +244,7 @@ void  Sequences::removeResidues(int startSequence,int stopSequence,int startPos,
 	for (int s=startSequence; s<=stopSequence; s++){
 		sequences_.at(s)->residues.remove(startPos,nResidues);
 	}
+	updateCachedVariables(); // must recalculate
 	emit changed();
 }
 
@@ -244,3 +271,12 @@ QString Sequences::getLabelAt(int i)
 		return (sequences_.at(i)->label).trimmed(); 
 }
 
+void Sequences::updateCachedVariables()
+{
+	maxLen_=0;
+	for (int s=0;s<sequences_.count();s++){
+		int len =sequences_.at(s)->residues.length();
+		if (len> maxLen_)
+			maxLen_=len;
+	}
+}

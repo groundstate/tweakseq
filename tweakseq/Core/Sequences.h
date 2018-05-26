@@ -59,6 +59,8 @@ class Sequences:public QObject
 		Sequence * visibleAt(int);
 		int visibleToActual(int);
 		
+		int maxLength(bool recalculate=false);
+		
 		bool isSubGroup(int,int);
 		
 		Sequence * add(QString,QString,QString,QString,bool );
@@ -81,7 +83,11 @@ class Sequences:public QObject
 		
 	private:
 		
+		void updateCachedVariables();
+		
 		QList<Sequence *> sequences_;
+		
+		int maxLen_;
 };
 
 #endif

@@ -678,6 +678,7 @@ void SeqEditMainWin::editCut()
 
 void SeqEditMainWin::editPaste()
 {
+	// FIXME need to be able to paste into an empty project ie nothing to select
 	QList<Sequence *> &seqs = app->clipboard().sequences();
 	Sequence *selSeq = project_->sequenceSelection->itemAt(0); // only one item
 	for (int s=0;s<seqs.size();s++){

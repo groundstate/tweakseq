@@ -125,11 +125,11 @@ class SequenceEditor: public QWidget
 		
 		int numRows_,numCols_;
 		double rowPadding_,columnPadding_;
-		int rowHeight_,columnWidth_;
+		int rowHeight_,colWidth_;
 		int flagsWidth_,labelWidth_;
 		
 		int firstVisibleRow_,lastVisibleRow_;
-		int firstVisibleColumn_,lastVisibleColumn_;
+		int firstVisibleCol_,lastVisibleCol_;
 		
 		int currGroupColour_;
 		

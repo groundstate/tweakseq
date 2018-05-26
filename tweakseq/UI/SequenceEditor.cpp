@@ -100,9 +100,9 @@ void SequenceEditor::setEditorFont(const QFont &f)
 	int h = fm.width('W'); // a wide character
 	int w = h;
 	rowHeight_= (int) h*rowPadding_;
-	columnWidth_= (int) w*columnPadding_;
+	colWidth_= (int) w*columnPadding_;
 	
-	flagsWidth_=columnWidth_*FLAGS_WIDTH;
+	flagsWidth_=colWidth_*FLAGS_WIDTH;
 	labelWidth_=w*LABEL_WIDTH;
 	
 	updateViewExtents();
@@ -167,16 +167,18 @@ void SequenceEditor::sequenceAdded(Sequence *s)
 	
 	if (s->visible){
 		numRows_=numRows_+1;
+		numCols_=project_->sequences.maxLength();
 	}
 	
-	if (!loadingSequences_){
-		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
+	if (!loadingSequences_){ // suppress viewport updates until loading is finished
+		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
 	}
 }
 
 void SequenceEditor::sequencesCleared()
 {
 	numRows_=0;
+	numCols_=0;
 }
 
 void SequenceEditor::postLoadTidy()
@@ -208,7 +210,7 @@ void SequenceEditor::loadingSequences(bool loading)
 	loadingSequences_= loading;
 	if (!loadingSequences_){
 		updateViewport();
-		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
+		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
 	}
 }
 
@@ -233,7 +235,7 @@ void SequenceEditor::setFirstVisibleColumn(int)
 void SequenceEditor::resizeEvent(QResizeEvent *)
 {
 	updateViewExtents();
-	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_); // FIXME
+	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_); // FIXME
 }
 
 void SequenceEditor::paintEvent(QPaintEvent *pev)
@@ -533,7 +535,7 @@ void SequenceEditor::wheelEvent(QWheelEvent *ev)
 		firstVisibleRow_ = numRows_- nvis;
 	lastVisibleRow_ = firstVisibleRow_ + nvis -1;
 	
-	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
+	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
 	
 	repaint();
 }
@@ -566,7 +568,7 @@ void SequenceEditor::scrollRow()
 			seqSelectionDrag_ = firstVisibleRow_;
 	}
 	
-	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
+	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
 	
 	repaint();
 }
@@ -587,20 +589,21 @@ void SequenceEditor::init()
 	
 	firstVisibleRow_ = 0;
 	lastVisibleRow_=1;
-	firstVisibleColumn_=0;
-	lastVisibleColumn_=0;
+	firstVisibleCol_=0;
+	lastVisibleCol_=1;
 	
 	rowPadding_=1.3;
 	rowHeight_=16;
 	
 	columnPadding_=1.3;
-	columnWidth_=16;
+	colWidth_=16;
 	
 	flagsWidth_=0;
 	labelWidth_=0;
 	
 	loadingSequences_=false;
 	selectingSequences_=false;
+	selectingResidues_=false;
 	selAnchorRow_=selAnchorCol_=selDragRow_=selDragCol_=-1; 
 	seqSelectionAnchor_=seqSelectionDrag_=-1;
 	leftDown_=false;
@@ -632,7 +635,16 @@ void SequenceEditor::updateViewExtents()
 	if (lastVisibleRow_ < firstVisibleRow_)
 		lastVisibleRow_=firstVisibleRow_;
 	
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << firstVisibleRow_ << " " << lastVisibleRow_;
+	numCols_= project_->sequences.maxLength();
+	int displayableCols=ceil((double)(width() - (flagsWidth_+labelWidth_))/((double) colWidth_));
+	lastVisibleCol_ = firstVisibleCol_ + displayableCols -1;
+	
+	if (lastVisibleCol_ >= numCols_)
+		lastVisibleCol_ = numCols_-1; 
+	if (lastVisibleCol_ < firstVisibleCol_)
+		lastVisibleCol_=firstVisibleCol_;
+	
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << firstVisibleRow_ << " " << lastVisibleRow_ << " " << displayableCols << " " << firstVisibleCol_ << " " << lastVisibleCol_;
 }
 
 
@@ -674,7 +686,11 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col )
 	
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 
-	int w = columnWidth_;
+	int yrow = rowHeight_*(row-firstVisibleRow_);
+	int xcell = flagsWidth_ + labelWidth_ + col*colWidth_;
+	p->translate(xcell,yrow);
+	
+	int w = colWidth_;
 	int h = rowHeight_;
 	
 	c=cellContent(row,col,REMOVE_FLAGS);
@@ -775,6 +791,8 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col )
 		p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 	}
 
+	p->translate(-xcell,-yrow);
+	
 }
 
 void SequenceEditor::paintRow(QPainter *p,int row)
@@ -816,7 +834,10 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	
 	txtColor.setRgb(255,255,255);
 	p->setPen(txtColor);
-	p->drawText( columnWidth_*1, yrow,columnWidth_*3,rowHeight_, Qt::AlignLeft, QString::number(row));
+	p->drawText( colWidth_*1, yrow,colWidth_*3,rowHeight_, Qt::AlignLeft, QString::number(row));
+	
+	for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++)
+		paintCell(p,row,col);
 	
 }
 
@@ -828,7 +849,7 @@ int SequenceEditor::rowAt(int ypos)
 int SequenceEditor::columnAt(int xpos)
 {
 	// The return result only makes sense for the FLAGS area
-	return (int) (xpos/columnWidth_);
+	return (int) (xpos/colWidth_);
 }
 
 int SequenceEditor::rowFirstVisibleSequenceInGroup(SequenceGroup *sg)
