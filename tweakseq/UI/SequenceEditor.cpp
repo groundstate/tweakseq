@@ -414,9 +414,9 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 {
 
 	QPoint pos;
-	int currRow;
+	//int currRow;
 	//int col,row,currRow,currCol;
-	int startRow,stopRow;
+	//int startRow,stopRow;
 	//int startCol,stopCol;
 	int clickedRow;
 
@@ -459,9 +459,9 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 				scrollRowTimer_.start(); 
 			}
 			else{
-				int newTimeout;
+				int newTimeout=baseTimeout_;
 				if (pos.y() > height())
-					newTimeout = baseTimeout_/rint(( pos.y() - height())/5);
+					newTimeout = baseTimeout_/rint(( pos.y() - height())/5); // scrolling is accelerated proportional to displacement
 				else if (pos.y() < 0)
 					newTimeout = baseTimeout_/rint( -pos.y()/5);
 				if (newTimeout < 100) newTimeout=100;
@@ -472,29 +472,13 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 			}
 		}
 		else{
-			cleanupTimer();
-			ensureRowVisible(clickedRow);
+			if (scrollRowTimer_.isActive()) cleanupTimer();
+			if (seqSelectionDrag_ != clickedRow){
+				seqSelectionDrag_=clickedRow;
+				repaint();
+			}
 		}
-		//qDebug() << ev->pos() << " " << height();
 	}	
-	
-	if (selectingSequences_ && leftDown_){
-		if (seqSelectionDrag_ != clickedRow){
-			currRow = clickedRow;
-			startRow =  find_smallest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
-			stopRow  =  find_largest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
-			seqSelectionDrag_=currRow;
-			// don't need to translate visible to actual here
-			//for (int row=startRow;row<=stopRow;row++)
-			//	for (int col=FLAGSWIDTH; col < LABELWIDTH+FLAGSWIDTH; col ++)
-			//		updateCell(row,col);
-			//qDebug() << trace.header(__PRETTY_FUNCTION__) << seqSelectionAnchor_ << " " << seqSelectionDrag_ ;
-			//for (int row=startRow;row<=stopRow;row++)
-			//	updateRow(row);
-			repaint();
-		}
-	}
-	
 	
 }
 
@@ -575,6 +559,13 @@ void SequenceEditor::scrollRow()
 		firstVisibleRow_ = numRows_- nvis;
 	lastVisibleRow_ = firstVisibleRow_ + nvis -1;
 	
+	if (leftDown_ && selectingSequences_){ // only use scrollRow in this context but just in case I forget
+		if (scrollRowIncrement_ > 0)
+			seqSelectionDrag_ = lastVisibleRow_;
+		else
+			seqSelectionDrag_ = firstVisibleRow_;
+	}
+	
 	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
 	
 	repaint();
@@ -627,25 +618,6 @@ void SequenceEditor::init()
 	
 }
 
-void SequenceEditor::ensureRowVisible(int row)
-{
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << row; 
-	int nvis = lastVisibleRow_ - firstVisibleRow_ + 1;
-	if (row < firstVisibleRow_){
-		firstVisibleRow_ = row;
-		lastVisibleRow_ = firstVisibleRow_+ nvis -1;
-		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
-		repaint();
-	}
-	else if ( row > lastVisibleRow_){
-		lastVisibleRow_=row;
-		firstVisibleRow_ = lastVisibleRow_ - nvis + 1;
-		qDebug() << trace.header(__PRETTY_FUNCTION__) << firstVisibleRow_ << " " << lastVisibleRow_;
-		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
-		repaint();
-	}
-}
-
 void SequenceEditor::updateViewExtents()
 {
 	// round up to catch fractional bits ?
@@ -663,18 +635,146 @@ void SequenceEditor::updateViewExtents()
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << firstVisibleRow_ << " " << lastVisibleRow_;
 }
 
-void SequenceEditor::connectToProject()
+
+
+QChar SequenceEditor::cellContent(int row, int col, int maskFlags )
 {
-	connect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
-	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
-	connect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
+	
+	QChar pChar;
+	QString s;
+	
+	QList<Sequence *> &seq = project_->sequences.sequences();
+	Sequence *currSeq = project_->sequences.visibleAt(row);
+	
+	// Note Since paintCell() calls this function before any sequences
+	// are added have to return valid values when the editor is empty
+	
+	if (!seq.isEmpty()){
+		s=currSeq->residues;
+		pChar= s[col];
+		if (pChar.unicode() != 0){
+			if (col <  s.length())
+				return QChar(pChar.unicode() & maskFlags);
+			else
+				return QChar(0);
+		}
+		else
+			return QChar(0);
+	}
+	else 
+		return QChar(0);
+
 }
 
-void SequenceEditor::disconnectFromProject()
+void SequenceEditor::paintCell( QPainter* p, int row, int col )
 {
-	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
-	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
-	disconnect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
+	QChar c,cwflags;
+	QColor txtColor;
+	int cellSelected=false;
+	
+	Sequence *currSeq = project_->sequences.visibleAt(row);
+
+	int w = columnWidth_;
+	int h = rowHeight_;
+	
+	c=cellContent(row,col,REMOVE_FLAGS);
+	if (c.unicode()==0) return;
+	cwflags=cellContent(row,col,KEEP_FLAGS);
+	
+	// If the cell is highlighted then do it
+	
+	if (selectingResidues_ && currSeq->visible){
+	txtColor.setRgb(255,255,255);
+		if (selAnchorRow_ <= selDragRow_){ // dragging top to bottom
+			if (selAnchorCol_ <= selDragCol_){ // left to right
+				if (row >= selAnchorRow_ && row <= selDragRow_ && 
+					col >= selAnchorCol_ && col<=selDragCol_){
+						p->fillRect(0,0,w,h,txtColor);
+						cellSelected=true;
+					}
+			}
+			else{
+				if (row >= selAnchorRow_ && row <= selDragRow_ && 
+					col <= selAnchorCol_ && col>=selDragCol_){
+						p->fillRect(0,0,w,h,txtColor);
+						cellSelected=true;
+					}
+			}
+		}
+		else{ // dragging bottom to top
+			if (selAnchorCol_ <= selDragCol_){ // left to right
+				if (row <= selAnchorRow_ && row >= selDragRow_ && 
+					col >= selAnchorCol_ && col<=selDragCol_){
+						p->fillRect(0,0,w,h,txtColor);
+						cellSelected=true;
+					}
+			}
+			else{
+				if (row <= selAnchorRow_ && row >= selDragRow_ && 
+					col <= selAnchorCol_ && col>=selDragCol_){
+						p->fillRect(0,0,w,h,txtColor);
+						cellSelected=true;
+					}
+			}
+		}
+	}
+	
+	//  Draw cell content 
+	switch (c.toLatin1()){
+		case 'D': case 'E': case 'S': case 'T':// red 
+			txtColor.setRgb(255,0,0);
+			break; 
+		case 'R': case 'K': case 'H': // sky blue
+			txtColor.setRgb(135,206,235);
+			break;
+		case 'Q': case 'N': // purple
+			txtColor.setRgb(255,0,255);
+			break; 
+		case 'M': case 'C': // yellow
+			txtColor.setRgb(255,255,0);
+			break; 
+		case 'A': case 'I': case 'L' : case 'V' : case 'G': case '-': 
+		case '!'://white
+			if (cellSelected)
+				txtColor.setRgb(0,0,0);
+			else
+				txtColor.setRgb(255,255,255);
+			break; 
+		case 'Y': case 'F': case 'W': // orange
+			txtColor.setRgb(254,172,0);
+			break; 
+		case 'P': // green
+			txtColor.setRgb(0,255,0);
+			break;
+	};
+
+		// FIXME not so useful if the group is not contiguous
+	if (currSeq->group != NULL){
+		int start = rowFirstVisibleSequenceInGroup(currSeq->group);
+		int stop  = rowLastVisibleSequenceInGroup(currSeq->group);
+		if (row==start){
+			p->setPen(currSeq->group->textColour());
+			p->drawLine(0,2,w-1,2);
+		}
+		if (row==stop){
+			p->setPen(currSeq->group->textColour());
+			p->drawLine(0,h-2,w-1,h-2);
+		}
+	}
+	
+	if ((!cellSelected) && (cwflags.unicode() & EXCLUDE_CELL) && currSeq->visible ){
+		//txtColor.setRgb(128,128,128);
+		//p->fillRect(0,0,w,h,txtColor);
+		p->setPen(QColor(240,240,16));
+		p->drawLine(2,2,w-2,h-2); // X marks the spot ...
+		p->drawLine(w-2,2,2,h-2);
+	}
+	
+	if (currSeq->visible){
+		p->setPen(txtColor);
+		p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
+	}
+
 }
 
 void SequenceEditor::paintRow(QPainter *p,int row)
@@ -729,6 +829,46 @@ int SequenceEditor::columnAt(int xpos)
 {
 	// The return result only makes sense for the FLAGS area
 	return (int) (xpos/columnWidth_);
+}
+
+int SequenceEditor::rowFirstVisibleSequenceInGroup(SequenceGroup *sg)
+{
+	int visIndex=0;
+	for (int s=0;s<project_->sequences.size();s++){ // checked OK
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (sg==seq->group && seq->visible)
+			return visIndex;
+		if (seq->visible)
+			visIndex++;
+	}
+	return -1;
+}
+
+int SequenceEditor::rowLastVisibleSequenceInGroup(SequenceGroup *sg)
+{
+	int visIndex=project_->sequences.numVisible()-1;
+	for (int s=project_->sequences.size()-1;s>=0;s--){ // checked OK
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (sg==seq->group && seq->visible)
+			return visIndex;
+		if (seq->visible)
+			visIndex--;
+	}
+	return -1;
+}
+
+void SequenceEditor::connectToProject()
+{
+	connect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
+	connect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
+}
+
+void SequenceEditor::disconnectFromProject()
+{
+	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
+	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
+	disconnect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
 }
 
 void SequenceEditor::cleanupTimer()

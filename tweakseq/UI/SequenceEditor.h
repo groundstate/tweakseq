@@ -39,6 +39,7 @@ class QWheelEvent;
 
 class Project;
 class Sequence;
+class SequenceGroup;
 
 class SequenceEditor: public QWidget
 {
@@ -102,17 +103,20 @@ class SequenceEditor: public QWidget
 	private:
 	
 		void init();
-		void ensureRowVisible(int);
+
 		void updateViewExtents();
-	
-		void connectToProject();
-		void disconnectFromProject();
+		QChar cellContent(int, int, int );
+		void paintCell( QPainter* p, int, int );
+		void paintRow(QPainter *p,int);
 		
-		void paintRow(QPainter *p,int row);
-	
 		int rowAt(int);
 		int columnAt(int);
 		
+		int rowFirstVisibleSequenceInGroup(SequenceGroup *);
+		int rowLastVisibleSequenceInGroup(SequenceGroup *);
+	
+		void connectToProject();
+		void disconnectFromProject();
 		void cleanupTimer();
 		
 		Project *project_;
@@ -132,7 +136,7 @@ class SequenceEditor: public QWidget
 		QString lastInfo_;
 		
 		bool loadingSequences_;
-		bool selectingSequences_;
+		bool selectingSequences_,selectingResidues_;
 		int  selAnchorRow_,selAnchorCol_,selDragRow_,selDragCol_;
 		int  seqSelectionAnchor_,seqSelectionDrag_;
 		bool leftDown_;
