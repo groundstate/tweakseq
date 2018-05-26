@@ -251,6 +251,7 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 {
 	
 	totalWheelRotation_ = 0;
+	cleanupTimer();
 	
 	if (readOnly_) return;
 	
@@ -337,7 +338,9 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	
+	// clean up any events we might be tracking
 	totalWheelRotation_ = 0;
+	cleanupTimer();
 	
 	if (readOnly_) return;
 	
@@ -410,7 +413,7 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 {
 
-	QPoint clickedPos;
+	QPoint pos;
 	int currRow;
 	//int col,row,currRow,currCol;
 	int startRow,stopRow;
@@ -421,12 +424,12 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	
 	if (numRows_== 0) return; // so we don't have to guard against null pointers
 	
-	clickedPos = ev->pos();              		
-	clickedRow=rowAt( clickedPos.y() + contentsRect().y());
+	pos = ev->pos();              		
+	clickedRow=rowAt( pos.y() + contentsRect().y());
 	
 	// clamp to bounds
 	if (clickedRow < 0){
-		if (clickedPos.y() >=0) // clamp to bottom
+		if (pos.y() >=0) // clamp to bottom
 			clickedRow = numRows_ -1;
 		else // clamp to top
 			clickedRow = 0;
@@ -444,8 +447,35 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	
 	if (readOnly_) return;
 	
-	if (leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
-		ensureRowVisible(clickedRow);
+	if (selectingSequences_&& leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
+		// If we go out of the bounds of the window, then the view is scrolled at a rate proportional to the distance
+		// we have moved out of the window
+		if (pos.y() > height() || pos.y() < 0){
+			if (!scrollRowTimer_.isActive()){
+				if (pos.y() > height())
+					scrollRowIncrement_=1;
+				else
+					scrollRowIncrement_=-1;
+				scrollRowTimer_.start(); 
+			}
+			else{
+				int newTimeout;
+				if (pos.y() > height())
+					newTimeout = baseTimeout_/rint(( pos.y() - height())/5);
+				else if (pos.y() < 0)
+					newTimeout = baseTimeout_/rint( -pos.y()/5);
+				if (newTimeout < 100) newTimeout=100;
+				if (newTimeout != currentTimeout_){
+					currentTimeout_=newTimeout;
+					scrollRowTimer_.start(currentTimeout_);
+				}
+			}
+		}
+		else{
+			cleanupTimer();
+			ensureRowVisible(clickedRow);
+		}
+		//qDebug() << ev->pos() << " " << height();
 	}	
 	
 	if (selectingSequences_ && leftDown_){
@@ -528,6 +558,28 @@ void SequenceEditor::keyPressEvent( QKeyEvent* )
 {
 }
 
+//
+// Private members
+//
+
+void SequenceEditor::scrollRow()
+{
+	// Scrolls the view by one row
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << scrollRowIncrement_;
+	int nvis = lastVisibleRow_ - firstVisibleRow_ + 1;
+	
+	firstVisibleRow_ += scrollRowIncrement_;
+	if (firstVisibleRow_< 0)
+		firstVisibleRow_= 0;
+	if (firstVisibleRow_ + nvis -1 >= numRows_)
+		firstVisibleRow_ = numRows_- nvis;
+	lastVisibleRow_ = firstVisibleRow_ + nvis -1;
+	
+	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleColumn_,lastVisibleColumn_,numCols_);
+	
+	repaint();
+}
+
 		
 //
 // Private members
@@ -567,6 +619,12 @@ void SequenceEditor::init()
 	currGroupColour_=0;
 	
 	totalWheelRotation_=0;
+	
+	baseTimeout_=500;
+	currentTimeout_=baseTimeout_;
+	scrollRowTimer_.setInterval(baseTimeout_);
+	connect(&scrollRowTimer_, SIGNAL(timeout()), this, SLOT(scrollRow()) );
+	
 }
 
 void SequenceEditor::ensureRowVisible(int row)
@@ -671,4 +729,11 @@ int SequenceEditor::columnAt(int xpos)
 {
 	// The return result only makes sense for the FLAGS area
 	return (int) (xpos/columnWidth_);
+}
+
+void SequenceEditor::cleanupTimer()
+{
+	scrollRowTimer_.stop();
+	scrollRowTimer_.setInterval(baseTimeout_);
+	currentTimeout_ = baseTimeout_;
 }

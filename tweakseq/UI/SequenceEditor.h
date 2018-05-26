@@ -28,6 +28,7 @@
 #define __SEQUENCE_EDITOR_H_
 
 #include <QWidget>
+#include <QTimer>
 
 class QFont;
 class QKeyEvent;
@@ -94,6 +95,10 @@ class SequenceEditor: public QWidget
 	
 		void keyPressEvent( QKeyEvent* );
 	
+	private slots:
+		
+		void scrollRow();
+		
 	private:
 	
 		void init();
@@ -107,6 +112,8 @@ class SequenceEditor: public QWidget
 	
 		int rowAt(int);
 		int columnAt(int);
+		
+		void cleanupTimer();
 		
 		Project *project_;
 	
@@ -129,6 +136,9 @@ class SequenceEditor: public QWidget
 		int  selAnchorRow_,selAnchorCol_,selDragRow_,selDragCol_;
 		int  seqSelectionAnchor_,seqSelectionDrag_;
 		bool leftDown_;
+		QTimer scrollRowTimer_;
+		int scrollRowIncrement_; // +/-1
+		int baseTimeout_, currentTimeout_;
 		
 		int totalWheelRotation_;
 };
