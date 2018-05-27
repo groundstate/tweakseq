@@ -38,6 +38,7 @@ class QSplitter;
 class QTemporaryFile;
 class QToolBar;
 
+class FindTool;
 class MessageWin;
 class Project;
 class SequenceEditor;
@@ -140,6 +141,8 @@ private:
 	
 	void printRes( QPainter*,QChar,int,int );
 	
+	void updateFindTool();
+	
 	QStringList findDuplicates(QStringList &);
 	
 	bool maybeSave();
@@ -161,6 +164,8 @@ private:
 	QAction *testAction;
 	
 	QToolBar *seqEditTB;
+	FindTool *findTool_;
+	
 	QScrollBar *vscroller_,*hscroller_;
 	QSplitter *split;
 	MessageWin *mw;

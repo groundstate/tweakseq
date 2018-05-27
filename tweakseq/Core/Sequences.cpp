@@ -49,6 +49,18 @@ int Sequences::index(Sequence *seq)
 	return -1;
 }
 
+Sequence* Sequences::getSequence(const QString &label)
+{
+	QString t=label.trimmed();// TO DO why is this here ?
+	int i=0;
+	while ((i<sequences_.count()) && (getLabelAt(i) != t)) i++;
+	
+	if (i==sequences_.count())
+		return NULL;
+	else
+		return sequences_.at(i);
+}
+
 int Sequences::visibleIndex(Sequence *seq)
 {
 	if (!(seq->visible)) return -1;

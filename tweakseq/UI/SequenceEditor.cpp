@@ -71,6 +71,7 @@ static int groupColours[N_GROUP_COLOURS][3]
 SequenceEditor::SequenceEditor(Project *project,QWidget *parent): QWidget(parent)
 {
 	setContentsMargins(0,0,0,0);
+	setFocusPolicy(Qt::StrongFocus);
 	
 	init();
 	project_=project;
@@ -106,6 +107,7 @@ void SequenceEditor::setEditorFont(const QFont &f)
 	labelWidth_=w*LABEL_WIDTH;
 	
 	updateViewExtents();
+	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
 	
 	repaint();
 }
@@ -156,6 +158,30 @@ void SequenceEditor::visibleRows(int *start,int *stop)
 	*start = firstVisibleRow_;
 	*stop  = lastVisibleRow_;
 	qDebug() << *start << " " << *stop;
+}
+
+void SequenceEditor::selectSequence(const QString &label)
+{
+	
+	Sequence *seq = project_->sequences.getSequence(label);
+	if (seq){
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << "found " <<seq->label;
+		project_->sequenceSelection->set(seq);
+		// now make sure it is visible
+		if (!seq->visible){
+			seq->visible = true;
+			updateViewExtents();
+		}
+		int index = project_->sequences.visibleIndex(seq);
+		if (index < firstVisibleRow_){
+			setFirstVisibleRow(index);
+		}
+		else if (index > lastVisibleRow_){
+		  setFirstVisibleRow(index-(lastVisibleRow_-firstVisibleRow_));
+		}
+		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
+		repaint();
+	}
 }
 
 //
@@ -214,6 +240,7 @@ void SequenceEditor::loadingSequences(bool loading)
 	}
 }
 
+// This is connected to the vertical scrollbar
 void SequenceEditor::setFirstVisibleRow(int val)
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << val << endl;
@@ -223,8 +250,14 @@ void SequenceEditor::setFirstVisibleRow(int val)
 	repaint();
 }
 
-void SequenceEditor::setFirstVisibleColumn(int)
+// This is connected to the horizontal scrollbar
+void SequenceEditor::setFirstVisibleColumn(int val)
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << val << endl;
+	if (val <0) val=0; // the slider can return -1
+	firstVisibleCol_=val;
+	updateViewExtents();
+	repaint();
 }
 
 		
@@ -684,17 +717,18 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col )
 	QColor txtColor;
 	int cellSelected=false;
 	
+	c=cellContent(row,col,REMOVE_FLAGS);
+	if (c.unicode()==0) return;
+	
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 
 	int yrow = rowHeight_*(row-firstVisibleRow_);
-	int xcell = flagsWidth_ + labelWidth_ + col*colWidth_;
-	p->translate(xcell,yrow);
+	int xcol = flagsWidth_ + labelWidth_ + (col-firstVisibleCol_)*colWidth_;
+	p->translate(xcol,yrow);
 	
 	int w = colWidth_;
 	int h = rowHeight_;
 	
-	c=cellContent(row,col,REMOVE_FLAGS);
-	if (c.unicode()==0) return;
 	cwflags=cellContent(row,col,KEEP_FLAGS);
 	
 	// If the cell is highlighted then do it
@@ -791,7 +825,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col )
 		p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 	}
 
-	p->translate(-xcell,-yrow);
+	p->translate(-xcol,-yrow);
 	
 }
 

@@ -68,6 +68,7 @@
 #include "ClustalFile.h"
 #include "ClustalO.h"
 #include "FASTAFile.h"
+#include "FindTool.h"
 #include "MessageWin.h"
 #include "Muscle.h"
 #include "Project.h"
@@ -149,6 +150,8 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	connect(vscroller_,SIGNAL(valueChanged(int)),se,SLOT(setFirstVisibleRow(int)));
 	connect(hscroller_,SIGNAL(valueChanged(int)),se,SLOT(setFirstVisibleColumn(int)));
 	
+	connect(findTool_,SIGNAL(find(const QString &)),se,SLOT(selectSequence(const QString &)));
+
 	statusBar()->showMessage("Ready");
 
 }
@@ -163,9 +166,11 @@ SeqEditMainWin::~SeqEditMainWin(){
 void SeqEditMainWin::doAlignment(){
 }
 
+// This is called by a Project after loading is completed
 void SeqEditMainWin::postLoadTidy()
 {
 	se->postLoadTidy();
+	updateFindTool();
 	setWindowTitle("tweakseq - " + project_->name());
 }
 
@@ -336,6 +341,7 @@ void SeqEditMainWin::fileImport(){
 	}
 	else{
 	}
+	updateFindTool();
 }
 
 void SeqEditMainWin::fileExportFASTA(){
@@ -907,18 +913,33 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 	delete cm;
 }
 
-void SeqEditMainWin::updateScrollBars(int startRow,int stopRow,int numRows,int,int,int)
+void SeqEditMainWin::updateScrollBars(int startRow,int stopRow,int numRows,int startCol,int stopCol,int numCols)
 {
 	// Triggered by resizeEvent() in SequenceEditor, ...
+	
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " << numRows << " " << startCol << " " << stopCol << " " << numCols;
 	
 	int nvis = stopRow - startRow + 1;
 	vscroller_->setMinimum(0);
 	vscroller_->setPageStep(nvis);
 	vscroller_->setMaximum(numRows-nvis);
 	vscroller_->setValue(startRow);
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " << numRows;
+	
+	int nviscol = stopCol - startCol + 1;
+	hscroller_->setMinimum(0);
+	hscroller_->setPageStep(nviscol);
+	hscroller_->setMaximum(numCols-nviscol);
+	hscroller_->setValue(startCol);
+	
+	
 }
 
+void projectLoading(bool loading)
+{
+	if (!loading){ // ie done
+		
+	}
+}
 
 void SeqEditMainWin::sequenceSelectionChanged()
 {
@@ -1229,6 +1250,10 @@ void SeqEditMainWin::createMenus()
 void SeqEditMainWin::createToolBars()
 {
 	seqEditTB =addToolBar("Sequence editor tools");
+	
+	findTool_ = new FindTool(this);
+	seqEditTB->addWidget(findTool_);
+	
 	//seqEditTB->addAction(lockAction);
 	//tb->setToggleButton(true);
 	//connect(tb,SIGNAL(toggled(bool)),se,SLOT(lockMode(bool)));
@@ -1358,6 +1383,15 @@ void SeqEditMainWin::printRes( QPainter* p,QChar r,int x,int y)
 	}
 	
 	p->setPen(oldPen);
+}
+
+void SeqEditMainWin::updateFindTool()
+{
+	QList<Sequence *> &sequences = project_->sequences.sequences();
+	QStringList labels;
+	for (int s=0;s<sequences.count();s++)
+		labels.append(sequences.at(s)->label);
+	findTool_->setCompleterModel(labels);
 }
 
 QStringList SeqEditMainWin::findDuplicates(QStringList &sl)

@@ -63,7 +63,7 @@ class SequenceEditor: public QWidget
 	
 		void updateViewport();
 		void visibleRows(int *,int *);
-		
+	
 	signals:
 	
 		void info(const QString &);
@@ -80,6 +80,8 @@ class SequenceEditor: public QWidget
 	
 		void setFirstVisibleRow(int);
 		void setFirstVisibleColumn(int);
+		
+		void selectSequence(const QString &);
 		
 	protected:
 	

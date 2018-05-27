@@ -15,6 +15,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/ClustalO.h \
 								 include/DebuggingInfo.h \
 								 include/FASTAFile.h \
+								 include/FindTool.h \
 								 include/MessageWin.h \
 								 include/Muscle.h \
 								 include/Project.h \
@@ -58,6 +59,7 @@ SOURCES				+=  Core/UndoCommand/UndoCommand.cpp \
 									
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/AlignmentToolDlg.cpp \
+									UI/FindTool.cpp \
 									UI/MessageWin.cpp \
 									UI/SequenceEditor.cpp \
 									UI/SeqEditMainWin.cpp \
