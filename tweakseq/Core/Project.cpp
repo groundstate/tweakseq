@@ -941,8 +941,6 @@ void Project::readAlignmentToolSettings(QDomDocument &doc)
 		if (clustalOTool_->preferred())
 			alignmentTool_=clustalOTool_;
 	}
-	
-	
 }
 
 int Project::getSeqIndex(QString l)

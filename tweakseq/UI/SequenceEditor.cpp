@@ -35,6 +35,7 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QRect>
+#include <QTime>
 
 #include "Project.h"
 #include "ResidueSelection.h"
@@ -275,11 +276,14 @@ void SequenceEditor::paintEvent(QPaintEvent *pev)
 {
 	QPainter p(this);
 
+	QTime t;
+	t.start();
 	p.fillRect(pev->rect(),QColor(0,0,0));
 	
 	for (int r=firstVisibleRow_;r<=lastVisibleRow_;r++){
 		paintRow(&p,r);
 	}
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << t.elapsed() << "ms";
 }
 
 void SequenceEditor::mousePressEvent( QMouseEvent *ev )
@@ -296,14 +300,14 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 	
 	QPoint clickedPos;
 	int clickedRow,clickedCol;
-	//int col,row,startRow,stopRow,startCol,stopCol;
+	int col,row,startRow,stopRow,startCol,stopCol;
 	
 	clickedPos = ev->pos();		
 	clickedRow=rowAt( clickedPos.y() + contentsRect().y());
 	clickedCol=columnAt(clickedPos.x() + contentsRect().x());
 	
 	// If we clicked outside the editing area ... well ... do nothing
-	if ((clickedRow < 0) || (clickedRow > lastVisibleRow_) || clickedCol < 0){
+	if ((clickedRow < 0) || (clickedRow > lastVisibleRow_) || clickedCol > lastVisibleCol_){
 		switch (ev->button()){
 			case Qt::LeftButton:
 				break;
@@ -312,60 +316,110 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 		return;
 	}
 	qDebug() << clickedRow << " " << clickedCol;
+	
 	// For the moment we do nothing with the flags area
-	if (clickedCol < FLAGS_WIDTH) return;
+	if (clickedPos.x() < flagsWidth_) return;
 	
 	// otherwise ...
 	
-	Sequence *selSeq =  project_->sequences.visibleAt(clickedRow);
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << "selected " << selSeq->label;
+	if (clickedPos.x() < flagsWidth_+labelWidth_){
+		Sequence *selSeq =  project_->sequences.visibleAt(clickedRow);
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << "selected " << selSeq->label;
+
+		// Remove any residue selection
+		selAnchorRow_=selAnchorCol_=selDragRow_=selDragCol_=-1;
+		project_->residueSelection->clear(); // FIXME better done with a signal ?
+		selectingResidues_=false;	
+		selectingSequences_=true;
+
+		switch (ev->button()){
+			case Qt::LeftButton:
+			{
+				switch (ev->modifiers()){
+					case Qt::NoModifier:
+						project_->sequenceSelection->clear();
+						seqSelectionAnchor_=seqSelectionDrag_=clickedRow;
+						break;
+					case Qt::ShiftModifier:
+						if (project_->sequenceSelection->contains(selSeq))
+							project_->sequenceSelection->toggle(selSeq);
+						else{
+							project_->sequenceSelection->set(selSeq);
+						}
+						break;
+					case Qt::ControlModifier:
+						project_->sequenceSelection->toggle(selSeq);
+						selectingSequences_=false;
+						break;
+					default:
+						break;
+					}
+				leftDown_=true; // not set in mouse move event
+				break;
+				
+			}
+			case Qt::RightButton:
+			{
+					// If a context menu is being requested for a non-selected item
+					// make it the new selection
+					if (!project_->sequenceSelection->contains(selSeq)){
+						project_->sequenceSelection->set(selSeq);
+					}
+			}
+			default:
+				break;
+		}
+
+		repaint();
+		return;
+	}
 	
-	// Remove any residue selection
-	selAnchorRow_=selAnchorCol_=selDragRow_=selDragCol_=-1;
-	project_->residueSelection->clear(); // FIXME better done with a signal ?
-		
-	selectingSequences_=true;
+	// The user has clicked inside the sequence area so start selecting residues
+	project_->sequenceSelection->clear(); // clear the current selection
 	
 	switch (ev->button()){
 		case Qt::LeftButton:
-		{
-			switch (ev->modifiers()){
-				case Qt::NoModifier:
-					project_->sequenceSelection->clear();
-					seqSelectionAnchor_=seqSelectionDrag_=clickedRow;
-					break;
-				case Qt::ShiftModifier:
-					if (project_->sequenceSelection->contains(selSeq))
-						project_->sequenceSelection->toggle(selSeq);
-					else{
-						project_->sequenceSelection->set(selSeq);
-					}
-					break;
-				case Qt::ControlModifier:
-					project_->sequenceSelection->toggle(selSeq);
-					selectingSequences_=false;
-					break;
-				default:
-					break;
+			leftDown_=true;
+			if (selectingResidues_){
+				// If we have already selected a block of cells
+				// then we need to update these viz remove the highlight mark
+				selectingResidues_=false; // this will block a redraw of the highlight
+				if (selAnchorRow_ > selDragRow_){ 
+					startRow=selDragRow_;
+					stopRow=selAnchorRow_;
 				}
-			leftDown_=true; // not set in mouse move event
-			break;
+				else{
+					startRow=selAnchorRow_;
+					stopRow=selDragRow_;
+				}
+				if (selAnchorCol_ > selDragCol_){ 
+					startCol=selDragCol_;
+					stopCol=selAnchorCol_;
+				}
+				else{
+					startCol=selAnchorCol_;
+					stopCol=selDragCol_;
+				}
+				//for (row=startRow;row<=stopRow;row++)
+					//for (col=startCol;col<=stopCol;col++)
+						//updateCell(row,col);
+			}
+			// A new selection has been made
+			selectingResidues_ = true;
 			
-		}
-		case Qt::RightButton:
-		{
-				// If a context menu is being requested for a non-selected item
-				// make it the new selection
-				if (!project_->sequenceSelection->contains(selSeq)){
-					project_->sequenceSelection->set(selSeq);
-				}
-		}
-		default:
+			selAnchorRow_ = clickedRow;   // map to row; set current cell
+			selAnchorCol_ = clickedCol;   // map to col; set current cell
+			selDragRow_ = selAnchorRow_;
+			selDragCol_ = selAnchorCol_;
+			//updateCell(selAnchorRow,selAnchorCol);
 			break;
+		case Qt::MidButton:
+			break;
+		case Qt::RightButton:
+			break;
+		default:break;
 	}
-	
-	this->repaint();
-	return;
+	repaint();
 		
 }
 
@@ -383,7 +437,24 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 		case Qt::LeftButton:
 		{
 			leftDown_=false; // have finished selection
-			if (selectingSequences_){
+			if (selectingResidues_){
+				//selectingResidues_=false; // somewhat illogically, don't drop the mode because painting depends on it still being true
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << selAnchorRow_ << " " << selAnchorCol_ << " " << selDragRow_ << " " << selDragCol_;
+				int startRow=selAnchorRow_,stopRow=selDragRow_;
+				int startCol=selAnchorCol_,stopCol=selDragCol_;
+				if (stopRow < startRow) swap_int(&startRow,&stopRow);
+				if (stopCol < startCol) swap_int(&startCol,&stopCol);
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << startCol << " " << stopRow << " " << stopCol;
+				QList<ResidueGroup *> resSel;
+				// startRow and stopRow are for the visible sequences but we need to loop over the hidden ones too
+				startRow = project_->sequences.visibleToActual(startRow);
+				stopRow  = project_->sequences.visibleToActual(stopRow);
+				for (int r=startRow;r<=stopRow;r++)
+					resSel.append(new ResidueGroup(project_->sequences.sequences().at(r),startCol,stopCol));
+				project_->residueSelection->set(resSel);
+				// DO NOT delete the selection
+			}
+			else if (selectingSequences_){
 				selectingSequences_=false;
 				int startRow = seqSelectionAnchor_,stopRow=seqSelectionDrag_;
 				if (stopRow < startRow) swap_int(&startRow,&stopRow);
@@ -449,11 +520,10 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 {
 
 	QPoint pos;
-	//int currRow;
-	//int col,row,currRow,currCol;
-	//int startRow,stopRow;
-	//int startCol,stopCol;
-	int clickedRow;
+	int col,row,currRow,currCol;
+	int startRow,stopRow;
+	int startCol,stopCol;
+	int clickedRow,clickedCol;
 
 	totalWheelRotation_ = 0;
 	
@@ -461,6 +531,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	
 	pos = ev->pos();              		
 	clickedRow=rowAt( pos.y() + contentsRect().y());
+	clickedCol=columnAt(pos.x() + contentsRect().x());
 	
 	// clamp to bounds
 	if (clickedRow < 0){
@@ -515,6 +586,42 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 		}
 	}	
 	
+	if (selectingResidues_ && leftDown_){ 
+		
+		// Must be moving the highlight box around in the sequence field
+		//if (clickedCol < LABELWIDTH+FLAGSWIDTH && clickedCol >= FLAGSWIDTH)
+		//	clickedCol = LABELWIDTH+FLAGSWIDTH;
+		if (clickedCol < 0)
+			clickedCol = firstVisibleCol_;
+		//	if (clickedPos.x() >= 0)
+		//		clickedCol = numCols() -1;
+		//	else
+		//		clickedCol = LABELWIDTH+FLAGSWIDTH;
+		//}
+		
+		currRow = clickedRow;    // map to row; set current cell
+		currCol = clickedCol;    // map to col; set current cell
+		// Determine the bounds of the rectangle enclosing both
+		// the old highlight box and the new highlight box (so we redraw cells in the old box)
+		// Determine the vertical bounds
+		startRow = find_smallest_int(currRow,selAnchorRow_,selDragRow_);
+		stopRow  = find_largest_int(currRow,selAnchorRow_,selDragRow_);
+		// Determine the horizontal bounds
+		startCol= find_smallest_int(currCol,selAnchorCol_,selDragCol_);
+		stopCol = find_largest_int(currCol,selAnchorCol_,selDragCol_);
+		selDragRow_=currRow;
+		selDragCol_=currCol;
+		
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " <<
+			startCol << " " << stopCol;
+			
+		repaint();
+		// Now update the cells
+		//for (row=startRow;row<=stopRow;row++)
+		//	for (col=startCol;col<=stopCol;col++)
+		//		updateCell(row,col);
+	}
+	
 }
 
 void SequenceEditor::mouseDoubleClickEvent(QMouseEvent *ev)
@@ -527,31 +634,18 @@ void SequenceEditor::mouseDoubleClickEvent(QMouseEvent *ev)
 	
 	if (seq.count() == 0) return;
 	
-	QPoint clickedPos;
-	int clickedRow,clickedCol;
-	
-	clickedPos = ev->pos();		
-	clickedRow=rowAt( clickedPos.y() + contentsRect().y());
-	clickedCol=columnAt( clickedPos.x() + contentsRect().x());
+	QPoint clickedPos = ev->pos();		
+	int clickedRow=rowAt( clickedPos.y() + contentsRect().y());
 
-	// If we clicked outside the editing area ... well ... do nothing
-	if ((clickedRow < 0) || (clickedRow > project_->sequences.numVisible() -1) || (clickedCol < 0 )){
-		switch (ev->button()){
-			case Qt::LeftButton:
-				break;
-			default:break;
-		} // end switch (e->button
-		return;
-	}
-
-	if (clickedCol >= FLAGS_WIDTH){
+	if (clickedPos.x() >= flagsWidth_ && clickedPos.x() <= flagsWidth_ + labelWidth_){
 		Sequence *selseq = project_->sequences.visibleAt(clickedRow);
 		if (selseq->group){
 			project_->sequenceSelection->clear();
 			project_->addGroupToSelection(selseq->group);
+			repaint();
 		}
 	}
-	this->repaint();
+	
 }
 
 void SequenceEditor::wheelEvent(QWheelEvent *ev)
@@ -813,8 +907,6 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col )
 	}
 	
 	if ((!cellSelected) && (cwflags.unicode() & EXCLUDE_CELL) && currSeq->visible ){
-		//txtColor.setRgb(128,128,128);
-		//p->fillRect(0,0,w,h,txtColor);
 		p->setPen(QColor(240,240,16));
 		p->drawLine(2,2,w-2,h-2); // X marks the spot ...
 		p->drawLine(w-2,2,2,h-2);
@@ -871,7 +963,7 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	p->drawText( colWidth_*1, yrow,colWidth_*3,rowHeight_, Qt::AlignLeft, QString::number(row));
 	
 	for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++)
-		paintCell(p,row,col);
+		paintCell(p,row,col); // FIXME pass currSeq - maybe optional parameter & test for NULL?
 	
 }
 
@@ -883,7 +975,7 @@ int SequenceEditor::rowAt(int ypos)
 int SequenceEditor::columnAt(int xpos)
 {
 	// The return result only makes sense for the FLAGS area
-	return (int) (xpos/colWidth_);
+	return (int) ((xpos-(flagsWidth_ + labelWidth_))/colWidth_) + firstVisibleCol_;
 }
 
 int SequenceEditor::rowFirstVisibleSequenceInGroup(SequenceGroup *sg)
