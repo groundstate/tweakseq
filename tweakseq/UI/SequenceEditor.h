@@ -107,8 +107,10 @@ class SequenceEditor: public QWidget
 		void init();
 
 		void updateViewExtents();
-		QChar cellContent(int, int, int );
-		void paintCell( QPainter* p, int, int );
+		QChar cellContent(int, int, int,Sequence *currSeq );
+		void setCellFlag(int row,int col,bool exclude);
+		
+		void paintCell( QPainter* p, int, int,Sequence *currSeq );
 		void paintRow(QPainter *p,int);
 		
 		int rowAt(int);
@@ -116,7 +118,8 @@ class SequenceEditor: public QWidget
 		
 		int rowFirstVisibleSequenceInGroup(SequenceGroup *);
 		int rowLastVisibleSequenceInGroup(SequenceGroup *);
-	
+		int rowVisibleSequence(Sequence *seq);
+		
 		void connectToProject();
 		void disconnectFromProject();
 		void cleanupTimer();
@@ -147,5 +150,7 @@ class SequenceEditor: public QWidget
 		int baseTimeout_, currentTimeout_;
 		
 		int totalWheelRotation_;
+		
+		QString numStr_; 
 };
 #endif
