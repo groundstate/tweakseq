@@ -90,6 +90,7 @@ private slots:
 	
 	void editGroupSequences();
 	void editUngroupSequences();
+	void editUngroupAll();
 	
 	void editExclude();
 	void editRemoveExclude();
@@ -97,6 +98,8 @@ private slots:
 	void editUnlock();
 	void editHideNonSelectedGroupMembers();
 	void editUnhideAllGroupMembers();
+	void editUnhideAll();
+	
 	void editReadOnly();
 	
 	void setupAlignmentMenu();
@@ -153,8 +156,8 @@ private:
 	QAction  *alignAllAction,*alignSelectionAction,*undoLastAction;
 	QAction  *undoAction,*redoAction,*cutAction,*pasteAction;
 	QAction  *excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
-	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction;
-	QAction  *groupSequencesAction,*ungroupSequencesAction;
+	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction,*unhideAllAction;
+	QAction  *groupSequencesAction,*ungroupSequencesAction,*ungroupAllAction;
 	QAction  *readOnlyAction;
 	QAction  *helpAction,*aboutAction;
 	QAction  *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;

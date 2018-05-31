@@ -31,6 +31,8 @@
 
 #include <QFile>
 #include <QStringList>
+#include <QFileInfo>
+#include <QStringList>
 
 #include "FASTAFile.h"
 
@@ -42,10 +44,20 @@
 
 FASTAFile::FASTAFile(QString n):SequenceFile(n)
 {
+	QStringList ext;
+	ext << "*.fa" << "*.faa" << "*.fasta";
+	setExtensions(ext);
 }
 
 FASTAFile::~FASTAFile()
 {
+}
+
+bool FASTAFile::isFASTAFile(QString fname)
+{
+	QFileInfo fi(fname);
+	QString ext = "*."+fi.suffix();
+	return extensions().contains(ext,Qt::CaseInsensitive);
 }
 
 #define SEEKING_COMMENT 0
@@ -111,8 +123,9 @@ bool FASTAFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comme
 		
 	}
 
+	qDebug() << trace.header() << "read " << seqcnt << " sequences";
 	//for (int i=0;i<seqnames.size();i++){
-	//	qDebug() << trace.header() << seqnames.at(i) << " " << seqs.at(i);
+	//	qDebug() << trace.header() << seqnames.at(i) << " " << seqs.at(i).size();
 	//}
 		
 	return true;

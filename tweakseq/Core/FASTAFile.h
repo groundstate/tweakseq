@@ -35,6 +35,8 @@ class FASTAFile:public SequenceFile{
 		FASTAFile(QString n= QString());
 		~FASTAFile();
 		
+		bool isFASTAFile(QString);
+		
 		virtual bool read(QStringList &,QStringList &,QStringList &);
 		virtual bool write(QStringList &,QStringList &,QStringList &);
 	

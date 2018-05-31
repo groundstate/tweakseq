@@ -76,6 +76,8 @@ class Sequences:public QObject
 		void  addInsertions(Sequence *,int,int);
 		void  removeResidues(int,int,int,int);
 		
+		void  unhideAll();
+		
 	signals:
 		
 		void sequenceAdded(Sequence *);

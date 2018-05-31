@@ -243,7 +243,6 @@ void SequenceEditor::selectSequence(const QString &label)
 
 void SequenceEditor::sequenceAdded(Sequence *s)
 {
-	
 	if (s->visible){
 		numRows_=numRows_+1;
 		numCols_=project_->sequences.maxLength();
@@ -328,14 +327,14 @@ void SequenceEditor::paintEvent(QPaintEvent *pev)
 {
 	QPainter p(this);
 
-	QTime t;
-	t.start();
+	//QTime t;
+	//t.start();
 	p.fillRect(pev->rect(),QColor(0,0,0));
 	
 	for (int r=firstVisibleRow_;r<=lastVisibleRow_;r++){
 		paintRow(&p,r);
 	}
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << t.elapsed() << "ms";
+	//qDebug() << trace.header(__PRETTY_FUNCTION__) << t.elapsed() << "ms";
 }
 
 void SequenceEditor::mousePressEvent( QMouseEvent *ev )
@@ -879,13 +878,15 @@ void SequenceEditor::init()
 	lastVisibleCol_=1;
 	
 	rowPadding_=1.3;
-	rowHeight_=16;
-	
 	columnPadding_=1.3;
-	colWidth_=16;
 	
-	flagsWidth_=0;
-	labelWidth_=0;
+	int h = fontMetrics().width('W'); // a wide character
+	int w = h;
+	rowHeight_= h*rowPadding_;
+	colWidth_ = w*columnPadding_;
+	
+	flagsWidth_=colWidth_*FLAGS_WIDTH;
+	labelWidth_=w*LABEL_WIDTH;
 	
 	loadingSequences_=false;
 	selectingSequences_=false;

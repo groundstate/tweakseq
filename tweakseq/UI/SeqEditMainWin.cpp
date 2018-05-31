@@ -306,42 +306,91 @@ void SeqEditMainWin::fileSaveProjectAs()
 	
 void SeqEditMainWin::fileImport(){
 	
-	QString fname = QFileDialog::getOpenFileName(this,
-    tr("Open Sequence"), "./", tr("Sequence Files (*.fasta *.aln *.clustal *.fa)"));
-	if (fname.isNull()) return;
+	FASTAFile ff;
+	ClustalFile cf;
+	
+	QString allext="";
+	QStringList ext = ff.extensions();
+	for (int s=0;s<ext.size();s++)
+		allext = allext + ext.at(s) + " ";
+	ext = cf.extensions();
+	for (int s=0;s<ext.size();s++)
+		allext = allext + ext.at(s) + " ";
+	allext.append(")");
+	allext.prepend("Sequence Files (");
+	
+	QString startDir = "./";
+	if (!lastImportedFile.isEmpty()){
+		QFileInfo fi(lastImportedFile);
+		if (!fi.absolutePath().isEmpty())
+			startDir = fi.absolutePath();
+	}
+	QStringList files = QFileDialog::getOpenFileNames(this,
+    tr("Open Sequence"),startDir, allext);
+	qDebug() << trace.header() << files;
+	if (files.isEmpty()) return;
 
-	FASTAFile cf(fname);
-	QStringList seqnames,seqs,comments;
-	if (cf.read(seqnames,seqs,comments)){
-		// Check for duplicates
-		QStringList currSeqNames;
-		QList<Sequence *> currseq = project_->sequences.sequences();
-		for (int i=0;i<currseq.size();++i)
-			currSeqNames.append(currseq.at(i)->label.trimmed());
-		currSeqNames = currSeqNames + seqnames;
-		QStringList dups = findDuplicates(currSeqNames);
-		if (dups.size() > 0){
-			QString msg("There are duplicated sequences in the file being imported:\n");
-			
-			for (int i=0; i< dups.size()-1;i++)
-				msg = msg + dups.at(i) + ",";
-			msg=msg+dups.last() + "\nYou will have to fix this.";
-			
-			QMessageBox::critical(this, tr("Error during import"),msg);
+	for (int f=0;f<files.size();f++){
+		QString fname = files.at(f);
+		bool ok = false;
+		QStringList seqnames,seqs,comments;
+		
+		if (ff.isFASTAFile(fname)){
+			ff.setName(fname);
+			ok = ff.read(seqnames,seqs,comments);
+		}
+		else if (cf.isClustalFile(fname)){
+			cf.setName(fname);
+			ok = cf.read(seqnames,seqs,comments);
+		}
+		else{
+			QMessageBox::critical(this, tr("Error during import"),"Unable to identify " + fname);
+			se->loadingSequences(false);
+			postLoadTidy();
 			return;
 		}
 		
-		se->loadingSequences(true);
-		for (int i=0;i<seqnames.size();i++){
-			project_->sequences.add(seqnames.at(i),seqs.at(i),comments.at(i),fname,false);
+		if (ok){
+			// Check for duplicates
+			qDebug() << trace.header() << "checking for duplicates";
+			QStringList currSeqNames;
+			QList<Sequence *> currseq = project_->sequences.sequences();
+			for (int i=0;i<currseq.size();++i)
+				currSeqNames.append(currseq.at(i)->label.trimmed());
+			currSeqNames = currSeqNames + seqnames;
+			QStringList dups = findDuplicates(currSeqNames);
+			if (dups.size() > 0){
+				QString msg("There are duplicated sequences in the file being imported:\n");
+				
+				for (int i=0; i< dups.size()-1;i++)
+					msg = msg + dups.at(i) + ",";
+				msg=msg+dups.last() + "\nYou will have to fix this.";
+				
+				QMessageBox::critical(this, tr("Error during import"),msg);
+				se->loadingSequences(false);
+				postLoadTidy();
+				return;
+			}
+			
+			se->loadingSequences(true);
+			
+			for (int i=0;i<seqnames.size();i++){
+				project_->sequences.add(seqnames.at(i),seqs.at(i),comments.at(i),fname,true);
+			}
+			
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "added " << project_->sequences.size();
+			
+			lastImportedFile=fname;
 		}
-		se->loadingSequences(false);
-		
-		lastImportedFile=fname;
+		else{
+			QMessageBox::critical(this, tr("Error during import"),"Error while trying to read " + fname);
+			se->loadingSequences(false);
+			postLoadTidy();
+			return;
+		}
 	}
-	else{
-	}
-	updateFindTool();
+	se->loadingSequences(false);
+	postLoadTidy();
 }
 
 void SeqEditMainWin::fileExportFASTA(){
@@ -598,8 +647,10 @@ void SeqEditMainWin::setupEditActions()
 		redoAction->setEnabled(false);
 		groupSequencesAction->setEnabled(false);
 		ungroupSequencesAction->setEnabled(false);
+		ungroupAllAction->setEnabled(false);
 		hideNonSelectedGroupMembersAction->setEnabled(false);
 		unhideAllGroupMembersAction->setEnabled(false);
+		unhideAllAction->setEnabled(true);
 		lockAction->setEnabled(false);
 		unlockAction->setEnabled(false);
 		excludeAction->setEnabled(false);
@@ -714,6 +765,12 @@ void SeqEditMainWin::editUngroupSequences()
 	se->updateViewport(); // number of rows may have changed because of unhiding
 }
 
+void SeqEditMainWin::editUngroupAll()
+{
+	project_->ungroupAllSequences();
+	se->updateViewport();
+}
+
 void SeqEditMainWin::editLock(){
 	project_->lockSelectedGroups(true);
 	se->repaint();
@@ -728,13 +785,17 @@ void SeqEditMainWin::editHideNonSelectedGroupMembers()
 {
 	project_->hideNonSelectedGroupMembers();
 	se->updateViewport();
-	//se->viewport()->repaint();
 }
 
 void SeqEditMainWin::editUnhideAllGroupMembers(){
 	project_->unhideAllGroupMembers();
 	se->updateViewport();
-	se->repaint();
+}
+	
+void SeqEditMainWin::editUnhideAll()
+{
+	project_->sequences.unhideAll();
+	se->updateViewport();
 }
 	
 void SeqEditMainWin::editExclude(){
@@ -1067,6 +1128,12 @@ void SeqEditMainWin::createActions()
 	connect(ungroupSequencesAction, SIGNAL(triggered()), this, SLOT(editUngroupSequences()));
 	ungroupSequencesAction->setEnabled(false);
 	
+	ungroupAllAction = new QAction( tr("Ungroup all sequences"), this);
+	ungroupAllAction->setStatusTip(tr("Ungroup all sequences"));
+	addAction(ungroupAllAction);
+	connect(ungroupAllAction, SIGNAL(triggered()), this, SLOT(editUngroupAll()));
+	ungroupAllAction->setEnabled(true);
+	
 	lockAction = new QAction( tr("Lock groups(s)"), this);
 	lockAction->setStatusTip(tr("Lock selected group(s)"));
 	//lockAction->setIcon(QIcon(lock_xpm));
@@ -1087,6 +1154,11 @@ void SeqEditMainWin::createActions()
 	unhideAllGroupMembersAction ->setStatusTip(tr("Hide non-selected sequences in the group"));
 	addAction(unhideAllGroupMembersAction);
 	connect(unhideAllGroupMembersAction, SIGNAL(triggered()), this, SLOT(editUnhideAllGroupMembers()));
+	
+	unhideAllAction = new QAction( tr("Unhide all hidden sequences"), this);
+	unhideAllAction ->setStatusTip(tr("Unhide all hidden sequences"));
+	addAction(unhideAllAction);
+	connect(unhideAllAction, SIGNAL(triggered()), this, SLOT(editUnhideAll()));
 	
 	excludeAction = new QAction( tr("Exclude residues"), this);
 	excludeAction->setStatusTip(tr("Exclude residues"));
@@ -1124,7 +1196,6 @@ void SeqEditMainWin::createActions()
 	addAction(settingsEditorFontAction);
 	connect(settingsEditorFontAction, SIGNAL(triggered()), this, SLOT(settingsEditorFont()));
 	
-
 	settingsAlignmentToolClustalOAction = new QAction( tr("ClustalO"), this);
 	settingsAlignmentToolClustalOAction->setStatusTip(tr("Select Clustal Omega"));
 	addAction(settingsAlignmentToolClustalOAction);
@@ -1205,10 +1276,12 @@ void SeqEditMainWin::createMenus()
 	
 	editMenu->addAction(groupSequencesAction);
 	editMenu->addAction(ungroupSequencesAction);
+	editMenu->addAction(ungroupAllAction);
 	editMenu->addAction(lockAction);
 	editMenu->addAction(unlockAction);
 	editMenu->addAction(hideNonSelectedGroupMembersAction);
 	editMenu->addAction(unhideAllGroupMembersAction);
+	editMenu->addAction(unhideAllAction);
 	editMenu->addSeparator();
 
 	editMenu->addAction(excludeAction);

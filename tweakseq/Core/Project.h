@@ -95,6 +95,7 @@ class Project:public QObject
 		bool canGroupSelectedSequences();
 		bool groupSelectedSequences(QColor);
 		bool ungroupSelectedSequences();
+		void ungroupAllSequences();
 		
 		void addGroupToSelection(SequenceGroup *);
 		bool canToggleLock();

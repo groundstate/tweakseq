@@ -315,6 +315,15 @@ bool Project::ungroupSelectedSequences()
 	return true;
 }
 
+void Project::ungroupAllSequences()
+{
+	while (!sequenceGroups.isEmpty()){
+		SequenceGroup *sg = sequenceGroups.takeLast(); // this also removes sqeuenecs from their group
+		delete sg;
+	}
+	dirty_=true;
+}
+
 bool Project::canToggleLock()
 {
 	for (int s=0;s<sequenceSelection->size();s++){

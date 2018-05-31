@@ -260,7 +260,14 @@ void  Sequences::removeResidues(int startSequence,int stopSequence,int startPos,
 	emit changed();
 }
 
+void  Sequences::unhideAll()
+{
+	for (int s=0;s<sequences_.count();s++)
+		sequences_.at(s)->visible=true;
+	emit changed();
+}
 		
+
 int Sequences::getIndex(QString label)
 {
 	// Get the index of the sequence with label l

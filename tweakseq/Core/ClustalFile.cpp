@@ -30,6 +30,7 @@
 #include <cmath>
 
 #include <QFile>
+#include <QFileInfo>
 #include <QStringList>
 
 #include "Application.h"
@@ -45,10 +46,21 @@ extern Application *app;
 
 ClustalFile::ClustalFile(QString n):SequenceFile(n)
 {
+	QStringList ext;
+	ext << "*.aln" << "*.clustal";
+	setExtensions(ext);
 }
 
 ClustalFile::~ClustalFile()
 {
+}
+
+bool ClustalFile::isClustalFile(QString fname)
+{
+	// FIXME for the moment just use the extension to identify the file
+	QFileInfo fi(fname);
+	QString ext = "*."+fi.suffix();
+	return extensions().contains(ext,Qt::CaseInsensitive);
 }
 
 bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &)

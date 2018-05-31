@@ -29,6 +29,7 @@
 #define __SEQUENCE_FILE_H_
 
 #include <QString>
+#include <QStringList>
 
 // Base class for supported sequence alignment formats
 class SequenceFile
@@ -41,6 +42,8 @@ class SequenceFile
 		QString name(){return n_;};
 		void setName(QString n){n_=n;}
 		
+		QStringList & extensions(){return extensions_;}
+		
 		QString formatName(){return formatName_;}
 		QString formatVersion(){return formatVersion_;}
 		QString error(){return err_;}
@@ -52,7 +55,8 @@ class SequenceFile
 		
 		void setFormatName(QString n){formatName_=n;}
 		void setFormatVersion(QString n){formatVersion_=n;}
-		void    setError(QString e){err_=e;}
+		void setError(QString e){err_=e;}
+		void setExtensions(QStringList &e){extensions_=e;}
 		
 	private:
 		
@@ -60,6 +64,8 @@ class SequenceFile
 		
 		QString formatName_;
 		QString formatVersion_;
+		
+		QStringList extensions_;
 		
 		QString err_;
 };
