@@ -49,6 +49,7 @@ class SequenceGroup
 		bool locked(){return locked_;}
 		void lock(bool l){locked_=l;}
 
+		bool hasHiddenSequences();
 		void enforceVisibility();
 		
 		// UI stuff

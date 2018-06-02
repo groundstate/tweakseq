@@ -110,7 +110,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	
 	createActions();
 	createMenus();
-	createToolBars();
+	
 
 	split = new QSplitter(Qt::Vertical,this);
 	
@@ -132,6 +132,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	mw = new MessageWin(split);
 	
 	createStatusBar(); // need to connect to other widgets so do this here
+	createToolBars();
 	
 	QList<int> wsizes;
 	wsizes.append(600);wsizes.append(200);
@@ -139,6 +140,8 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	
 	setCentralWidget(split);
 	//centralWidget()->setMouseTracking(true);
+	
+	
 	
 	printer = new QPrinter();
 	printer->setFullPage(true);
@@ -171,6 +174,7 @@ void SeqEditMainWin::postLoadTidy()
 {
 	se->postLoadTidy();
 	updateFindTool();
+	setupAlignmentActions();
 	setWindowTitle("tweakseq - " + project_->name());
 }
 
@@ -811,10 +815,13 @@ void SeqEditMainWin::editReadOnly(){
 	se->setReadOnly(readOnlyAction->isChecked());
 }
 
-void SeqEditMainWin::setupAlignmentMenu()
+void SeqEditMainWin::setupAlignmentActions()
 {
 	alignAllAction->setEnabled(project_->sequences.size() >= 2);
 	alignSelectionAction->setEnabled(project_->sequenceSelection->size() >= 2);
+	if (NULL != alignmentProc_){
+		alignStopAction->setEnabled(alignmentProc_->state() == QProcess::Running);
+	}
 }
 
 void SeqEditMainWin::alignmentAll()
@@ -827,14 +834,25 @@ void SeqEditMainWin::alignmentSelection()
 {
 	alignAll=false;
 	se->setReadOnly(true);
-	setupEditActions();
 	startAlignment();
+}
+
+void SeqEditMainWin::alignmentStop()
+{
+	if (NULL != alignmentProc_){
+		alignmentProc_->kill();
+		// FIXME clean up ??
+		alignAllAction->setEnabled(true);
+		alignStopAction->setEnabled(false);
+	}
 }
 
 void SeqEditMainWin::alignmentStarted()
 {
 	qDebug() << trace.header() << "seqEditMainWin::alignmentStarted()";
 	statusBar()->showMessage("Alignment running");
+	alignAllAction->setEnabled(false);
+	alignStopAction->setEnabled(true);
 }
 
 void SeqEditMainWin::alignmentReadyReadStdOut()
@@ -866,7 +884,8 @@ void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus)
 			previewNewAlignment();
 		}
 	}
-	
+	alignAllAction->setEnabled(true);
+	alignStopAction->setEnabled(false);
 }
 
 
@@ -885,6 +904,21 @@ void SeqEditMainWin::settingsEditorFont()
 	}
 }
 
+void SeqEditMainWin::settingsStandardView()
+{
+	se->setResidueView(SequenceEditor::StandardView);
+}
+
+void SeqEditMainWin::settingsInvertedView()
+{
+	se->setResidueView(SequenceEditor::InvertedView);
+}
+
+void SeqEditMainWin::settingsBlockView()
+{
+	se->setResidueView(SequenceEditor::BlockView);
+}
+	
 void SeqEditMainWin::settingsAlignmentToolClustalO()
 {
 	if (project_->alignmentTool()->name() != "clustalo"){
@@ -1183,6 +1217,7 @@ void SeqEditMainWin::createActions()
 	addAction(alignAllAction);
 	connect(alignAllAction, SIGNAL(triggered()), this, SLOT(alignmentAll()));
 	alignAllAction->setEnabled(false);
+	alignAllAction->setIcon(QIcon(":/images/go.png"));
 	
 	alignSelectionAction = new QAction( tr("&Align selection"), this);
 	alignSelectionAction->setStatusTip(tr("Run alignment on the current selection"));
@@ -1190,11 +1225,42 @@ void SeqEditMainWin::createActions()
 	connect(alignSelectionAction, SIGNAL(triggered()), this, SLOT(alignmentSelection()));
 	alignSelectionAction->setEnabled(false);
 	
+	alignStopAction = new QAction( tr("Stop alignment"), this);
+	alignStopAction->setStatusTip(tr("Stop the running alignment"));
+	addAction(alignStopAction);
+	connect(alignStopAction, SIGNAL(triggered()), this, SLOT(alignmentStop()));
+	alignStopAction->setEnabled(false);
+	alignStopAction->setIcon(QIcon(":/images/stop.png"));
+	
 	// Settings actions
 	settingsEditorFontAction = new QAction( tr("Editor font"), this);
 	settingsEditorFontAction->setStatusTip(tr("Choose the font used in the sequence editor"));
 	addAction(settingsEditorFontAction);
 	connect(settingsEditorFontAction, SIGNAL(triggered()), this, SLOT(settingsEditorFont()));
+	
+	QActionGroup *agView = new QActionGroup(this);
+	agView->setExclusive(true);
+	settingsStandardViewAction = new QAction( tr("Standard"), this);
+	settingsStandardViewAction->setStatusTip(tr("Standard residue view"));
+	addAction(settingsStandardViewAction);
+	connect(settingsStandardViewAction, SIGNAL(triggered()), this, SLOT(settingsStandardView()));
+	settingsStandardViewAction->setCheckable(true);
+	agView->addAction(settingsStandardViewAction);
+	settingsStandardViewAction->setChecked(true);
+	
+	settingsInvertedViewAction = new QAction( tr("Inverted"), this);
+	settingsInvertedViewAction->setStatusTip(tr("Inverted residue view"));
+	addAction(settingsInvertedViewAction);
+	connect(settingsInvertedViewAction, SIGNAL(triggered()), this, SLOT(settingsInvertedView()));
+	settingsInvertedViewAction->setCheckable(true);
+	agView->addAction(settingsInvertedViewAction);
+	
+	settingsBlockViewAction = new QAction( tr("Block"), this);
+	settingsBlockViewAction->setStatusTip(tr("Block residue view (no label)"));
+	addAction(settingsBlockViewAction);
+	connect(settingsBlockViewAction, SIGNAL(triggered()), this, SLOT(settingsBlockView()));
+	settingsBlockViewAction->setCheckable(true);
+	agView->addAction(settingsBlockViewAction);
 	
 	settingsAlignmentToolClustalOAction = new QAction( tr("ClustalO"), this);
 	settingsAlignmentToolClustalOAction->setStatusTip(tr("Select Clustal Omega"));
@@ -1294,15 +1360,28 @@ void SeqEditMainWin::createMenus()
 	connect(alignmentMenu,SIGNAL(aboutToShow()),this,SLOT(setupAlignmentMenu()));
 	alignmentMenu->addAction(alignAllAction);
 	alignmentMenu->addAction(alignSelectionAction);
+	alignmentMenu->addAction(alignStopAction);
 	//alignmentMenu->addAction(undoLastAction);
 	
+	//
+	// Settings
+	//
 	settingsMenu = menuBar()->addMenu(tr("Settings"));
 	connect(settingsMenu,SIGNAL(aboutToShow()),this,SLOT(setupSettingsMenu()));
 	
 	settingsMenu->addAction(settingsEditorFontAction);
+	
+	QMenu* viewToolMenu = settingsMenu->addMenu(tr("Residue view"));
+	viewToolMenu->addAction(settingsStandardViewAction);
+	viewToolMenu->addAction(settingsInvertedViewAction);
+	viewToolMenu->addAction(settingsBlockViewAction);
+	
+	settingsMenu->addSeparator();
+	
 	QMenu* alignmentToolMenu = settingsMenu->addMenu(tr("Alignment tool"));
 	alignmentToolMenu->addAction(settingsAlignmentToolClustalOAction);
 	alignmentToolMenu->addAction(settingsAlignmentToolMUSCLEAction);
+	
 	settingsMenu->addAction(settingsAlignmentToolPropertiesAction);
 	
 	settingsMenu->addSeparator();
@@ -1327,6 +1406,26 @@ void SeqEditMainWin::createToolBars()
 	findTool_ = new FindTool(this);
 	seqEditTB->addWidget(findTool_);
 	
+	//seqEditTB->addAction(prevMarkAction);
+	//seqEditTB->addAction(nextMarkAction);
+	
+	seqEditTB->addSeparator();
+	
+	seqEditTB->addAction(alignAllAction);
+	seqEditTB->addAction(alignStopAction);
+	
+	QWidget *separator = new QWidget(this);
+	separator->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+	seqEditTB->addWidget(separator);
+
+	QLabel *info = new QLabel(this);
+	info->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+ 	info->setLineWidth(1);
+	info->setFixedWidth(fontMetrics().width('W')*16);
+	
+	seqEditTB->addWidget(info);
+	connect(se,SIGNAL(info(const QString &)),info,SLOT(setText(const QString &)));
+	
 	//seqEditTB->addAction(lockAction);
 	//tb->setToggleButton(true);
 	//connect(tb,SIGNAL(toggled(bool)),se,SLOT(lockMode(bool)));
@@ -1336,11 +1435,7 @@ void SeqEditMainWin::createToolBars()
 
 void SeqEditMainWin::createStatusBar()
 {
-	QLabel *info = new QLabel(this);
-	info->setFrameStyle(QFrame::Panel | QFrame::Sunken);
- 	info->setLineWidth(1);
-	statusBar()->addPermanentWidget(info);
-	connect(se,SIGNAL(info(const QString &)),info,SLOT(setText(const QString &)));
+	
 }
 
 void SeqEditMainWin::startAlignment()
@@ -1350,6 +1445,7 @@ void SeqEditMainWin::startAlignment()
 		if (alignmentProc_->state() != QProcess::NotRunning)
 			alignmentProc_->close();
 		delete alignmentProc_;
+		alignmentProc_=NULL;
 	}
 	
 	alignmentProc_ = new QProcess(this);
@@ -1383,6 +1479,8 @@ void SeqEditMainWin::startAlignment()
 	project_->alignmentTool()->makeCommand(fin,fout,exec,args);
 	qDebug() <<  trace.header() << exec << args;
 	alignmentProc_->start(exec,args);
+	alignAllAction->setEnabled(false);
+	alignStopAction->setEnabled(true);
 }
 
 void SeqEditMainWin::readNewAlignment(bool isFullAlignment)

@@ -3,6 +3,9 @@
 	<file>text/aboutdialog/about.html</file>
 	<file>text/aboutdialog/authors.html</file>
 	<file>text/aboutdialog/license</file>
+	<file>images/lock.png</file>
+	<file>images/go.png</file>
+	<file>images/stop.png</file>
 </qresource>
 </RCC>
 

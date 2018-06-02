@@ -45,7 +45,7 @@
 #include "SequenceSelection.h"
 #include "Utility.h"
 
-#define FLAGS_WIDTH 4
+#define FLAGS_WIDTH 6
 #define LABEL_WIDTH 16
 
 #define N_GROUP_COLOURS 10
@@ -65,6 +65,8 @@ static int groupColours[N_GROUP_COLOURS][3]
 	{167,220,38} // 115  yellow green
 };
 
+QPixmap *lockpm=NULL;
+
 //
 // Public members
 //
@@ -75,6 +77,10 @@ SequenceEditor::SequenceEditor(Project *project,QWidget *parent): QWidget(parent
 	setFocusPolicy(Qt::StrongFocus);
 	
 	init();
+	if (lockpm == NULL){
+		lockpm = new QPixmap(":/images/lock.png");
+		qDebug() << trace.header(__PRETTY_FUNCTION__) <<lockpm->size();
+	}
 	project_=project;
 	
 	setMouseTracking(true);
@@ -104,8 +110,9 @@ void SequenceEditor::setEditorFont(const QFont &f)
 	rowHeight_= (int) h*rowPadding_;
 	colWidth_= (int) w*columnPadding_;
 	
-	flagsWidth_=colWidth_*FLAGS_WIDTH;
-	labelWidth_=w*LABEL_WIDTH;
+	flagsWidth_= w*FLAGS_WIDTH;
+	labelWidth_= w*LABEL_WIDTH;
+	charWidth_ = w;
 	
 	updateViewExtents();
 	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
@@ -126,6 +133,13 @@ QColor SequenceEditor::getSequenceGroupColour()
 	if (currGroupColour_ == N_GROUP_COLOURS+1)
 		currGroupColour_=1;
 	return QColor(groupColours[currGroupColour_-1][0],groupColours[currGroupColour_-1][1],groupColours[currGroupColour_-1][2]);
+}
+
+
+void SequenceEditor::setResidueView(int rv)
+{
+	residueView_=rv;
+	repaint();
 }
 
 void SequenceEditor::updateViewport()
@@ -195,12 +209,14 @@ void SequenceEditor::removeExcludeSelection()
 		//	startCol,stopCol,1));
 		
 		// Mark the residues
-		for (row=startRow;row<=stopRow;row++)
+		for (row=startRow;row<=stopRow;row++){
+			int actualRow = project_->sequences.visibleToActual(row);
 			// Update past the deletion point only
 			for (col=startCol;col<=stopCol;col++){
-			  setCellFlag(row,col,false);
+			  setCellFlag(actualRow,col,false);
 				//updateCell(row,col);
 			}// of for (col=)
+		}
 		repaint();
 		
 	}	// of if (selectingResidues_)
@@ -604,7 +620,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	
 	if (readOnly_) return;
 	
-	if (selectingSequences_&& leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
+	if ((selectingSequences_ || selectingResidues_) && leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
 		// If we go out of the bounds of the window, then the view is scrolled at a rate proportional to the distance
 		// we have moved out of the window
 		if (pos.y() > height() || pos.y() < 0){
@@ -629,49 +645,36 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 			}
 		}
 		else{
-			if (scrollRowTimer_.isActive()) cleanupTimer();
-			if (seqSelectionDrag_ != clickedRow){
-				seqSelectionDrag_=clickedRow;
+			if (selectingSequences_){
+				if (scrollRowTimer_.isActive()) cleanupTimer();
+				if (seqSelectionDrag_ != clickedRow){
+					seqSelectionDrag_=clickedRow;
+					repaint();
+				}
+			}
+			else if (selectingResidues_){
+				if (scrollRowTimer_.isActive()) cleanupTimer();
+				if (clickedCol < 0)
+					clickedCol = firstVisibleCol_;
+				currRow = clickedRow;    // map to row; set current cell
+				currCol = clickedCol;    // map to col; set current cell
+				// Determine the bounds of the rectangle enclosing both
+				// the old highlight box and the new highlight box (so we redraw cells in the old box)
+				// Determine the vertical bounds
+				startRow = find_smallest_int(currRow,selAnchorRow_,selDragRow_);
+				stopRow  = find_largest_int(currRow,selAnchorRow_,selDragRow_);
+				// Determine the horizontal bounds
+				startCol= find_smallest_int(currCol,selAnchorCol_,selDragCol_);
+				stopCol = find_largest_int(currCol,selAnchorCol_,selDragCol_);
+				selDragRow_=currRow;
+				selDragCol_=currCol;
+				
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " <<
+					startCol << " " << stopCol;
 				repaint();
 			}
 		}
 	}	
-	
-	if (selectingResidues_ && leftDown_){ 
-		
-		// Must be moving the highlight box around in the sequence field
-		//if (clickedCol < LABELWIDTH+FLAGSWIDTH && clickedCol >= FLAGSWIDTH)
-		//	clickedCol = LABELWIDTH+FLAGSWIDTH;
-		if (clickedCol < 0)
-			clickedCol = firstVisibleCol_;
-		//	if (clickedPos.x() >= 0)
-		//		clickedCol = numCols() -1;
-		//	else
-		//		clickedCol = LABELWIDTH+FLAGSWIDTH;
-		//}
-		
-		currRow = clickedRow;    // map to row; set current cell
-		currCol = clickedCol;    // map to col; set current cell
-		// Determine the bounds of the rectangle enclosing both
-		// the old highlight box and the new highlight box (so we redraw cells in the old box)
-		// Determine the vertical bounds
-		startRow = find_smallest_int(currRow,selAnchorRow_,selDragRow_);
-		stopRow  = find_largest_int(currRow,selAnchorRow_,selDragRow_);
-		// Determine the horizontal bounds
-		startCol= find_smallest_int(currCol,selAnchorCol_,selDragCol_);
-		stopCol = find_largest_int(currCol,selAnchorCol_,selDragCol_);
-		selDragRow_=currRow;
-		selDragCol_=currCol;
-		
-		qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " <<
-			startCol << " " << stopCol;
-			
-		repaint();
-		// Now update the cells
-		//for (row=startRow;row<=stopRow;row++)
-		//	for (col=startCol;col<=stopCol;col++)
-		//		updateCell(row,col);
-	}
 	
 }
 
@@ -846,11 +849,19 @@ void SequenceEditor::scrollRow()
 		firstVisibleRow_ = numRows_- nvis;
 	lastVisibleRow_ = firstVisibleRow_ + nvis -1;
 	
-	if (leftDown_ && selectingSequences_){ // only use scrollRow in this context but just in case I forget
-		if (scrollRowIncrement_ > 0)
-			seqSelectionDrag_ = lastVisibleRow_;
-		else
-			seqSelectionDrag_ = firstVisibleRow_;
+	if (leftDown_){ // only use scrollRow in this context but just in case I forget
+		if (selectingSequences_){
+			if (scrollRowIncrement_ > 0)
+				seqSelectionDrag_ = lastVisibleRow_;
+			else
+				seqSelectionDrag_ = firstVisibleRow_;
+		}
+		else if (selectingResidues_){
+			if (scrollRowIncrement_ > 0)
+				selDragRow_ = lastVisibleRow_;
+			else
+				selDragRow_ = firstVisibleRow_;
+		}
 	}
 	
 	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
@@ -868,6 +879,7 @@ void SequenceEditor::init()
 	project_=NULL;
 	
 	readOnly_=false;
+	residueView_ = SequenceEditor::StandardView;
 	
 	numRows_=0;
 	numCols_=0;
@@ -884,9 +896,10 @@ void SequenceEditor::init()
 	int w = h;
 	rowHeight_= h*rowPadding_;
 	colWidth_ = w*columnPadding_;
+	charWidth_ = w;
 	
-	flagsWidth_=colWidth_*FLAGS_WIDTH;
-	labelWidth_=w*LABEL_WIDTH;
+	flagsWidth_=charWidth_*FLAGS_WIDTH;
+	labelWidth_=charWidth_*LABEL_WIDTH;
 	
 	loadingSequences_=false;
 	selectingSequences_=false;
@@ -972,21 +985,21 @@ QChar SequenceEditor::cellContent(int row, int col, int maskFlags, Sequence *cur
 void SequenceEditor::setCellFlag(int row,int col,bool exclude)
 {
 	// TO DO - make portable the OR
-	qDebug() << trace.header() << "SequenceEditor::setCellMark() row=" << row << " col=" << col << " exclude=" << exclude;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << " row=" << row << " col=" << col << " exclude=" << exclude;
 	QList<Sequence *> &seq = project_->sequences.sequences();
 	
-	if (exclude)
-		seq.at(row)->residues[col] = 
-			seq.at(row)->residues[col].unicode() | EXCLUDE_CELL;
-	else
-		seq.at(row)->residues[col] = 
-			seq.at(row)->residues[col].unicode() & (~EXCLUDE_CELL);
+	if (exclude){
+		seq.at(row)->residues[col] = seq.at(row)->residues[col].unicode() | EXCLUDE_CELL;
+	}
+	else{
+		seq.at(row)->residues[col] = (seq.at(row)->residues[col].unicode() & (~EXCLUDE_CELL));
+	}
 }
 
 void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq )
 {
 	QChar c,cwflags;
-	QColor txtColor;
+	QColor txtColor,fillColour;
 	int cellSelected=false;
 	
 	if (NULL == currSeq){
@@ -1008,39 +1021,40 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	// If the cell is highlighted then do it
 	
 	if (selectingResidues_ && currSeq->visible){
-		txtColor.setRgb(128,128,128);
+		
 		if (selAnchorRow_ <= selDragRow_){ // dragging top to bottom
 			if (selAnchorCol_ <= selDragCol_){ // left to right
 				if (row >= selAnchorRow_ && row <= selDragRow_ && 
 					col >= selAnchorCol_ && col<=selDragCol_){
-						p->fillRect(0,0,w,h,txtColor);
 						cellSelected=true;
-					}
+				}
 			}
 			else{
 				if (row >= selAnchorRow_ && row <= selDragRow_ && 
 					col <= selAnchorCol_ && col>=selDragCol_){
-						p->fillRect(0,0,w,h,txtColor);
 						cellSelected=true;
-					}
+				}
 			}
 		}
 		else{ // dragging bottom to top
 			if (selAnchorCol_ <= selDragCol_){ // left to right
 				if (row <= selAnchorRow_ && row >= selDragRow_ && 
 					col >= selAnchorCol_ && col<=selDragCol_){
-						p->fillRect(0,0,w,h,txtColor);
 						cellSelected=true;
-					}
+				}
 			}
 			else{
 				if (row <= selAnchorRow_ && row >= selDragRow_ && 
 					col <= selAnchorCol_ && col>=selDragCol_){
-						p->fillRect(0,0,w,h,txtColor);
 						cellSelected=true;
-					}
+				}
 			}
 		}
+	}
+	
+	if (cellSelected){
+		fillColour.setRgb(192,192,192);
+		p->fillRect(0,0,w,h,fillColour);
 	}
 	
 	//  Draw cell content 
@@ -1062,7 +1076,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 			if (cellSelected)
 				txtColor.setRgb(0,0,0);
 			else
-				txtColor.setRgb(255,255,255);
+				txtColor.setRgb(224,224,224);
 			break; 
 		case 'Y': case 'F': case 'W': // orange
 			txtColor.setRgb(254,172,0);
@@ -1073,28 +1087,61 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	};
 
 		// FIXME not so useful if the group is not contiguous
-	if (currSeq->group != NULL){
-		int start = rowFirstVisibleSequenceInGroup(currSeq->group);
-		int stop  = rowLastVisibleSequenceInGroup(currSeq->group);
-		if (row==start){
-			p->setPen(currSeq->group->textColour());
-			p->drawLine(0,2,w-1,2);
-		}
-		if (row==stop){
-			p->setPen(currSeq->group->textColour());
-			p->drawLine(0,h-2,w-1,h-2);
-		}
-	}
+	//if (currSeq->group != NULL){
+	//	int start = rowFirstVisibleSequenceInGroup(currSeq->group);
+	//	int stop  = rowLastVisibleSequenceInGroup(currSeq->group);
+	//	if (row==start){
+	//		p->setPen(currSeq->group->textColour());
+	//		p->drawLine(0,2,w-1,2);
+	//	}
+	//	if (row==stop){
+	//		p->setPen(currSeq->group->textColour());
+	//		p->drawLine(0,h-2,w-1,h-2);
+	//	}
+	//}
 	
-	if ((!cellSelected) && (cwflags.unicode() & EXCLUDE_CELL) && currSeq->visible ){
-		p->setPen(QColor(240,240,16));
-		p->drawLine(2,2,w-2,h-2); // X marks the spot ...
-		p->drawLine(w-2,2,2,h-2);
-	}
+	
+	QPen xPen;
+	xPen.setWidth(2);
 	
 	if (currSeq->visible){
-		p->setPen(txtColor);
-		p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
+		switch (residueView_){
+			case StandardView:
+				if ((cwflags.unicode() & EXCLUDE_CELL) ){
+					xPen.setColor(QColor(240,240,16));
+					p->setPen(xPen);
+					p->drawLine(2,2,w-2,h-2); // X marks the spot ...
+					p->drawLine(w-2,2,2,h-2);
+				}
+				p->setPen(txtColor);
+				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
+				break;
+			case InvertedView:
+				if (!cellSelected){
+					p->fillRect(0,2,w,h-2,txtColor);
+				}
+				if ((cwflags.unicode() & EXCLUDE_CELL)){
+					xPen.setColor(QColor(32,32,32));
+					p->setPen(xPen);
+					p->drawLine(2,2,w-2,h-2); // X marks the spot ...
+					p->drawLine(w-2,2,2,h-2);
+				}
+				txtColor.setRgb(0,0,0);
+				p->setPen(txtColor);
+				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
+				break;
+			case BlockView:
+				if (!cellSelected){
+					p->fillRect(0,2,w,h-2,txtColor);
+				}
+				if ((cwflags.unicode() & EXCLUDE_CELL) ){
+					xPen.setColor(QColor(32,32,32));
+					p->setPen(xPen);
+					p->drawLine(2,2,w-2,h-2); // X marks the spot ...
+					p->drawLine(w-2,2,2,h-2);
+				}
+				break;
+		}
 	}
 
 	p->translate(-xcol,-yrow);
@@ -1125,10 +1172,22 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 		
 	if (currSeq->group != NULL){
 		if (currSeq->group->locked()){
-			txtColor.setRgb(255,0,0);
-			p->setPen(txtColor);
-			p->drawText( 0, yrow, flagsWidth_, rowHeight_, Qt::AlignLeft, "L");
+			//txtColor.setRgb(255,0,0);
+			//p->setPen(txtColor);
+			//p->drawText( 4*charWidth_, yrow, charWidth_, rowHeight_, Qt::AlignCenter, "L");
+			int xpm = 4*charWidth_ + (charWidth_ - lockpm->width())/2;
+			int ypm = yrow + (rowHeight_ - lockpm->height())/2;
+			p->drawPixmap(xpm, ypm,*lockpm);
 		}
+		int groupBegin = rowFirstVisibleSequenceInGroup(currSeq->group);
+		if (row == groupBegin){
+			if (currSeq->group->hasHiddenSequences()){
+				txtColor.setRgb(255,215,0);
+				p->setPen(txtColor);
+				p->drawText( 5*charWidth_, yrow, charWidth_, rowHeight_, Qt::AlignCenter, "+");
+			}
+		}
+		
 		txtColor=currSeq->group->textColour(); // group colour for sequence label
 	}
 	else{
@@ -1140,7 +1199,7 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	
 	txtColor.setRgb(255,255,255);
 	p->setPen(txtColor);
-	p->drawText( colWidth_*1, yrow,colWidth_*3,rowHeight_, Qt::AlignLeft, QString::number(row));
+	p->drawText( 0, yrow,charWidth_*4,rowHeight_, Qt::AlignRight, QString::number(row));
 	
 	for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++)
 		paintCell(p,row,col,currSeq); // FIXME pass currSeq - maybe optional parameter & test for NULL?

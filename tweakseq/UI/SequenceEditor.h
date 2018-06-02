@@ -56,6 +56,9 @@ class SequenceEditor: public QWidget
 		const QFont &editorFont(){return font();}
 		QColor getSequenceGroupColour();
 		
+		int  residueView(){return residueView_;}
+		void setResidueView(int);
+		
 		void cutSelectedResidues();
 		void cutSelectedSequences();
 		void excludeSelection();
@@ -64,6 +67,8 @@ class SequenceEditor: public QWidget
 		void updateViewport();
 		void visibleRows(int *,int *);
 	
+		enum ResidueView {StandardView, InvertedView, BlockView};
+		
 	signals:
 	
 		void info(const QString &);
@@ -124,13 +129,17 @@ class SequenceEditor: public QWidget
 		void disconnectFromProject();
 		void cleanupTimer();
 		
+		// data
 		Project *project_;
 	
+		// properties
 		bool readOnly_;
+		int  residueView_;
 		
+		// geometry
 		int numRows_,numCols_;
 		double rowPadding_,columnPadding_;
-		int rowHeight_,colWidth_;
+		int rowHeight_,colWidth_,charWidth_;
 		int flagsWidth_,labelWidth_;
 		
 		int firstVisibleRow_,lastVisibleRow_;
@@ -141,6 +150,8 @@ class SequenceEditor: public QWidget
 		QString lastInfo_;
 		
 		bool loadingSequences_;
+		
+		// mouse state
 		bool selectingSequences_,selectingResidues_;
 		int  selAnchorRow_,selAnchorCol_,selDragRow_,selDragCol_;
 		int  seqSelectionAnchor_,seqSelectionDrag_;

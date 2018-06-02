@@ -83,6 +83,15 @@ void SequenceGroup::clear()
 	seqs_.clear();
 }
 
+bool SequenceGroup::hasHiddenSequences()
+{
+	for (int s=0;s<seqs_.size();s++){
+		if (!seqs_.at(s)->visible)
+			return true;
+	}
+	return false;
+}
+
 void SequenceGroup::enforceVisibility()
 {
 	// After removing sequences, none may be visible - so if there are no visible sequences,

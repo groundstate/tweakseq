@@ -102,9 +102,10 @@ private slots:
 	
 	void editReadOnly();
 	
-	void setupAlignmentMenu();
+	void setupAlignmentActions();
 	void alignmentAll();
 	void alignmentSelection();
+	void alignmentStop();
 	
 	void alignmentStarted();
 	void alignmentReadyReadStdOut();
@@ -113,6 +114,9 @@ private slots:
 	
 	void setupSettingsMenu();
 	void settingsEditorFont();
+	void settingsStandardView();
+	void settingsInvertedView();
+	void settingsBlockView();
 	void settingsAlignmentToolClustalO();
 	void settingsAlignmentToolMUSCLE();
 	void settingsAlignmentToolProperties();
@@ -153,7 +157,7 @@ private:
 	QMenu    *fileMenu,*alignmentMenu,*editMenu,*settingsMenu,*helpMenu,*testMenu;
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
-	QAction  *alignAllAction,*alignSelectionAction,*undoLastAction;
+	QAction  *alignAllAction,*alignSelectionAction,*alignStopAction,*undoLastAction;
 	QAction  *undoAction,*redoAction,*cutAction,*pasteAction;
 	QAction  *excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
 	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction,*unhideAllAction;
@@ -161,6 +165,7 @@ private:
 	QAction  *readOnlyAction;
 	QAction  *helpAction,*aboutAction;
 	QAction  *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
+	QAction  *settingsStandardViewAction,*settingsInvertedViewAction,*settingsBlockViewAction;
 	QAction  *settingsAlignmentToolPropertiesAction;
 
 	QAction *settingsSaveAppDefaultsAction;
