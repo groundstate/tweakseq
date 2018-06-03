@@ -48,6 +48,11 @@
 #define FLAGS_WIDTH 6
 #define LABEL_WIDTH 16
 
+#define BOOKMARK_COL 0
+#define INDEX_COL    1 // but right justified
+#define LOCK_COL     4
+#define HIDE_COL     5
+
 #define N_GROUP_COLOURS 10
 
 // Colours chose for maximum  contrast for Kenneth Kelly's sequence
@@ -66,6 +71,7 @@ static int groupColours[N_GROUP_COLOURS][3]
 };
 
 QPixmap *lockpm=NULL;
+QPixmap *bookmarkpm=NULL;
 
 //
 // Public members
@@ -76,11 +82,13 @@ SequenceEditor::SequenceEditor(Project *project,QWidget *parent): QWidget(parent
 	setContentsMargins(0,0,0,0);
 	setFocusPolicy(Qt::StrongFocus);
 	
-	init();
-	if (lockpm == NULL){
+	if (lockpm == NULL)
 		lockpm = new QPixmap(":/images/lock.png");
-		qDebug() << trace.header(__PRETTY_FUNCTION__) <<lockpm->size();
-	}
+	if (bookmarkpm == NULL)
+		bookmarkpm = new QPixmap(":/images/bookmark.png");
+	
+	init();
+
 	project_=project;
 	
 	setMouseTracking(true);
@@ -142,6 +150,8 @@ void SequenceEditor::setResidueView(int rv)
 	repaint();
 }
 
+
+		
 void SequenceEditor::updateViewport()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
@@ -156,13 +166,19 @@ void SequenceEditor::cutSelectedResidues()
 void SequenceEditor::cutSelectedSequences()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	// Before the sequences are removed, remove them from the current list of bookmarks
+	SequenceSelection *sel = project_->sequenceSelection;
+	for (int s=0;s<sel->size();s++){
+		if (bookmarks_.contains(sel->itemAt(s)))
+			bookmarks_.removeOne(sel->itemAt(s));
+	}
 	project_->cutSelectedSequences();
 	updateViewport();
 }
 
 void SequenceEditor::excludeSelection()
 {
-	qDebug() << trace.header() << "SequenceEditor::excludeSelection()";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	
 	int startRow=selAnchorRow_,stopRow=selDragRow_,
 			startCol=selAnchorCol_,stopCol=selDragCol_,row,col;
@@ -193,7 +209,7 @@ void SequenceEditor::excludeSelection()
 void SequenceEditor::removeExcludeSelection()
 {
 	// Selected cells that are marked are unmarked
-	qDebug() << trace.header() << "SequenceEditor::removeExcludeSelection()";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	
 	int startRow=selAnchorRow_,stopRow=selDragRow_,
 			startCol=selAnchorCol_,stopCol=selDragCol_,row,col;
@@ -220,6 +236,11 @@ void SequenceEditor::removeExcludeSelection()
 		repaint();
 		
 	}	// of if (selectingResidues_)
+}
+
+bool SequenceEditor::isBookmarked(Sequence *seq)
+{
+	return bookmarks_.contains(seq);
 }
 
 void SequenceEditor::visibleRows(int *start,int *stop)
@@ -264,6 +285,10 @@ void SequenceEditor::sequenceAdded(Sequence *s)
 		numCols_=project_->sequences.maxLength();
 	}
 	
+	if (s->bookmarked){
+		bookmarks_.append(s); // FIXME check if already there ? Sort?
+	}
+	
 	if (!loadingSequences_){ // suppress viewport updates until loading is finished
 		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
 	}
@@ -271,8 +296,11 @@ void SequenceEditor::sequenceAdded(Sequence *s)
 
 void SequenceEditor::sequencesCleared()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	numRows_=0;
 	numCols_=0;
+	bookmarks_.clear();
+	currBookmark_=-1;
 }
 
 void SequenceEditor::postLoadTidy()
@@ -296,6 +324,9 @@ void SequenceEditor::postLoadTidy()
 		}
 	}
 	currGroupColour_=maxCol+1;
+	
+	sortBookmarks();
+	
 }
 
 void SequenceEditor::loadingSequences(bool loading)
@@ -326,6 +357,55 @@ void SequenceEditor::setFirstVisibleColumn(int val)
 	firstVisibleCol_=val;
 	updateViewExtents();
 	repaint();
+}
+
+void SequenceEditor::createBookmark()
+{
+	if (project_->sequenceSelection->size() == 1){
+		// bookmarks need to be ordered so that they are traversed sequentially
+		project_->sequenceSelection->itemAt(0)->bookmarked=true;
+		bookmarks_.append(project_->sequenceSelection->itemAt(0));
+		sortBookmarks();
+		repaint();
+	}
+}
+
+void SequenceEditor::removeBookmark()
+{
+	if (project_->sequenceSelection->size() == 1){
+		// may need to move the pointer to the current bookmark
+		int index = bookmarks_.indexOf(project_->sequenceSelection->itemAt(0));
+		if (currBookmark_ > index){
+			currBookmark_--;
+		}
+		project_->sequenceSelection->itemAt(0)->bookmarked=false;
+		bookmarks_.removeOne(project_->sequenceSelection->itemAt(0));
+		if (bookmarks_.isEmpty())
+			currBookmark_=-1;
+		repaint();
+	}
+}
+
+		
+void SequenceEditor::moveToNextBookmark()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	if (bookmarks_.isEmpty()) return;
+	currBookmark_++;
+	if (currBookmark_>= bookmarks_.size()) // wrap back to beginning
+		currBookmark_=0;
+	selectSequence(bookmarks_.at(currBookmark_)->label);
+}
+
+void SequenceEditor::moveToPreviousBookmark()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	if (bookmarks_.isEmpty()) return;
+	currBookmark_--;
+	if (currBookmark_< 0) // wrap back to beginning
+		currBookmark_= bookmarks_.size() - 1;
+	selectSequence(bookmarks_.at(currBookmark_)->label);
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 }
 
 		
@@ -367,7 +447,7 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 	
 	QPoint clickedPos;
 	int clickedRow,clickedCol;
-	int col,row,startRow,stopRow,startCol,stopCol;
+	int startRow,stopRow,startCol,stopCol;
 	
 	clickedPos = ev->pos();		
 	clickedRow=rowAt( clickedPos.y() + contentsRect().y());
@@ -587,7 +667,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 {
 
 	QPoint pos;
-	int col,row,currRow,currCol;
+	int row,currRow,currCol;
 	int startRow,stopRow;
 	int startCol,stopCol;
 	int clickedRow,clickedCol;
@@ -727,7 +807,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 	
 	QString l;
 	int startRow=selAnchorRow_,stopRow=selDragRow_,
-			startCol=selAnchorCol_,stopCol=selDragCol_,row,col;	
+			startCol=selAnchorCol_,stopCol=selDragCol_,row;	
 
 	switch (ev->key()){
 		case Qt::Key_0:case Qt::Key_1:case Qt::Key_2:case Qt::Key_3:case Qt::Key_4:
@@ -881,6 +961,8 @@ void SequenceEditor::init()
 	readOnly_=false;
 	residueView_ = SequenceEditor::StandardView;
 	
+	currBookmark_=-1;
+	
 	numRows_=0;
 	numCols_=0;
 	
@@ -921,6 +1003,18 @@ void SequenceEditor::init()
 	
 }
 
+void SequenceEditor::sortBookmarks()
+{
+	QList<Sequence *> &seqs = project_->sequences.sequences();
+	QList<Sequence *> sorted; // FIXME shared
+	
+	for (int s=0;s<seqs.size();s++){
+		if (bookmarks_.contains(seqs.at(s)))
+			sorted.append(seqs.at(s));
+	}
+	bookmarks_=sorted;
+}
+
 void SequenceEditor::updateViewExtents()
 {
 	// round up to catch fractional bits ?
@@ -946,8 +1040,6 @@ void SequenceEditor::updateViewExtents()
 	
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << firstVisibleRow_ << " " << lastVisibleRow_ << " " << displayableCols << " " << firstVisibleCol_ << " " << lastVisibleCol_;
 }
-
-
 
 QChar SequenceEditor::cellContent(int row, int col, int maskFlags, Sequence *currSeq )
 {
@@ -1117,7 +1209,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				break;
 			case InvertedView:
-				if (!cellSelected){
+				if (!cellSelected  && c.toLatin1() != '-'){
 					p->fillRect(0,2,w,h-2,txtColor);
 				}
 				if ((cwflags.unicode() & EXCLUDE_CELL)){
@@ -1126,12 +1218,13 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 					p->drawLine(2,2,w-2,h-2); // X marks the spot ...
 					p->drawLine(w-2,2,2,h-2);
 				}
-				txtColor.setRgb(0,0,0);
+				if (c.toLatin1() != '-')
+					txtColor.setRgb(0,0,0);
 				p->setPen(txtColor);
 				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				break;
 			case BlockView:
-				if (!cellSelected){
+				if (!cellSelected && c.toLatin1() != '-'){
 					p->fillRect(0,2,w,h-2,txtColor);
 				}
 				if ((cwflags.unicode() & EXCLUDE_CELL) ){
@@ -1139,6 +1232,10 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 					p->setPen(xPen);
 					p->drawLine(2,2,w-2,h-2); // X marks the spot ...
 					p->drawLine(w-2,2,2,h-2);
+				}
+				if (c.toLatin1()=='-'){
+					p->setPen(txtColor);
+					p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				}
 				break;
 		}
@@ -1150,7 +1247,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 
 void SequenceEditor::paintRow(QPainter *p,int row)
 {
-	QColor txtColor;
+	QColor labelColor,txtColor;
 	
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 	if (currSeq == NULL) return; // this happens with an empty project
@@ -1175,7 +1272,7 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 			//txtColor.setRgb(255,0,0);
 			//p->setPen(txtColor);
 			//p->drawText( 4*charWidth_, yrow, charWidth_, rowHeight_, Qt::AlignCenter, "L");
-			int xpm = 4*charWidth_ + (charWidth_ - lockpm->width())/2;
+			int xpm = LOCK_COL*charWidth_ + (charWidth_ - lockpm->width())/2;
 			int ypm = yrow + (rowHeight_ - lockpm->height())/2;
 			p->drawPixmap(xpm, ypm,*lockpm);
 		}
@@ -1184,25 +1281,31 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 			if (currSeq->group->hasHiddenSequences()){
 				txtColor.setRgb(255,215,0);
 				p->setPen(txtColor);
-				p->drawText( 5*charWidth_, yrow, charWidth_, rowHeight_, Qt::AlignCenter, "+");
+				p->drawText( HIDE_COL*charWidth_, yrow, charWidth_, rowHeight_, Qt::AlignCenter, "+");
 			}
 		}
 		
-		txtColor=currSeq->group->textColour(); // group colour for sequence label
+		labelColor=currSeq->group->textColour(); // group colour for sequence label
 	}
 	else{
-		txtColor.setRgb(255,255,255); //default colour 
+		labelColor.setRgb(255,255,255); //default colour 
 	}
 	
-	p->setPen(txtColor);
-	p->drawText( flagsWidth_, yrow, labelWidth_,rowHeight_,Qt::AlignLeft, currSeq->label);
+	if (currSeq->bookmarked){
+		int xpm = BOOKMARK_COL*charWidth_ + (charWidth_ - bookmarkpm->width())/2;
+		int ypm = yrow + (rowHeight_ - bookmarkpm->height())/2;
+		p->drawPixmap(xpm, ypm,*bookmarkpm);
+	}
 	
 	txtColor.setRgb(255,255,255);
 	p->setPen(txtColor);
-	p->drawText( 0, yrow,charWidth_*4,rowHeight_, Qt::AlignRight, QString::number(row));
+	p->drawText(INDEX_COL, yrow,charWidth_*4,rowHeight_, Qt::AlignRight, QString::number(row));
+	
+	p->setPen(labelColor);
+	p->drawText( flagsWidth_, yrow, labelWidth_,rowHeight_,Qt::AlignLeft, currSeq->label);
 	
 	for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++)
-		paintCell(p,row,col,currSeq); // FIXME pass currSeq - maybe optional parameter & test for NULL?
+		paintCell(p,row,col,currSeq); 
 	
 }
 

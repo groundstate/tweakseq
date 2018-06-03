@@ -45,6 +45,7 @@ Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis){
 	group=NULL;
 	source=f;
 	visible=vis;
+	bookmarked=false;
 	//cerr << "Residues " << r.latin1() << endl;
 }
 

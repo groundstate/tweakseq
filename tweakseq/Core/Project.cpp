@@ -44,7 +44,8 @@
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
 #include "SeqEditMainWin.h"
-#include "UndoAlignmentCommand.h"
+#include "UndoAlignment.h"
+#include "UndoCutSequences.h"
 #include "XMLHelper.h"
 
 extern Application *app;
@@ -460,11 +461,17 @@ bool Project::cutSelectedSequences()
 	// This is easier than trying to insert in the right place
 	
 	QList<Sequence *> orderedCutSeqs;
+	QList<int> positions; // this is for the Undo record
 	for (s=0;s<seqs.size();s++){
 		Sequence *seq = seqs.at(s);
-		if (cutSeqs.contains(seq))
+		if (cutSeqs.contains(seq)){
 			orderedCutSeqs.append(seq);
+			positions.append(s);
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << seq->label << " at " << s;
+		}
 	}
+	
+
 	// Now that there is a complete list of cut sequences, remove them
 	s=0;
 	while (s<seqs.size()){
@@ -473,6 +480,8 @@ bool Project::cutSelectedSequences()
 		else
 			s++;
 	}
+	undoStack_.push(new UndoCutSequences(this,orderedCutSeqs,positions,"cut sequences"));
+	dirty_ = true;
 	app->clipboard().setSequences(orderedCutSeqs);
 	return true;
 }
@@ -523,7 +532,12 @@ void Project::unhideAllGroupMembers()
 		seq->visible = true;
 	}
 }
-		
+
+void Project::undo()
+{
+	undoStack_.undo();
+}
+
 void Project::setAlignmentTool(const QString & atool)
 {
 	if (atool == "clustalo" && clustalOTool_)
@@ -576,7 +590,10 @@ bool Project::save(QString &fpathname)
 		XMLHelper::addElement(saveDoc,se,"comment",seq->comment);		
 		XMLHelper::addElement(saveDoc,se,"residues",seq->filter());
 		XMLHelper::addElement(saveDoc,se,"source",seq->source);
-		XMLHelper::addElement(saveDoc,se,"visible",(seq->visible?"yes":"no"));
+		if (!seq->visible)
+			XMLHelper::addElement(saveDoc,se,"visible",(seq->visible?"yes":"no"));
+		if (seq->bookmarked)
+			XMLHelper::addElement(saveDoc,se,"bookmarked",(seq->bookmarked?"yes":"no"));
 		QList<int> x = seq->exclusions();
 		QString xs="";
 		for (int xi=0;xi<x.size()-1;xi+=2){
@@ -650,6 +667,7 @@ void Project::load(QString &fname)
 		
 		QString sName,sComment,sResidues,sSrc;
 		bool sVisible = true;
+		bool sBookmarked = false;
 		
 		QDomElement elem = sNode.firstChildElement();
 		QList<int> exclusions;
@@ -664,6 +682,8 @@ void Project::load(QString &fname)
 				sSrc = elem.text().trimmed();
 			else if (elem.tagName() == "visible")
 				sVisible = XMLHelper::stringToBool(elem.text().trimmed());
+			else if (elem.tagName() == "bookmarked")
+				sBookmarked = XMLHelper::stringToBool(elem.text().trimmed());
 			else if (elem.tagName() == "exclusions"){
 				QStringList sl = elem.text().trimmed().split(',');
 				for (int sli=0;sli<sl.size();sli++){
@@ -679,6 +699,7 @@ void Project::load(QString &fname)
 			elem=elem.nextSiblingElement();
 		}
 		Sequence *seq = sequences.add(sName,sResidues,sComment,sSrc,sVisible);
+		seq->bookmarked=sBookmarked;
 		for (int x=0;x<exclusions.size()-1;x+=2)
 			seq->exclude(exclusions.at(x),exclusions.at(x+1));
 				 
@@ -821,7 +842,8 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 	emit loadingSequences(true);
 	
 	if (isFullAlignment){
-		// Sequences are moved to their new position in the alignment and updated
+		// Sequences are moved to their new position in the alignment and the residues are updated
+		// This retains visibility, locks, groups, bookmarks etc.
 		for (int snew=0;snew<newseqs.size();snew++){
 			int sold=0;
 			while ((sold < sequences.size())){
@@ -862,7 +884,7 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 		
 	}
 
-	undoStack().push(new UndoAlignmentCommand(this,oldSeqs,oldGroups,sequences.sequences(),sequenceGroups,"alignment"));
+	undoStack().push(new UndoAlignment(this,oldSeqs,oldGroups,sequences.sequences(),sequenceGroups,"alignment"));
 	
 	// Tidy up time
 	while (!oldSeqs.isEmpty())

@@ -30,14 +30,14 @@
 #include "Project.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
-#include "UndoAlignmentCommand.h"
+#include "UndoAlignment.h"
 
 //
 // Public members
 //
 
 		
-UndoAlignmentCommand::UndoAlignmentCommand(Project *p,const QList<Sequence *> &preAlign,const QList<SequenceGroup *> &groupsPreAlign,
+UndoAlignment::UndoAlignment(Project *p,const QList<Sequence *> &preAlign,const QList<SequenceGroup *> &groupsPreAlign,
 																					 const QList<Sequence *> &postAlign,const QList<SequenceGroup *> &groupsPostAlign,
 																					 const QString &txt):UndoCommand(p,txt)
 {
@@ -78,9 +78,9 @@ UndoAlignmentCommand::UndoAlignmentCommand(Project *p,const QList<Sequence *> &p
 	
 }
 
-UndoAlignmentCommand::~UndoAlignmentCommand()
+UndoAlignment::~UndoAlignment()
 {
-	qDebug() << trace.header() << "UndoAlignmentCommand::~UndoAlignmentCommand()";
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	while (!seqPreAlign_.isEmpty())
 		delete seqPreAlign_.takeFirst();
 	while (!groupsPreAlign_.isEmpty())
@@ -91,20 +91,20 @@ UndoAlignmentCommand::~UndoAlignmentCommand()
 		delete groupsPostAlign_.takeFirst();
 }
 
-void UndoAlignmentCommand::redo()
+void UndoAlignment::redo()
 {
-	qDebug() << trace.header() << "UndoAlignmentCommand::redo()" << seqPreAlign_.size() << " " << groupsPreAlign_.size();
+	qDebug() << trace.header(__PRETTY_FUNCTION__)  << seqPreAlign_.size() << " " << groupsPreAlign_.size();
 	prj_->setAlignment(seqPostAlign_,groupsPostAlign_);
 	
 }
 
-void UndoAlignmentCommand::undo()
+void UndoAlignment::undo()
 {
-	qDebug() << trace.header() << "UndoAlignmentCommand::undo()" << seqPreAlign_.size() << " " << groupsPreAlign_.size();
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << seqPreAlign_.size() << " " << groupsPreAlign_.size();
 	prj_->setAlignment(seqPreAlign_,groupsPreAlign_);
 }
 
-int UndoAlignmentCommand::groupIndex(SequenceGroup *sg,const QList<SequenceGroup *> &sgl)
+int UndoAlignment::groupIndex(SequenceGroup *sg,const QList<SequenceGroup *> &sgl)
 {
 	for (int i=0;i<sgl.size();i++){
 		if (sgl.at(i) == sg) return i;

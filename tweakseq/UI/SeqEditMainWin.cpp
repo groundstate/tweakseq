@@ -79,10 +79,9 @@
 #include "Sequence.h"
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
-#include "UndoAlignmentCommand.h"
+#include "UndoAlignment.h"
 #include "XMLHelper.h"
 
-#include "Resources/lock.xpm"
 #include "Resources/seqedit.xpm"
 
 using namespace std;
@@ -108,9 +107,6 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	setGeometry(0,0,800,600);
 	//setWindowIcon(QIcon(seqedit_xpm));
 	
-	createActions();
-	createMenus();
-	
 
 	split = new QSplitter(Qt::Vertical,this);
 	
@@ -131,17 +127,17 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 		
 	mw = new MessageWin(split);
 	
-	createStatusBar(); // need to connect to other widgets so do this here
-	createToolBars();
-	
 	QList<int> wsizes;
 	wsizes.append(600);wsizes.append(200);
 	split->setSizes(wsizes);
 	
 	setCentralWidget(split);
-	//centralWidget()->setMouseTracking(true);
-	
-	
+
+	// need to connect to other widgets so do create actions last
+	createActions();
+	createMenus();
+	createStatusBar(); 
+	createToolBars();
 	
 	printer = new QPrinter();
 	printer->setFullPage(true);
@@ -291,7 +287,7 @@ void SeqEditMainWin::fileOpenProject()
 void SeqEditMainWin::fileSaveProject()
 {
 	QString fpathname;
-	if (!project_->named()){ // never saved so need a get a project name and path
+	if (!project_->named()){ // never saved so need to get a project name and path
 		 fpathname = QFileDialog::getSaveFileName(this, tr("Save project"));
 		if (fpathname.isNull()) return;
 	}
@@ -717,7 +713,7 @@ void SeqEditMainWin::setupEditActions()
 
 void SeqEditMainWin::editUndo()
 {
-	project_->undoStack().undo();
+	project_->undo();
 	setupEditActions(); // need this so that keyboard accelerators are enabled/disabled
 	se->repaint();
 }
@@ -1003,6 +999,19 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 
 	cm->addAction(excludeAction);
 	cm->addAction(removeExcludeAction);
+	cm->addSeparator();
+	
+	createBookmarkAction->setEnabled(false);
+	removeBookmarkAction->setEnabled(false);
+	if (project_->sequenceSelection->size()==1){
+		Sequence *seq = project_->sequenceSelection->itemAt(0);
+		if (se->isBookmarked(seq))
+			removeBookmarkAction->setEnabled(true);
+		else
+			createBookmarkAction->setEnabled(true);
+	}
+	cm->addAction(createBookmarkAction);
+	cm->addAction(removeBookmarkAction);
 	
 	cm->exec(QCursor::pos());
 	delete cm;
@@ -1309,6 +1318,29 @@ void SeqEditMainWin::createActions()
 	addAction(testAction);
 	connect(testAction, SIGNAL(triggered()), this, SLOT(test()));
 	
+	
+	// Miscellaneous actions
+	createBookmarkAction = new QAction( tr("Create bookmark"), this);
+	createBookmarkAction->setStatusTip(tr("Bookmark the selected sequence"));
+	addAction(createBookmarkAction);
+	connect(createBookmarkAction, SIGNAL(triggered()), se, SLOT(createBookmark()));
+	
+	removeBookmarkAction = new QAction( tr("Remove bookmark"), this);
+	removeBookmarkAction->setStatusTip(tr("Remove bookmark from the selected sequence"));
+	addAction(removeBookmarkAction);
+	connect(removeBookmarkAction, SIGNAL(triggered()), se, SLOT(removeBookmark()));
+	
+	nextBookmarkAction = new QAction( tr("Next bookmark"), this);
+	nextBookmarkAction->setStatusTip(tr("Move to the next bookmarked sequence"));
+	nextBookmarkAction->setIcon(QIcon(":/images/go-next.png"));
+	addAction(nextBookmarkAction);
+	connect(nextBookmarkAction, SIGNAL(triggered()), se, SLOT(moveToNextBookmark()));
+	
+	prevBookmarkAction = new QAction( tr("Previous bookmark"), this);
+	prevBookmarkAction->setStatusTip(tr("Move to the previous bookmarked sequence"));
+	prevBookmarkAction->setIcon(QIcon(":/images/go-previous.png"));
+	addAction(prevBookmarkAction);
+	connect(prevBookmarkAction, SIGNAL(triggered()), se, SLOT(moveToPreviousBookmark()));
 }
 
 void SeqEditMainWin::createMenus()
@@ -1357,7 +1389,7 @@ void SeqEditMainWin::createMenus()
 	editMenu->addAction(readOnlyAction);
 	
 	alignmentMenu = menuBar()->addMenu(tr("Alignment"));
-	connect(alignmentMenu,SIGNAL(aboutToShow()),this,SLOT(setupAlignmentMenu()));
+	connect(alignmentMenu,SIGNAL(aboutToShow()),this,SLOT(setupAlignmentActions()));
 	alignmentMenu->addAction(alignAllAction);
 	alignmentMenu->addAction(alignSelectionAction);
 	alignmentMenu->addAction(alignStopAction);
@@ -1393,7 +1425,7 @@ void SeqEditMainWin::createMenus()
 	helpMenu->addAction(helpAction);
 	helpMenu->addAction(aboutAction);
 	
-	testMenu = menuBar()->addMenu(tr("Test"));
+	//testMenu = menuBar()->addMenu(tr("Test"));
 	//testMenu->addAction(testAction);
 	
 }
@@ -1406,8 +1438,8 @@ void SeqEditMainWin::createToolBars()
 	findTool_ = new FindTool(this);
 	seqEditTB->addWidget(findTool_);
 	
-	//seqEditTB->addAction(prevMarkAction);
-	//seqEditTB->addAction(nextMarkAction);
+	seqEditTB->addAction(prevBookmarkAction);
+	seqEditTB->addAction(nextBookmarkAction);
 	
 	seqEditTB->addSeparator();
 	

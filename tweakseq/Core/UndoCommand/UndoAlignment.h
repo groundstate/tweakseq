@@ -24,37 +24,35 @@
 // THE SOFTWARE.
 //
 
-
-#ifndef __SEQUENCE_H_
-#define __SEQUENCE_H_
+#ifndef __UNDO_ALIGNMENT_H_
+#define __UNDO_ALIGNMENT_H_
 
 #include <QList>
-#include <QString>
 
+#include "UndoCommand.h"
+
+class Sequence;
 class SequenceGroup;
 
-class Sequence
+class UndoAlignment: public UndoCommand
 {
 	public:
-		Sequence();
-		Sequence(QString,QString,QString c=QString(),QString f=QString(),bool vis=true);
-		~Sequence();
-		// comment is for a longer comment
-		QString label,residues,comment;
 		
-		QString filter(bool applyExclusions=false);
-		void exclude(int,int);
-		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
+		UndoAlignment(Project *,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QString &);
+		virtual ~UndoAlignment();
+
+		virtual void redo();
+		virtual void undo();
 		
-		void remove(int,int);
-		void insert(QString,int);
+	private:
 		
-		bool visible;
-		bool bookmarked;
+		int groupIndex(SequenceGroup *,const QList<SequenceGroup *> &);
 		
-		SequenceGroup *group;
+		QList<Sequence *>  seqPreAlign_;
+		QList<Sequence *>  seqPostAlign_;
+		QList<SequenceGroup *> groupsPreAlign_;
+		QList<SequenceGroup *> groupsPostAlign_;
 		
-		QString source; // file sequence was originally sourced from
 };
 
 #endif

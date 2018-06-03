@@ -24,37 +24,23 @@
 // THE SOFTWARE.
 //
 
+#include "Sequence.h"
+#include "SequenceGroup.h"
+#include "UndoCutSequences.h"
 
-#ifndef __SEQUENCE_H_
-#define __SEQUENCE_H_
-
-#include <QList>
-#include <QString>
-
-class SequenceGroup;
-
-class Sequence
+UndoCutSequences::UndoCutSequences(Project *project,const QList<Sequence *> &seqs,const QList<int> &positions,const QString &txt):UndoCommand(project,txt)
 {
-	public:
-		Sequence();
-		Sequence(QString,QString,QString c=QString(),QString f=QString(),bool vis=true);
-		~Sequence();
-		// comment is for a longer comment
-		QString label,residues,comment;
-		
-		QString filter(bool applyExclusions=false);
-		void exclude(int,int);
-		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
-		
-		void remove(int,int);
-		void insert(QString,int);
-		
-		bool visible;
-		bool bookmarked;
-		
-		SequenceGroup *group;
-		
-		QString source; // file sequence was originally sourced from
-};
+}
 
-#endif
+UndoCutSequences::~UndoCutSequences()
+{
+}
+
+void UndoCutSequences::redo()
+{
+}
+
+void UndoCutSequences::undo()
+{
+}
+		

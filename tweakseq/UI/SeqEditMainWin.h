@@ -171,6 +171,8 @@ private:
 	QAction *settingsSaveAppDefaultsAction;
 	QAction *testAction;
 	
+	QAction *createBookmarkAction,*removeBookmarkAction,*nextBookmarkAction,*prevBookmarkAction;
+	
 	QToolBar *seqEditTB;
 	FindTool *findTool_;
 	

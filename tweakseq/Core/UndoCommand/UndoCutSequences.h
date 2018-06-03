@@ -24,8 +24,8 @@
 // THE SOFTWARE.
 //
 
-#ifndef __UNDO_ALIGNMENT_COMMAND_H_
-#define __UNDO_ALIGNMENT_COMMAND_H_
+#ifndef __UNDO_CUT_SEQUENCES_H_
+#define __UNDO_CUT_SEQUENCES_H_
 
 #include <QList>
 
@@ -34,25 +34,21 @@
 class Sequence;
 class SequenceGroup;
 
-class UndoAlignmentCommand: public UndoCommand
+class UndoCutSequences: public UndoCommand
 {
 	public:
 		
-		UndoAlignmentCommand(Project *,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QString &);
-		virtual ~UndoAlignmentCommand();
+		UndoCutSequences(Project *,const QList<Sequence *> &,const QList<int> &,const QString &);
+		virtual ~UndoCutSequences();
 
 		virtual void redo();
 		virtual void undo();
 		
 	private:
 		
-		int groupIndex(SequenceGroup *,const QList<SequenceGroup *> &);
-		
-		QList<Sequence *>  seqPreAlign_;
-		QList<Sequence *>  seqPostAlign_;
-		QList<SequenceGroup *> groupsPreAlign_;
-		QList<SequenceGroup *> groupsPostAlign_;
-		
+		QList<Sequence *>  seqs_;
+		QList<int> positions_;
+	  Sequence *cutPosition_; // sequences were cut after this point - NULL flags beginning
 };
 
 #endif

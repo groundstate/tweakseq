@@ -27,8 +27,12 @@
 #ifndef __SEQUENCE_EDITOR_H_
 #define __SEQUENCE_EDITOR_H_
 
-#include <QWidget>
+
+#include <QSharedPointer>
 #include <QTimer>
+#include <QWidget>
+
+#include "Sequence.h"
 
 class QFont;
 class QKeyEvent;
@@ -64,6 +68,8 @@ class SequenceEditor: public QWidget
 		void excludeSelection();
 		void removeExcludeSelection();
 	
+		bool isBookmarked(Sequence *);
+		
 		void updateViewport();
 		void visibleRows(int *,int *);
 	
@@ -85,6 +91,11 @@ class SequenceEditor: public QWidget
 	
 		void setFirstVisibleRow(int);
 		void setFirstVisibleColumn(int);
+		
+		void createBookmark();
+		void removeBookmark();
+		void moveToNextBookmark();
+		void moveToPreviousBookmark();
 		
 		void selectSequence(const QString &);
 		
@@ -111,6 +122,8 @@ class SequenceEditor: public QWidget
 	
 		void init();
 
+		void sortBookmarks();
+		
 		void updateViewExtents();
 		QChar cellContent(int, int, int,Sequence *currSeq );
 		void setCellFlag(int row,int col,bool exclude);
@@ -131,7 +144,9 @@ class SequenceEditor: public QWidget
 		
 		// data
 		Project *project_;
-	
+		QList<Sequence *> bookmarks_; // bookmarks move with a sequence FIXME shared pointer
+		int currBookmark_;
+		
 		// properties
 		bool readOnly_;
 		int  residueView_;

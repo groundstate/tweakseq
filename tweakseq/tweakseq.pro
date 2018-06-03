@@ -31,7 +31,8 @@ HEADERS       =  include/AboutDialog.h \
 								 include/SequenceSelection.h \
 								 include/SetupWizard.h \
 								 include/UndoCommand.h \
-								 include/UndoAlignmentCommand.h \
+								 include/UndoAlignment.h \
+								 include/UndoCutSequences.h \
 								 include/Utility.h \
 								 include/Version.h \
 								 include/XMLHelper.h
@@ -55,7 +56,8 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/XMLHelper.cpp
 									
 SOURCES				+=  Core/UndoCommand/UndoCommand.cpp \
-									Core/UndoCommand/UndoAlignmentCommand.cpp
+									Core/UndoCommand/UndoAlignment.cpp \
+									Core/UndoCommand/UndoCutSequences.cpp
 									
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/AlignmentToolDlg.cpp \
