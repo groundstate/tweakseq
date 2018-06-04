@@ -117,6 +117,7 @@ class SequenceEditor: public QWidget
 	private slots:
 		
 		void scrollRow();
+		void scrollCol();
 		
 	private:
 	
@@ -171,8 +172,8 @@ class SequenceEditor: public QWidget
 		int  selAnchorRow_,selAnchorCol_,selDragRow_,selDragCol_;
 		int  seqSelectionAnchor_,seqSelectionDrag_;
 		bool leftDown_;
-		QTimer scrollRowTimer_;
-		int scrollRowIncrement_; // +/-1
+		QTimer scrollRowTimer_,scrollColTimer_;
+		int scrollRowIncrement_,scrollColIncrement_; // +/-1
 		int baseTimeout_, currentTimeout_;
 		
 		int totalWheelRotation_;

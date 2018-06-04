@@ -682,7 +682,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	
 	// clamp to bounds
 	if (clickedRow < 0){
-		if (pos.y() >=0) // clamp to bottom
+		if (pos.y() >=0) // clamp to bottom // FIXME looks like Qt3 cruft
 			clickedRow = numRows_ -1;
 		else // clamp to top
 			clickedRow = 0;
@@ -690,6 +690,11 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	
 	if (clickedRow >= numRows_)
 		clickedRow = numRows_ -1;
+	
+	if (clickedCol < 0)
+		clickedCol=0;
+	else if (clickedCol >= numCols_)
+		clickedCol=numCols_-1;
 	
 	// show the label of the sequence we are moving over
 	Sequence *currSeq = project_->sequences.visibleAt(clickedRow);
@@ -703,7 +708,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	if ((selectingSequences_ || selectingResidues_) && leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
 		// If we go out of the bounds of the window, then the view is scrolled at a rate proportional to the distance
 		// we have moved out of the window
-		if (pos.y() > height() || pos.y() < 0){
+		if (pos.y() > height() || pos.y() < 0){ // scroll up/down
 			if (!scrollRowTimer_.isActive()){
 				if (pos.y() > height())
 					scrollRowIncrement_=1;
@@ -724,7 +729,29 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 				}
 			}
 		}
-		else{
+		else if ((pos.x() < flagsWidth_+labelWidth_ )|| pos.x() > width()){ // scroll left/right
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "scrollin";
+			if (!scrollColTimer_.isActive()){
+				if (pos.x() > width())
+					scrollColIncrement_=1;
+				else
+					scrollColIncrement_=-1;
+				scrollColTimer_.start(); 
+			}
+			else{
+				int newTimeout=baseTimeout_;
+				if (pos.x() > width())
+					newTimeout = baseTimeout_/rint(( pos.x() - width())/5); // scrolling is accelerated proportional to displacement
+				else if (pos.x() < flagsWidth_+labelWidth_ )
+					newTimeout = baseTimeout_/rint( flagsWidth_+labelWidth_-pos.x()/5);
+				if (newTimeout < 100) newTimeout=100;
+				if (newTimeout != currentTimeout_){
+					currentTimeout_=newTimeout;
+					scrollColTimer_.start(currentTimeout_);
+				}
+			}
+		}
+		else{ // the usual case
 			if (selectingSequences_){
 				if (scrollRowTimer_.isActive()) cleanupTimer();
 				if (seqSelectionDrag_ != clickedRow){
@@ -733,7 +760,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 				}
 			}
 			else if (selectingResidues_){
-				if (scrollRowTimer_.isActive()) cleanupTimer();
+				if (scrollColTimer_.isActive()) cleanupTimer();
 				if (clickedCol < 0)
 					clickedCol = firstVisibleCol_;
 				currRow = clickedRow;    // map to row; set current cell
@@ -949,7 +976,32 @@ void SequenceEditor::scrollRow()
 	repaint();
 }
 
-		
+void SequenceEditor::scrollCol()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << scrollColIncrement_;
+	
+	int nvis = lastVisibleCol_ - firstVisibleCol_ + 1;
+	
+	firstVisibleCol_ += scrollColIncrement_;
+	if (firstVisibleCol_< 0)
+		firstVisibleCol_= 0;
+	if (firstVisibleCol_ + nvis -1 >= numCols_)
+		firstVisibleCol_ = numCols_- nvis;
+	lastVisibleCol_ = firstVisibleCol_ + nvis -1;
+	
+	if (leftDown_){ 
+		if (scrollColIncrement_ > 0)
+			selDragCol_ = lastVisibleCol_;
+		else
+			selDragCol_ = firstVisibleCol_;
+	}
+	
+	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
+	
+	repaint();
+}
+
+	
 //
 // Private members
 //
@@ -998,8 +1050,12 @@ void SequenceEditor::init()
 	
 	baseTimeout_=500;
 	currentTimeout_=baseTimeout_;
+	
 	scrollRowTimer_.setInterval(baseTimeout_);
 	connect(&scrollRowTimer_, SIGNAL(timeout()), this, SLOT(scrollRow()) );
+	
+	scrollColTimer_.setInterval(baseTimeout_);
+	connect(&scrollColTimer_, SIGNAL(timeout()), this, SLOT(scrollCol()) );
 	
 }
 
@@ -1377,5 +1433,7 @@ void SequenceEditor::cleanupTimer()
 {
 	scrollRowTimer_.stop();
 	scrollRowTimer_.setInterval(baseTimeout_);
+	scrollColTimer_.stop();
+	scrollColTimer_.setInterval(baseTimeout_);
 	currentTimeout_ = baseTimeout_;
 }
