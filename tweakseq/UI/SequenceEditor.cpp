@@ -729,7 +729,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 				}
 			}
 		}
-		else if ((pos.x() < flagsWidth_+labelWidth_ )|| pos.x() > width()){ // scroll left/right
+		else if (selectingResidues_ && ((pos.x() < flagsWidth_+labelWidth_ )|| pos.x() > width())){ // scroll left/right
 			qDebug() << trace.header(__PRETTY_FUNCTION__) << "scrollin";
 			if (!scrollColTimer_.isActive()){
 				if (pos.x() > width())
@@ -749,6 +749,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 					currentTimeout_=newTimeout;
 					scrollColTimer_.start(currentTimeout_);
 				}
+				selDragRow_=clickedRow;
 			}
 		}
 		else{ // the usual case
