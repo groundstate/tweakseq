@@ -411,8 +411,8 @@ bool Project::cutSelectedSequences()
 	QList<Sequence*> &seqs = sequences.sequences();
 	int s=0;
 	QList<Sequence *> cutSeqs;
-	// Building the list of cut sequences this way orders the selection in
-	// the correct order, recognizing that the selection may be in random order
+	// Duplicating the list of cut sequences this way orders the selection in
+	// the correct order, recognizing that the selection may have been chosen in random order
 	for (s=0;s<seqs.size();s++){
 		if (sequenceSelection->contains(seqs.at(s)))
 			cutSeqs.append(seqs.at(s));
@@ -420,6 +420,8 @@ bool Project::cutSelectedSequences()
 	
 	// Now we have to check whether any groups have been selected and include any
 	// non-visible items in the right order
+	// The convention is that if all of the visible items in a  a group have been selected
+	// then the whole group is selected
 	QList<SequenceGroup *> sgl =  sequenceSelection->uniqueGroups();
 	for (int g = 0; g < sgl.size(); g++){
 		SequenceGroup *sg = sgl.at(g);
@@ -432,7 +434,7 @@ bool Project::cutSelectedSequences()
 			}
 		}
 		if (groupSelected){
-			qDebug() << trace.header(__PRETTY_FUNCTION__) << "group cut : size = " << sg->size();
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "all visible sequences in group were cut : size = " << sg->size();
 			// Create the ordered list of sequences in the group
 			QList<Sequence *> groupSeqs;
 			for (s=0;s<seqs.size();s++){
@@ -440,7 +442,7 @@ bool Project::cutSelectedSequences()
 					groupSeqs.append(seqs.at(s));
 				}
 			}
-			// Now remove the visible group members from the list of cut sequences
+			// Now remove the (duplicated) visible group members from the list of cut sequences
 			s=0;
 			while (s<cutSeqs.size()){
 				Sequence *seq = cutSeqs.at(s);
@@ -453,7 +455,15 @@ bool Project::cutSelectedSequences()
 				cutSeqs.append(groupSeqs.at(s));
 		}
 		else{
-			qDebug() << trace.header(__PRETTY_FUNCTION__) << "group not cut";
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "group partially selected - removing sequences from the group before cut";
+			int s=0;
+			while ( s< sg->size()){
+				Sequence *seq = sg->itemAt(s);
+				if (sequenceSelection->contains(seq))
+					sg->removeSequence(seq);
+				else
+					s++;
+			}
 		}
 	}
 	
