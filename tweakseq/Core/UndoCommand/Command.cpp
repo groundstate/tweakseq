@@ -26,18 +26,18 @@
 
 
 #include "Project.h"
-#include "UndoCommand.h"
+#include "Command.h"
 
 //
 //	Public
 //
 
-UndoCommand::UndoCommand(Project *p,const QString &txt):QUndoCommand(txt)
+Command::Command(Project *p,const QString &txt):QUndoCommand(txt)
 {
 	prj_=p;
 }
 
-UndoCommand::~UndoCommand()
+Command::~Command()
 {
 }
 		

@@ -55,8 +55,8 @@ class AlignmentTool;
 class Operation;
 class ResidueSelection;
 class Sequence;
-class SequenceSelection;
 class SequenceGroup;
+class SequenceSelection;
 class SeqEditMainWin;
 
 
@@ -119,6 +119,7 @@ class Project:public QObject
 		
 		void readNewAlignment(QString,bool);
 	
+		
 	signals:
 		
 		void loadingSequences(bool);

@@ -32,10 +32,12 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+#include "AlignmentCmd.h"
 #include "AlignmentTool.h"
 #include "Application.h"
 #include "ClustalFile.h"
 #include "ClustalO.h"
+#include "CutSequencesCmd.h"
 #include "FASTAFile.h"
 #include "Muscle.h"
 #include "Project.h"
@@ -44,8 +46,6 @@
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
 #include "SeqEditMainWin.h"
-#include "UndoAlignment.h"
-#include "UndoCutSequences.h"
 #include "XMLHelper.h"
 
 extern Application *app;
@@ -152,36 +152,18 @@ QString Project::getLabelAt(int i)
 
 void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<SequenceGroup *> &newGroups)
 {
+	// Used bu AlignmentCmd undo() and redo()
+	
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	// Clear the selections because they will be meaningless post alignment
 	emit loadingSequences(true);
 	residueSelection->clear();
 	sequenceSelection->clear();
 	
-	sequences.clear();
+	sequences.sequences() = newSequences;
+	sequences.forceCacheUpdate(); 
+	sequenceGroups = newGroups;
 	
-	while (!sequenceGroups.isEmpty())
-		delete sequenceGroups.takeFirst();
-	
-	for (int g=0;g<newGroups.size();g++){
-		SequenceGroup *sg = new SequenceGroup();
-		*sg = *(newGroups.at(g));
-		sg->clear();
-		sequenceGroups.append(sg);
-	}
-	
-	for (int s=0;s<newSequences.size();s++){
-		Sequence *seq = new Sequence();
-		*seq = *(newSequences.at(s));
-		sequences.append(seq);
-		if (newSequences.at(s)->group){
-			int gi;
-			for (gi=0;gi<newGroups.size();gi++){
-				if (newGroups.at(gi) == newSequences.at(s)->group) break;
-			}
-			sequenceGroups.at(gi)->addSequence(seq);
-		}
-	}
 	emit loadingSequences(false);
 	dirty_=true;
 }
@@ -215,8 +197,8 @@ bool Project::canGroupSelectedSequences()
 	int nGrouped=0;
 	QList<SequenceGroup*> groups;
 	for (int s=0;s<sequenceSelection->size();s++){
-		SequenceGroup * sg = sequenceSelection->itemAt(s)->group;
-		if (sg){ 
+		SequenceGroup *sg = sequenceSelection->itemAt(s)->group;
+		if (sg != NULL){ 
 			nGrouped++;
 			if (!groups.contains(sg))
 				groups.append(sg);
@@ -304,9 +286,8 @@ bool Project::ungroupSelectedSequences()
 	while (g<sequenceGroups.size()){
 		SequenceGroup *sg = sequenceGroups.at(g);
 		if (sg->size() == 0){
-			sequenceGroups.removeOne(sg); // FIXME memory leak
-			qDebug() << trace.header(__PRETTY_FUNCTION__)  << " removing empty group";
-			delete sg;
+			sequenceGroups.removeOne(sg); 
+			qDebug() << trace.header(__PRETTY_FUNCTION__)  << "removing empty group";
 		}
 		else
 			g++;
@@ -319,8 +300,8 @@ bool Project::ungroupSelectedSequences()
 void Project::ungroupAllSequences()
 {
 	while (!sequenceGroups.isEmpty()){
-		SequenceGroup *sg = sequenceGroups.takeLast(); // this also removes sqeuenecs from their group
-		delete sg;
+		SequenceGroup *sg = sequenceGroups.takeLast(); 
+		sg->clear(); // this also removes sequencefrom their group
 	}
 	dirty_=true;
 }
@@ -490,9 +471,10 @@ bool Project::cutSelectedSequences()
 		else
 			s++;
 	}
-	undoStack_.push(new UndoCutSequences(this,orderedCutSeqs,positions,"cut sequences"));
+	//undoStack_.push(new UndoCutSequences(this,orderedCutSeqs,positions,"cut sequences"));
+	
 	dirty_ = true;
-	app->clipboard().setSequences(orderedCutSeqs);
+	app->clipboard().setSequences(orderedCutSeqs); // this removes whatever was there
 	return true;
 }
 
@@ -504,10 +486,10 @@ void Project::hideNonSelectedGroupMembers()
 	// Check the selection
 	QList<SequenceGroup *> groups;
 	for (int s=0;s<sequenceSelection->size();s++){
-		SequenceGroup *g = sequenceSelection->itemAt(s)->group;
-		if (g != NULL){
-			if (!groups.contains(g))
-				groups.append(g);
+		SequenceGroup *sg = sequenceSelection->itemAt(s)->group;
+		if (sg != NULL ){
+			if (!groups.contains(sg))
+				groups.append(sg);
 		}
 	}
 	
@@ -751,6 +733,7 @@ void Project::load(QString &fname)
 		}
 		sequenceGroups.append(sg);
 	}
+
 	
 	readAlignmentToolSettings(doc);
 	
@@ -818,57 +801,60 @@ void Project::exportClustalW(QString fname,bool removeExclusions)
 
 void Project::readNewAlignment(QString fname,bool isFullAlignment){
 	
-	// Make a copy of the existing alignment and groups
-	QList<Sequence *> oldSeqs;
-	QList<SequenceGroup *> oldGroups;
-	
-	for (int g=0;g<sequenceGroups.size();g++){
-		SequenceGroup *sg = new SequenceGroup();
-		*sg = *sequenceGroups.at(g);
-		sg->clear();
-		oldGroups.append(sg);
-	}
-	
-	for (int s=0;s<sequences.size();s++){
-		Sequence *seq = new Sequence();
-		*seq = *(sequences.sequences().at(s));
-		oldSeqs.append(seq);
-		if (sequences.sequences().at(s)->group){
-			int gi = getGroupIndex(sequences.sequences().at(s)->group);
-			oldGroups.at(gi)->addSequence(seq);
-		}
-	}
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	
 	FASTAFile fin(fname);
 	QStringList newlabels,newseqs,newcomments;
 	fin.read(newlabels,newseqs,newcomments);
 	
-	//qDebug() << trace.header() << newseqs.size() << " " << sequences.size();
-
 	// Groupings are preserved
-	
 	// Preserve tree-order
 	
+	QList<Sequence *>      oldSeqs   = sequences.sequences();
+	QList<SequenceGroup *> oldGroups = sequenceGroups;
+
 	emit loadingSequences(true);
 	
 	if (isFullAlignment){
-		// Sequences are moved to their new position in the alignment and the residues are updated
-		// This retains visibility, locks, groups, bookmarks etc.
+		
+		Sequences newSequences;
+		// Create the new sequences
 		for (int snew=0;snew<newseqs.size();snew++){
-			int sold=0;
-			while ((sold < sequences.size())){
-				if (newlabels.at(snew) == (sequences.sequences().at(sold)->label.trimmed())) // remember, labels are padded at the end with spaces
-					break;
-				sold++;
-			}
-			if (sold < sequences.size()){
-				sequences.move(sold,snew);
-				sequences.sequences().at(snew)->residues = newseqs.at(snew);
+			Sequence *oldSeq = sequences.getSequence(newlabels.at(snew));
+			if (NULL != oldSeq){
+				Sequence *newSeq = new Sequence(newlabels.at(snew),newseqs.at(snew),oldSeq->comment,oldSeq->source,oldSeq->visible);
+				newSeq->bookmarked=oldSeq->bookmarked;
+				newSequences.append(newSeq);
 			}
 			else{
-				qDebug() << trace.header(__PRETTY_FUNCTION__) << " missed " << newlabels.at(snew); 
-			}
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << "missed " << newlabels.at(snew); 
+			}	
 		}
+		
+		QList<SequenceGroup*> newGroups;
+		// Recreate the groups for the new sequences
+		for (int g=0;g<oldGroups.size();g++){
+			SequenceGroup *newGroup = new SequenceGroup();
+			newGroup->setTextColour(oldGroups.at(g)->textColour());
+			newGroup->lock(oldGroups.at(g)->locked());
+			newGroups.append(newGroup);
+			for (int s=0;s<oldGroups.at(g)->size();s++){
+				Sequence *oldGroupedSeq=oldGroups.at(g)->itemAt(s);
+				Sequence *newGroupedSeq = newSequences.getSequence(oldGroupedSeq->label);
+				if (NULL!=newGroupedSeq){
+					newGroup->addSequence(newGroupedSeq);
+				}
+				else{
+					qDebug() << trace.header(__PRETTY_FUNCTION__) << "missed grouping " << oldGroupedSeq->label;
+				}
+			}
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "new group created with " << newGroup->size() << " members";
+		}
+		
+		sequences.sequences() = newSequences.sequences();
+		sequences.forceCacheUpdate(); 
+		sequenceGroups = newGroups;
+		
 	}
 	else{
 		// The saved selection is examined and each sequence is replaced by the corresponding sequence in the new alignment
@@ -894,13 +880,7 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 		
 	}
 
-	undoStack().push(new UndoAlignment(this,oldSeqs,oldGroups,sequences.sequences(),sequenceGroups,"alignment"));
-	
-	// Tidy up time
-	while (!oldSeqs.isEmpty())
-		delete oldSeqs.takeFirst();
-	while (!oldGroups.isEmpty())
-		delete oldGroups.takeFirst();
+	undoStack().push(new AlignmentCmd(this,oldSeqs,oldGroups,sequences.sequences(),sequenceGroups,"alignment"));
 	
 	emit loadingSequences(false);
 	

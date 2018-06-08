@@ -29,27 +29,26 @@
 
 #include <QList>
 
-#include "UndoCommand.h"
+#include "Command.h"
 
 class Sequence;
 class SequenceGroup;
 
-class UndoAlignment: public UndoCommand
+class AlignmentCmd: public Command
 {
 	public:
 		
-		UndoAlignment(Project *,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QString &);
-		virtual ~UndoAlignment();
+		AlignmentCmd(Project *,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QString &);
+		virtual ~AlignmentCmd();
 
 		virtual void redo();
 		virtual void undo();
 		
 	private:
+	
 		
-		int groupIndex(SequenceGroup *,const QList<SequenceGroup *> &);
-		
-		QList<Sequence *>  seqPreAlign_;
-		QList<Sequence *>  seqPostAlign_;
+		QList<Sequence *>  		 seqPreAlign_;
+		QList<Sequence *> 		 seqPostAlign_;
 		QList<SequenceGroup *> groupsPreAlign_;
 		QList<SequenceGroup *> groupsPostAlign_;
 		

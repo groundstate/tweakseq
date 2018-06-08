@@ -169,8 +169,10 @@ void SequenceEditor::cutSelectedSequences()
 	// Before the sequences are removed, remove them from the current list of bookmarks
 	SequenceSelection *sel = project_->sequenceSelection;
 	for (int s=0;s<sel->size();s++){
-		if (bookmarks_.contains(sel->itemAt(s)))
-			bookmarks_.removeOne(sel->itemAt(s));
+		if (bookmarks_.contains(sel->itemAt(s))){
+			removeBookmark(sel->itemAt(s));  // this sets bookmarked to false
+			sel->itemAt(s)->bookmarked=true; // so undo it - want to restore the bookmark if we paste the cut selection
+		}
 	}
 	project_->cutSelectedSequences();
 	updateViewport();
@@ -247,7 +249,6 @@ void SequenceEditor::visibleRows(int *start,int *stop)
 {
 	*start = firstVisibleRow_;
 	*stop  = lastVisibleRow_;
-	qDebug() << *start << " " << *stop;
 }
 
 void SequenceEditor::selectSequence(const QString &label)
@@ -325,6 +326,14 @@ void SequenceEditor::postLoadTidy()
 	}
 	currGroupColour_=maxCol+1;
 	
+	// build a list of bookmarks
+	bookmarks_.clear();
+	for (int s=0;s<project_->sequences.size();s++){
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (seq->bookmarked)
+			bookmarks_.append(seq);
+	}
+	
 	sortBookmarks();
 	
 }
@@ -333,7 +342,8 @@ void SequenceEditor::loadingSequences(bool loading)
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << loading;
 	loadingSequences_= loading;
-	if (!loadingSequences_){
+	if (!loadingSequences_){ // done, so refresh the view
+		sortBookmarks(); 
 		updateViewport();
 		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
 	}
@@ -370,13 +380,26 @@ void SequenceEditor::createBookmark()
 	}
 }
 
+void SequenceEditor::createBookmark(Sequence *seq)
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
+	
+	if (!(bookmarks_.contains(seq))){
+		seq->bookmarked=true;
+		bookmarks_.append(seq);
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << "appended" << "n=" << bookmarks_.size();
+		sortBookmarks();
+		repaint();
+	}
+}
+
 void SequenceEditor::removeBookmark()
 {
 	if (project_->sequenceSelection->size() == 1){
 		// may need to move the pointer to the current bookmark
 		int index = bookmarks_.indexOf(project_->sequenceSelection->itemAt(0));
 		if (currBookmark_ > index){
-			currBookmark_--;
+			currBookmark_--; // because after removal, we wato stay pointing to the current bookmark
 		}
 		project_->sequenceSelection->itemAt(0)->bookmarked=false;
 		bookmarks_.removeOne(project_->sequenceSelection->itemAt(0));
@@ -386,10 +409,23 @@ void SequenceEditor::removeBookmark()
 	}
 }
 
-		
+void SequenceEditor::removeBookmark(Sequence *seq)
+{
+	int index = bookmarks_.indexOf(seq);
+	if (index == -1) return; // FIXME warning
+	if (currBookmark_ > index){
+		currBookmark_--; 
+	}
+	seq->bookmarked=false;
+	bookmarks_.removeOne(project_->sequenceSelection->itemAt(0));
+	if (bookmarks_.isEmpty())
+		currBookmark_=-1;
+	repaint();
+}
+
 void SequenceEditor::moveToNextBookmark()
 {
-	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "n=" << bookmarks_.size() << " curr=" << currBookmark_;
 	if (bookmarks_.isEmpty()) return;
 	currBookmark_++;
 	if (currBookmark_>= bookmarks_.size()) // wrap back to beginning
@@ -462,7 +498,7 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 		} // end switch (e->button
 		return;
 	}
-	qDebug() << clickedRow << " " << clickedCol;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "row=" << clickedRow << " col=" << clickedCol;
 	
 	// For the moment we do nothing with the flags area
 	if (clickedPos.x() < flagsWidth_) return;

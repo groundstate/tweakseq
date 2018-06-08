@@ -24,22 +24,23 @@
 // THE SOFTWARE.
 //
 
-#ifndef __UNDO_COMMAND_H_
-#define __UNDO_COMMAND_H_
+#include "Sequence.h"
+#include "SequenceGroup.h"
+#include "CutSequencesCmd.h"
 
-#include <QUndoCommand>
-
-class Project;
-
-class UndoCommand: public QUndoCommand
+CutSequencesCmd::CutSequencesCmd(Project *project,const QList<Sequence *> &seqs,const QList<int> &positions,const QString &txt):Command(project,txt)
 {
-	public:
-		
-		UndoCommand(Project *,const QString &);
-		virtual ~UndoCommand();
-		
-	protected:
-		Project *prj_;
-};
+}
 
-#endif
+CutSequencesCmd::~CutSequencesCmd()
+{
+}
+
+void CutSequencesCmd::redo()
+{
+}
+
+void CutSequencesCmd::undo()
+{
+}
+		

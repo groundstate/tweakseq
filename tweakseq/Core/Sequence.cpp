@@ -29,7 +29,6 @@
 #include "Sequence.h"
 #include "SequenceGroup.h"
 
-#define LABELWIDTH 16 // FIXME
 #define EXCLUDE_CELL 0x0080 // FIXME
 
 Sequence::Sequence()
@@ -38,15 +37,12 @@ Sequence::Sequence()
 
 Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis){
 	label = l;
-	while (label.length()<LABELWIDTH) // FIXME this should be done elsewhere
-		label.append(" ");
 	residues = r;
 	comment=c;
 	group=NULL;
 	source=f;
 	visible=vis;
 	bookmarked=false;
-	//cerr << "Residues " << r.latin1() << endl;
 }
 
 Sequence::~Sequence()

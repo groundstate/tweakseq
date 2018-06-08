@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,46 +24,46 @@
 // THE SOFTWARE.
 //
 
-#ifndef __SEQUENCE_GROUP_H_
-#define __SEQUENCE_GROUP_H_
 
-#include <QColor>
-#include <QList>
+#include "Project.h"
+#include "Sequences.h"
+#include "UndoInsertionCommand.h"
 
-class Sequence;
+//
+//	Public
+//	
 
-class SequenceGroup
+UndoInsertionCommand::UndoInsertionCommand(Project *p,
+	int startRow,int stopRow,int startCol,int nCols,bool insert,const QString &txt):UndoCommand(p,txt)
 {
-	public:
-		
-		SequenceGroup();
-		~SequenceGroup();
-		
-		void addSequence(Sequence *);
-		void removeSequence(Sequence *);
-		bool contains(Sequence *);
-		int size(){return seqs_.size();}
-		Sequence * itemAt(int);
-		void clear();
-		
-		bool locked(){return locked_;}
-		void lock(bool l){locked_=l;}
+	startRow_=startRow;
+	stopRow_=stopRow;
+	startCol_=startCol;
+	nCols_=nCols;
+	insert_=insert;
+}
 
-		bool hasHiddenSequences();
-		void enforceVisibility();
-		
-		// UI stuff
-		QColor & textColour(){return textColour_;}
-		void setTextColour(QColor c){textColour_=c;}
-		
-	private:
-		
-		bool locked_;
-		QList<Sequence *> seqs_;
-		
-		// UI stuff
-		QColor textColour_;
-};
+UndoInsertionCommand::~UndoInsertionCommand()
+{
+}
 
+void UndoInsertionCommand::redo()
+{
+	Sequences &seqs = prj_->sequences;
+	if (insert_){
+	}
+	else{
+	}
+}
 
-#endif
+void UndoInsertionCommand::undo()
+{
+	Sequences &seqs = prj_->sequences;
+	if (insert_){
+		seqs.remove();
+	}
+	else{
+	}
+}
+		
+

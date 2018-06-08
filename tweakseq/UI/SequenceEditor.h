@@ -93,7 +93,9 @@ class SequenceEditor: public QWidget
 		void setFirstVisibleColumn(int);
 		
 		void createBookmark();
+		void createBookmark(Sequence *);
 		void removeBookmark();
+		void removeBookmark(Sequence *);
 		void moveToNextBookmark();
 		void moveToPreviousBookmark();
 		

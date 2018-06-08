@@ -79,7 +79,7 @@
 #include "Sequence.h"
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
-#include "UndoAlignment.h"
+#include "AlignmentCmd.h"
 #include "XMLHelper.h"
 
 #include "Resources/seqedit.xpm"
@@ -106,7 +106,6 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	setWindowTitle("tweakseq - " + project->name());
 	setGeometry(0,0,800,600);
 	//setWindowIcon(QIcon(seqedit_xpm));
-	
 
 	split = new QSplitter(Qt::Vertical,this);
 	
@@ -356,7 +355,7 @@ void SeqEditMainWin::fileImport(){
 			QStringList currSeqNames;
 			QList<Sequence *> currseq = project_->sequences.sequences();
 			for (int i=0;i<currseq.size();++i)
-				currSeqNames.append(currseq.at(i)->label.trimmed());
+				currSeqNames.append(currseq.at(i)->label); // FIXME? removed trimmed()
 			currSeqNames = currSeqNames + seqnames;
 			QStringList dups = findDuplicates(currSeqNames);
 			if (dups.size() > 0){
@@ -736,13 +735,17 @@ void SeqEditMainWin::editCut()
 void SeqEditMainWin::editPaste()
 {
 	// FIXME need to be able to paste into an empty project ie nothing to select
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "n="<< app->clipboard().sequences().size();
 	QList<Sequence *> &seqs = app->clipboard().sequences();
 	Sequence *selSeq = project_->sequenceSelection->itemAt(0); // only one item
 	for (int s=0;s<seqs.size();s++){
-		project_->sequences.insert(seqs.at(s),selSeq);
-		selSeq = seqs.at(s); // so that we insert after the last insertion
+		Sequence *seq = seqs.at(s);
+		project_->sequences.insert(seq,selSeq);
+		if (seq->bookmarked) se->createBookmark(seq); // do this after so that sortBookmarks() sees the added sequence..
+		selSeq = seq; // so that we insert after the last insertion
 	}
-	pasteAction->setEnabled(false);
+	app->clipboard().clear();
+	pasteAction->setEnabled(false); // can't paste sequences twice
 	se->repaint();
 }
 
@@ -1473,7 +1476,7 @@ void SeqEditMainWin::createStatusBar()
 void SeqEditMainWin::startAlignment()
 {
 	if (NULL != alignmentProc_){
-		qDebug() << alignmentProc_->state();
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << "state=" << alignmentProc_->state();
 		if (alignmentProc_->state() != QProcess::NotRunning)
 			alignmentProc_->close();
 		delete alignmentProc_;

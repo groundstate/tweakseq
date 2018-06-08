@@ -46,6 +46,8 @@ class Sequences:public QObject
 		
 		QList<Sequence *> & sequences(){return sequences_;} 
 		
+		void  forceCacheUpdate();
+		
 		int index(Sequence *);
 		Sequence *getSequence(const QString &);
 		int visibleIndex(Sequence *);

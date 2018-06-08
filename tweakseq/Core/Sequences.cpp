@@ -40,6 +40,11 @@ Sequences::~Sequences()
 {
 }
 
+void Sequences::forceCacheUpdate()
+{
+	updateCachedVariables();
+}
+
 int Sequences::index(Sequence *seq)
 {
 	for (int s=0;s<sequences_.size();s++){
@@ -96,7 +101,6 @@ void Sequences::clear()
 		Sequence *seq = sequences_.takeFirst();
 		if (seq->group)
 			seq->group->removeSequence(seq);
-		delete seq;
 	}
 	updateCachedVariables();
 	emit cleared();
@@ -133,6 +137,7 @@ int Sequences::visibleToActual(int pos)
 int Sequences::maxLength(bool recalculate)
 {
 	if (recalculate){
+		updateCachedVariables();
 	}
 	return maxLen_;
 }
@@ -141,7 +146,7 @@ int Sequences::maxLength(bool recalculate)
 // Check whether the group defined by [start,stop] belongs to a contiguous subgroup
 bool Sequences::isSubGroup(int start,int stop)
 {
-	if (sequences_.at(start)->group == NULL || sequences_.at(start)->group == NULL) 
+	if (sequences_.at(start)->group == NULL  || sequences_.at(start)->group == NULL) 
 		return false;
 	SequenceGroup *sg = sequences_.at(start)->group;
 	for (int s=start;s<=stop;s++){

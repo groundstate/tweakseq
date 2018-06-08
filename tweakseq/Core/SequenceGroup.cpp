@@ -43,7 +43,8 @@ SequenceGroup::SequenceGroup()
 
 SequenceGroup::~SequenceGroup()
 {
-	for (int s=0;s<seqs_.size();s++)
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
+	for (int s=0;s<seqs_.size();s++) // FIXME this will go
 		seqs_.at(s)->group=NULL;
 }
 
@@ -80,6 +81,8 @@ Sequence * SequenceGroup::itemAt(int i)
 
 void SequenceGroup::clear()
 {
+	for (int s=0;s<seqs_.size();s++)
+		seqs_.at(s)->group=NULL;
 	seqs_.clear();
 }
 

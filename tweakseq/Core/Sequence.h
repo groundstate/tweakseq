@@ -29,9 +29,14 @@
 #define __SEQUENCE_H_
 
 #include <QList>
+#include <QSharedPointer>
+#include <QWeakPointer>
 #include <QString>
 
+class Sequence;
 class SequenceGroup;
+
+typedef QSharedPointer< Sequence > SequencePtr;
 
 class Sequence
 {

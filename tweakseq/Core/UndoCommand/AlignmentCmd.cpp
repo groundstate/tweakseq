@@ -30,86 +30,40 @@
 #include "Project.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
-#include "UndoAlignment.h"
+#include "AlignmentCmd.h"
 
 //
 // Public members
 //
 
 		
-UndoAlignment::UndoAlignment(Project *p,const QList<Sequence *> &preAlign,const QList<SequenceGroup *> &groupsPreAlign,
-																					 const QList<Sequence *> &postAlign,const QList<SequenceGroup *> &groupsPostAlign,
-																					 const QString &txt):UndoCommand(p,txt)
+AlignmentCmd::AlignmentCmd(Project *p,const QList<Sequence *> &seqPreAlign,const QList<SequenceGroup *> &groupsPreAlign,
+																					 const QList<Sequence *> &seqPostAlign,const QList<SequenceGroup *> &groupsPostAlign,
+																					 const QString &txt):Command(p,txt)
 {
-	
-	for (int g=0;g<groupsPreAlign.size();g++){
-		SequenceGroup *sg = new SequenceGroup();
-		*sg = *(groupsPreAlign.at(g));
-		sg->clear();
-		groupsPreAlign_.append(sg);
-	}
-	
-	for (int g=0;g<groupsPostAlign.size();g++){
-		SequenceGroup *sg = new SequenceGroup();
-		*sg = *(groupsPostAlign.at(g));
-		sg->clear();
-		groupsPostAlign_.append(sg);
-	}
-	
-	for (int s=0;s<preAlign.size();s++){
-		Sequence *seq = new Sequence();
-		*seq = *(preAlign.at(s));
-		seqPreAlign_.append(seq);
-		if (preAlign.at(s)->group){
-			int gi = groupIndex(preAlign.at(s)->group,groupsPreAlign);
-			groupsPreAlign_.at(gi)->addSequence(seq);
-		}
-	}
-	
-	for (int s=0;s<postAlign.size();s++){
-		Sequence *seq = new Sequence();
-		*seq = *(postAlign.at(s));
-		seqPostAlign_.append(seq);
-		if (postAlign.at(s)->group){
-			int gi = groupIndex(postAlign.at(s)->group,groupsPostAlign);
-			groupsPostAlign_.at(gi)->addSequence(seq);
-		}
-	}
-	
+	seqPreAlign_=seqPreAlign;
+	groupsPreAlign_=groupsPreAlign;
+	groupsPostAlign_= groupsPostAlign;
+	seqPostAlign_= seqPostAlign;
 }
 
-UndoAlignment::~UndoAlignment()
+AlignmentCmd::~AlignmentCmd()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	while (!seqPreAlign_.isEmpty())
-		delete seqPreAlign_.takeFirst();
-	while (!groupsPreAlign_.isEmpty())
-		delete groupsPreAlign_.takeFirst();
-	while (!seqPostAlign_.isEmpty())
-		delete seqPostAlign_.takeFirst();
-	while (!groupsPostAlign_.isEmpty())
-		delete groupsPostAlign_.takeFirst();
 }
 
-void UndoAlignment::redo()
+void AlignmentCmd::redo()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__)  << seqPreAlign_.size() << " " << groupsPreAlign_.size();
 	prj_->setAlignment(seqPostAlign_,groupsPostAlign_);
 	
 }
 
-void UndoAlignment::undo()
+void AlignmentCmd::undo()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << seqPreAlign_.size() << " " << groupsPreAlign_.size();
 	prj_->setAlignment(seqPreAlign_,groupsPreAlign_);
 }
 
-int UndoAlignment::groupIndex(SequenceGroup *sg,const QList<SequenceGroup *> &sgl)
-{
-	for (int i=0;i<sgl.size();i++){
-		if (sgl.at(i) == sg) return i;
-	}
-	return -1;
-}
 
 

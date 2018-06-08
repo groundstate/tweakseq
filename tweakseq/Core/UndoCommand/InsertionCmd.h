@@ -24,23 +24,26 @@
 // THE SOFTWARE.
 //
 
-#include "Sequence.h"
-#include "SequenceGroup.h"
-#include "UndoCutSequences.h"
+#ifndef __UNDO_INSERTION_COMMAND_H_
+#define __UNDO_INSERTION_COMMAND_H_
 
-UndoCutSequences::UndoCutSequences(Project *project,const QList<Sequence *> &seqs,const QList<int> &positions,const QString &txt):UndoCommand(project,txt)
-{
-}
+#include "UndoCommand.h"
 
-UndoCutSequences::~UndoCutSequences()
+class UndoInsertionCommand: public UndoCommand
 {
-}
-
-void UndoCutSequences::redo()
-{
-}
-
-void UndoCutSequences::undo()
-{
-}
+	public:
 		
+		UndoInsertionCommand(Project *,int,int,int,int,bool,const QString &);
+		virtual ~UndoInsertionCommand();
+
+		virtual void redo();
+		virtual void undo();
+		
+	private:
+		
+		int startRow_,stopRow_,startCol_,nCols_;
+		bool insert_;
+		
+};
+
+#endif
