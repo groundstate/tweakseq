@@ -55,7 +55,7 @@
 
 #define N_GROUP_COLOURS 10
 
-// Colours chose for maximum  contrast for Kenneth Kelly's sequence
+// Colours chosen for maximum  contrast, from Kenneth Kelly's sequence
 static int groupColours[N_GROUP_COLOURS][3]
 {
 	{241,191,21}, // 82,  yellow
@@ -69,6 +69,7 @@ static int groupColours[N_GROUP_COLOURS][3]
 	{235,221,33}, // 97   greenish yellow
 	{167,220,38} // 115  yellow green
 };
+
 
 QPixmap *lockpm=NULL;
 QPixmap *bookmarkpm=NULL;
@@ -1243,6 +1244,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	}
 	
 	//  Draw cell content 
+	// Physico-chemical properties 
 	switch (c.toLatin1()){
 		case 'D': case 'E': case 'S': case 'T':// red 
 			txtColor.setRgb(255,0,0);

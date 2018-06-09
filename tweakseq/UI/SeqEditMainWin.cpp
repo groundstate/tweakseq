@@ -832,7 +832,7 @@ void SeqEditMainWin::alignmentAll()
 void SeqEditMainWin::alignmentSelection()
 {
 	alignAll=false;
-	se->setReadOnly(true);
+	se->setReadOnly(true); // FIXME Maybe an indicator in the editor is needed
 	startAlignment();
 }
 

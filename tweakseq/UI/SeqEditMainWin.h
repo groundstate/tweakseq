@@ -166,6 +166,7 @@ private:
 	QAction  *helpAction,*aboutAction;
 	QAction  *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
 	QAction  *settingsStandardViewAction,*settingsInvertedViewAction,*settingsBlockViewAction;
+	QAction  *settingsStdColourMapAction;
 	QAction  *settingsAlignmentToolPropertiesAction;
 
 	QAction *settingsSaveAppDefaultsAction;

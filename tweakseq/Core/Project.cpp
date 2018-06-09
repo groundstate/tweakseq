@@ -803,22 +803,21 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 	
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	
-	FASTAFile fin(fname);
+	FASTAFile fin(fname); // FIXME FASTA output is hardcoded at present but may be optional eventually
 	QStringList newlabels,newseqs,newcomments;
 	fin.read(newlabels,newseqs,newcomments);
 	
-	// Groupings are preserved
-	// Preserve tree-order
+	// No need to emit loadingSequences(), because we are not modifying Project data here
 	
 	QList<Sequence *>      oldSeqs   = sequences.sequences();
 	QList<SequenceGroup *> oldGroups = sequenceGroups;
-
-	emit loadingSequences(true);
-	
-	if (isFullAlignment){
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << oldSeqs.size() << " " << oldGroups.size();
+	Sequences newSequences;
+	QList<SequenceGroup*> newGroups;
 		
-		Sequences newSequences;
-		// Create the new sequences
+	if (isFullAlignment){
+	
+		// Create the new sequences, in the order of the new alignment
 		for (int snew=0;snew<newseqs.size();snew++){
 			Sequence *oldSeq = sequences.getSequence(newlabels.at(snew));
 			if (NULL != oldSeq){
@@ -830,8 +829,7 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 				qDebug() << trace.header(__PRETTY_FUNCTION__) << "missed " << newlabels.at(snew); 
 			}	
 		}
-		
-		QList<SequenceGroup*> newGroups;
+	
 		// Recreate the groups for the new sequences
 		for (int g=0;g<oldGroups.size();g++){
 			SequenceGroup *newGroup = new SequenceGroup();
@@ -851,38 +849,72 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 			qDebug() << trace.header(__PRETTY_FUNCTION__) << "new group created with " << newGroup->size() << " members";
 		}
 		
-		sequences.sequences() = newSequences.sequences();
-		sequences.forceCacheUpdate(); 
-		sequenceGroups = newGroups;
 		
 	}
 	else{
-		// The saved selection is examined and each sequence is replaced by the corresponding sequence in the new alignment
+		
 		SequenceSelection *sel = sequenceSelection;
-		Sequences &seqs = sequences;
 		
-		QList<Sequence *> newSequences;	
-		// Make a list of pointers to the Sequences in the new alignment
-		for (int s=0;s<newlabels.size();s++){
-			int seqIndex = seqs.getIndex(newlabels.at(s));
-			newSequences.append(seqs.sequences().at(seqIndex));
-		}
-		// Make a list of indices of the sequences in the selection
-		QList<int> selIndices;
-		for (int s=0;s<sel->size();s++){
-			selIndices.append(seqs.getIndex(sel->itemAt(s)->label));
+		// Make a copy of the old sequences
+		for (int s=0;s<oldSeqs.size();s++){
+			Sequence *oldSeq = oldSeqs.at(s);
+			Sequence *newSeq = new Sequence(oldSeq->label,oldSeq->residues,oldSeq->comment,oldSeq->source,oldSeq->visible);
+			newSeq->bookmarked=oldSeq->bookmarked;
+			newSequences.append(newSeq);
 		}
 		
-		for (int s=0;s<selIndices.size();s++){
-			seqs.sequences().replace(selIndices.at(s),newSequences.at(s));
-			seqs.sequences().at(selIndices.at(s))->residues = newseqs.at(s); // update the residues
+		// Make a copy of the old groups
+		for (int g=0;g<oldGroups.size();g++){
+			SequenceGroup *newGroup = new SequenceGroup();
+			newGroup->setTextColour(oldGroups.at(g)->textColour());
+			newGroup->lock(oldGroups.at(g)->locked());
+			newGroups.append(newGroup);
+			for (int s=0;s<oldGroups.at(g)->size();s++){
+				Sequence *oldGroupedSeq=oldGroups.at(g)->itemAt(s);
+				Sequence *newGroupedSeq = newSequences.getSequence(oldGroupedSeq->label);
+				if (NULL!=newGroupedSeq){
+					newGroup->addSequence(newGroupedSeq);
+				}
+				else{
+					qDebug() << trace.header(__PRETTY_FUNCTION__) << "missed grouping " << oldGroupedSeq->label;
+				}
+			}
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << "new group created with " << newGroup->size() << " members";
+		}
+		
+		// Now update the selected sequences with their new alignment
+		// and put them in the right position
+		// The assumption is that the selection is contiguous
+		// so find the index of the first occurring selected sequence in the old alignment
+		int indexFirstSelSeq=-1;
+		for (int s=0;s<oldSeqs.size();s++){
+			if (sel->contains(oldSeqs.at(s))){
+				indexFirstSelSeq =s;
+				break;
+			}
+		}
+	
+		qDebug() << trace.header(__PRETTY_FUNCTION__) <<"first selected sequence index=" << indexFirstSelSeq;
+		
+		for (int l=0;l<newlabels.size();l++){
+			
+			Sequence *seq = newSequences.getSequence(newlabels.at(l));
+			if (seq){
+				seq->residues=newseqs.at(l);
+				// move it to its new home
+				int oldIndex = newSequences.getIndex(newlabels.at(l)); // note, after a sequence is moved, positions have all changed so use newSequences!
+				newSequences.sequences().move(oldIndex,indexFirstSelSeq + l);
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << "move " << newlabels.at(l) << " " << oldIndex << " " << indexFirstSelSeq + l;
+			}
+			else{
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << "missed aligned sequence " << newlabels.at(l);
+			}
 		}
 		
 	}
 
-	undoStack().push(new AlignmentCmd(this,oldSeqs,oldGroups,sequences.sequences(),sequenceGroups,"alignment"));
-	
-	emit loadingSequences(false);
+	// Pushing onto the stack triggers redo(), so this will finish things off (call setAlignment(), in particular
+	undoStack().push(new AlignmentCmd(this,oldSeqs,oldGroups,newSequences.sequences(),newGroups,"alignment"));
 	
 }
 
