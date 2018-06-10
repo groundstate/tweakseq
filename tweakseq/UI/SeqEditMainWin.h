@@ -112,7 +112,6 @@ private slots:
 	void alignmentReadyReadStdErr();
 	void alignmentFinished(int,QProcess::ExitStatus);
 	
-	void setupSettingsMenu();
 	void settingsEditorFont();
 	void settingsViewTool(QAction *);
 	void settingsColourMap(QAction *);
@@ -148,8 +147,7 @@ private:
 	void printRes( QPainter*,QChar,int,int );
 	
 	void updateFindTool();
-	
-	QStringList findDuplicates(QStringList &);
+	void updateSettingsActions();
 	
 	bool maybeSave();
 	
@@ -164,7 +162,8 @@ private:
 	QAction  *readOnlyAction;
 	QAction  *helpAction,*aboutAction;
 	QAction  *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
-	QAction  *settingsStdColourMapAction;
+	QList<QAction *> settingsViewActions;
+	QList<QAction *> settingsColourMapActions;
 	QAction  *settingsAlignmentToolPropertiesAction;
 
 	QAction *settingsSaveAppDefaultsAction;

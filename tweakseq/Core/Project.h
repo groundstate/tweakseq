@@ -87,6 +87,8 @@ class Project:public QObject
 		SequenceSelection *sequenceSelection;
 		QList<SequenceGroup *> sequenceGroups;
 
+		bool importSequences(QStringList &,QString &);
+		
 		QString getResidues(int,int);
 		QString getLabelAt(int);
 
@@ -144,6 +146,8 @@ class Project:public QObject
 		
 		int  getSeqIndex(QString);
 		int  getGroupIndex(SequenceGroup *sg);
+		
+		QStringList findDuplicates(QStringList &);
 		
 		// Widgets we keep track of
 		SeqEditMainWin *mainWindow_;

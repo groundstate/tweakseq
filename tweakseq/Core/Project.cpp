@@ -93,6 +93,67 @@ bool Project::empty(){
 	return sequences.isEmpty();
 }
 
+bool Project::importSequences(QStringList &files,QString &errmsg)
+{
+	FASTAFile ff;
+	ClustalFile cf;
+	
+	for (int f=0;f<files.size();f++){
+		QString fname = files.at(f);
+		bool ok = false;
+		QStringList seqnames,seqs,comments;
+		
+		if (ff.isFASTAFile(fname)){
+			ff.setName(fname);
+			ok = ff.read(seqnames,seqs,comments);
+		}
+		else if (cf.isClustalFile(fname)){
+			cf.setName(fname);
+			ok = cf.read(seqnames,seqs,comments);
+		}
+		else{
+			errmsg = "Unable to identify " + fname;
+			emit loadingSequences(false);
+			return false;
+		}
+		
+		if (ok){
+			// Check for duplicates
+			qDebug() << trace.header() << "checking for duplicates";
+			QStringList currSeqNames;
+			QList<Sequence *> currseq = sequences.sequences();
+			for (int i=0;i<currseq.size();++i)
+				currSeqNames.append(currseq.at(i)->label); // FIXME? removed trimmed()
+			currSeqNames = currSeqNames + seqnames;
+			QStringList dups = findDuplicates(currSeqNames);
+			if (dups.size() > 0){
+				errmsg="There are duplicated sequences in the file being imported:\n";
+				for (int i=0; i< dups.size()-1;i++)
+					errmsg = errmsg + dups.at(i) + ",";
+				errmsg=errmsg+dups.last() + "\nYou will have to fix this.";
+				emit loadingSequences(false);
+				return false;
+			}
+			
+			emit loadingSequences(true);
+			
+			for (int i=0;i<seqnames.size();i++){
+				sequences.add(seqnames.at(i),seqs.at(i),comments.at(i),fname,true);
+			}
+			
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "added " <<sequences.size();
+			
+		}
+		else{
+			errmsg ="Error while trying to read " + fname;
+			emit loadingSequences(false);
+			return false;
+		}
+	}
+	emit loadingSequences(false);
+	return true;
+}
+
 QString Project::getResidues(int i,int maskFlags)
 {
 	
@@ -994,6 +1055,23 @@ void Project::readAlignmentToolSettings(QDomDocument &doc)
 			alignmentTool_=clustalOTool_;
 	}
 }
+
+QStringList Project::findDuplicates(QStringList &sl)
+{
+	QStringList ret;
+	QSet<QString> visited;
+	for (int i=0;i<sl.size();++i){
+		const QString &s = sl.at(i);
+		if (visited.contains(s)){
+			ret.append(s);
+			continue;
+		}
+		visited.insert(s);
+	}
+	ret.removeDuplicates();
+	return ret;
+}
+
 
 int Project::getSeqIndex(QString l)
 {

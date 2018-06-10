@@ -165,11 +165,15 @@ void SeqEditMainWin::doAlignment(){
 }
 
 // This is called by a Project after loading is completed
+// Because the Project may have customised settings, actions are updated here
 void SeqEditMainWin::postLoadTidy()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	
 	se->postLoadTidy();
 	updateFindTool();
 	setupAlignmentActions();
+	updateSettingsActions();
 	setWindowTitle("tweakseq - " + project_->name());
 }
 
@@ -214,6 +218,8 @@ void SeqEditMainWin::readSettings(QDomDocument &doc)
 		split->setSizes(wsizes);
 	}
 	se->readSettings(doc);
+	setupAlignmentActions(); 
+	updateSettingsActions();  
 }
 
 //
@@ -266,6 +272,8 @@ void SeqEditMainWin::fileOpenProject()
 	se->setProject(project_);
 	delete oldProject;
 	project_->load(fname);
+	
+	updateSettingsActions();
 }
 
 void SeqEditMainWin::fileSaveProject()
@@ -313,68 +321,15 @@ void SeqEditMainWin::fileImport(){
     tr("Open Sequence"),startDir, allext);
 	qDebug() << trace.header() << files;
 	if (files.isEmpty()) return;
-
-	for (int f=0;f<files.size();f++){
-		QString fname = files.at(f);
-		bool ok = false;
-		QStringList seqnames,seqs,comments;
-		
-		if (ff.isFASTAFile(fname)){
-			ff.setName(fname);
-			ok = ff.read(seqnames,seqs,comments);
-		}
-		else if (cf.isClustalFile(fname)){
-			cf.setName(fname);
-			ok = cf.read(seqnames,seqs,comments);
-		}
-		else{
-			QMessageBox::critical(this, tr("Error during import"),"Unable to identify " + fname);
-			se->loadingSequences(false);
-			postLoadTidy();
-			return;
-		}
-		
-		if (ok){
-			// Check for duplicates
-			qDebug() << trace.header() << "checking for duplicates";
-			QStringList currSeqNames;
-			QList<Sequence *> currseq = project_->sequences.sequences();
-			for (int i=0;i<currseq.size();++i)
-				currSeqNames.append(currseq.at(i)->label); // FIXME? removed trimmed()
-			currSeqNames = currSeqNames + seqnames;
-			QStringList dups = findDuplicates(currSeqNames);
-			if (dups.size() > 0){
-				QString msg("There are duplicated sequences in the file being imported:\n");
-				
-				for (int i=0; i< dups.size()-1;i++)
-					msg = msg + dups.at(i) + ",";
-				msg=msg+dups.last() + "\nYou will have to fix this.";
-				
-				QMessageBox::critical(this, tr("Error during import"),msg);
-				se->loadingSequences(false);
-				postLoadTidy();
-				return;
-			}
-			
-			se->loadingSequences(true);
-			
-			for (int i=0;i<seqnames.size();i++){
-				project_->sequences.add(seqnames.at(i),seqs.at(i),comments.at(i),fname,true);
-			}
-			
-			qDebug() << trace.header(__PRETTY_FUNCTION__) << "added " << project_->sequences.size();
-			
-			lastImportedFile=fname;
-		}
-		else{
-			QMessageBox::critical(this, tr("Error during import"),"Error while trying to read " + fname);
-			se->loadingSequences(false);
-			postLoadTidy();
-			return;
-		}
-	}
-	se->loadingSequences(false);
-	postLoadTidy();
+	QString errmsg;
+	bool ok=project_->importSequences(files,errmsg);
+	if (!ok)
+		QMessageBox::critical(this, tr("Error during import"),errmsg);
+	else
+		lastImportedFile=files.at(files.size()-1);
+	
+	updateFindTool();
+	
 }
 
 void SeqEditMainWin::fileExportFASTA(){
@@ -873,12 +828,6 @@ void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus)
 	alignStopAction->setEnabled(false);
 }
 
-
-void SeqEditMainWin::setupSettingsMenu()
-{
-	settingsAlignmentToolPropertiesAction->setText(project_->alignmentTool()->name());
-}
-
 void SeqEditMainWin::settingsEditorFont()
 {
 	QFont currFont = se->editorFont();
@@ -1031,13 +980,6 @@ void SeqEditMainWin::updateScrollBars(int startRow,int stopRow,int numRows,int s
 	hscroller_->setValue(startCol);
 	
 	
-}
-
-void projectLoading(bool loading)
-{
-	if (!loading){ // ie done
-		
-	}
 }
 
 void SeqEditMainWin::sequenceSelectionChanged()
@@ -1379,21 +1321,24 @@ void SeqEditMainWin::createMenus()
 	QActionGroup *agView = new QActionGroup(this);
 	agView->setExclusive(true);
 	
-	QAction *viewAction = viewToolMenu->addAction("Standard");
-	viewAction->setStatusTip(tr("Standard residue view"));
-	viewAction->setCheckable(true);
-	viewAction->setChecked(true);
-	agView->addAction(viewAction);
+	QAction *viewAction  = viewToolMenu->addAction("Standard");
+	viewAction ->setStatusTip(tr("Standard residue view"));
+	viewAction ->setCheckable(true);
+	viewAction ->setChecked(true);
+	agView->addAction(viewAction );
+	settingsViewActions.append(viewAction);
 	
 	viewAction = viewToolMenu->addAction("Inverted");
 	viewAction->setStatusTip(tr("Inverted residue view"));
 	viewAction->setCheckable(true);
 	agView->addAction(viewAction);
+	settingsViewActions.append(viewAction);
 	
 	viewAction = viewToolMenu->addAction("Solid");
-	viewAction->setStatusTip(tr("Solid residue view (no label)"));
-	viewAction->setCheckable(true);
-	agView->addAction(viewAction);
+	viewAction ->setStatusTip(tr("Solid residue view (no label)"));
+	viewAction ->setCheckable(true);
+	agView->addAction(viewAction );
+	settingsViewActions.append(viewAction);
 	
 	connect(viewToolMenu,SIGNAL(triggered(QAction*)),this,SLOT(settingsViewTool(QAction *)));
 	
@@ -1404,14 +1349,17 @@ void SeqEditMainWin::createMenus()
 	colourMapAction->setCheckable(true);
 	colourMapAction->setChecked(true);
 	ag->addAction(colourMapAction);
+	settingsColourMapActions.append(colourMapAction);
 	
 	colourMapAction =colourMapMenu->addAction("RasMol");
 	colourMapAction->setCheckable(true);
 	ag->addAction(colourMapAction);
+	settingsColourMapActions.append(colourMapAction);
 	
 	colourMapAction =colourMapMenu->addAction("Taylor");
 	colourMapAction->setCheckable(true);
 	ag->addAction(colourMapAction);
+	settingsColourMapActions.append(colourMapAction);
 	
 	connect(colourMapMenu,SIGNAL(triggered(QAction*)),this,SLOT(settingsColourMap(QAction *)));
 	
@@ -1604,21 +1552,33 @@ void SeqEditMainWin::updateFindTool()
 	findTool_->setCompleterModel(labels);
 }
 
-QStringList SeqEditMainWin::findDuplicates(QStringList &sl)
+void SeqEditMainWin::updateSettingsActions()
 {
-		QStringList ret;
-		QSet<QString> visited;
-		for (int i=0;i<sl.size();++i){
-			const QString &s = sl.at(i);
-			if (visited.contains(s)){
-				ret.append(s);
-				continue;
-			}
-			visited.insert(s);
+	// Called after loading a Project
+	settingsAlignmentToolPropertiesAction->setText(project_->alignmentTool()->name());
+	
+	int view = se->residueView();
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << view;
+	for (int a=0;a<settingsViewActions.size();a++)
+		settingsViewActions.at(a)->setChecked(false);
+	for (int a=0;a<settingsViewActions.size();a++){
+		QAction *va = settingsViewActions.at(a);
+		if (va->text()=="Standard" && view == SequenceEditor::StandardView){
+			va->setChecked(true);
+			break;
 		}
-		ret.removeDuplicates();
-		return ret;
+		else if (va->text() == "Inverted" && view == SequenceEditor::InvertedView){
+			va->setChecked(true);
+			break;
+		}
+		else if (va->text() == "Solid" && view == SequenceEditor::SolidView){
+			va->setChecked(true);
+			break;
+		}
+	}
+	int colourMap=se->colourMap();
 }
+
 
 bool SeqEditMainWin::maybeSave()
 {
