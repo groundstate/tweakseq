@@ -471,7 +471,6 @@ bool Project::cutSelectedSequences()
 		else
 			s++;
 	}
-	//undoStack_.push(new UndoCutSequences(this,orderedCutSeqs,positions,"cut sequences"));
 	
 	dirty_ = true;
 	app->clipboard().setSequences(orderedCutSeqs); // this removes whatever was there

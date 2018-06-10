@@ -114,9 +114,8 @@ private slots:
 	
 	void setupSettingsMenu();
 	void settingsEditorFont();
-	void settingsStandardView();
-	void settingsInvertedView();
-	void settingsBlockView();
+	void settingsViewTool(QAction *);
+	void settingsColourMap(QAction *);
 	void settingsAlignmentToolClustalO();
 	void settingsAlignmentToolMUSCLE();
 	void settingsAlignmentToolProperties();
@@ -165,7 +164,6 @@ private:
 	QAction  *readOnlyAction;
 	QAction  *helpAction,*aboutAction;
 	QAction  *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
-	QAction  *settingsStandardViewAction,*settingsInvertedViewAction,*settingsBlockViewAction;
 	QAction  *settingsStdColourMapAction;
 	QAction  *settingsAlignmentToolPropertiesAction;
 

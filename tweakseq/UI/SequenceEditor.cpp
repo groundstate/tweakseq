@@ -37,6 +37,7 @@
 #include <QRect>
 #include <QTime>
 
+#include "AminoAcids.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "Sequence.h"
@@ -44,6 +45,7 @@
 #include "SequenceEditor.h"
 #include "SequenceSelection.h"
 #include "Utility.h"
+#include "XMLHelper.h"
 
 #define FLAGS_WIDTH 6
 #define LABEL_WIDTH 16
@@ -110,6 +112,64 @@ void SequenceEditor::setProject(Project *project)
 	
 }
 
+void SequenceEditor::writeSettings(QDomDocument &doc,QDomElement &parentElem)
+{
+	QDomElement pelem = doc.createElement("sequence_editor_ui");
+	parentElem.appendChild(pelem);
+	XMLHelper::addElement(doc,pelem,"font",font().toString());
+	
+	QString view;
+	switch (residueView_)
+	{
+		case StandardView:view="standard";break;
+		case InvertedView:view="inverted";break;
+		case SolidView   :view="solid";break;
+	}
+	XMLHelper::addElement(doc,pelem,"view",view);
+	
+	QString colMap;
+	switch (colourMap_)
+	{
+		case PhysicoChemicalMap:colMap="physico-chemical";break;
+		case RasMolMap:colMap="rasmol";break;
+		case TaylorMap:colMap="taylor";break;
+	}
+	XMLHelper::addElement(doc,pelem,"colourmap",colMap);
+}
+
+void SequenceEditor::readSettings(QDomDocument &doc)
+{
+	QDomNodeList nl = doc.elementsByTagName("sequence_editor_ui");
+	if (nl.count() == 1){
+		QDomNode gNode = nl.item(0);
+		QDomElement elem = gNode.firstChildElement();
+		QFont editorFont = font();
+		while (!elem.isNull()){
+			if (elem.tagName() == "font"){
+				editorFont.fromString(elem.text());
+			}
+			else if (elem.tagName() == "view"){
+				if (elem.text()=="standard")
+					residueView_=StandardView;
+				else if (elem.text()=="inverted")
+					residueView_=InvertedView;
+				else if (elem.text()=="solid")
+					residueView_=SolidView;
+			}
+			else if (elem.tagName() == "colourmap"){
+				if (elem.text()=="physico-chemical")
+					colourMap_=PhysicoChemicalMap;
+				else if (elem.text()=="rasmol")
+					colourMap_ = RasMolMap;
+				else if (elem.text()=="taylor")
+					colourMap_=TaylorMap;
+			}
+			elem=elem.nextSiblingElement();
+		}
+		setEditorFont(editorFont);
+	}
+}
+		
 void SequenceEditor::setEditorFont(const QFont &f)
 {
 	setFont(f); // presumption is that the requested font is available
@@ -136,7 +196,7 @@ void SequenceEditor::setReadOnly(bool readOnly)
 
 
 
-QColor SequenceEditor::getSequenceGroupColour()
+QColor SequenceEditor::getNextGroupColour()
 {
 	currGroupColour_++;
 	if (currGroupColour_ == N_GROUP_COLOURS+1)
@@ -151,7 +211,11 @@ void SequenceEditor::setResidueView(int rv)
 	repaint();
 }
 
-
+void SequenceEditor::setColourMap(int colourMap)
+{
+	colourMap_=colourMap;
+	repaint();
+}
 		
 void SequenceEditor::updateViewport()
 {
@@ -1050,7 +1114,8 @@ void SequenceEditor::init()
 	
 	readOnly_=false;
 	residueView_ = SequenceEditor::StandardView;
-	
+	colourMap_ = SequenceEditor::PhysicoChemicalMap;
+
 	currBookmark_=-1;
 	
 	numRows_=0;
@@ -1245,33 +1310,88 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	
 	//  Draw cell content 
 	// Physico-chemical properties 
-	switch (c.toLatin1()){
-		case 'D': case 'E': case 'S': case 'T':// red 
-			txtColor.setRgb(255,0,0);
-			break; 
-		case 'R': case 'K': case 'H': // sky blue
-			txtColor.setRgb(135,206,235);
+	
+	char ch = c.toLatin1();
+	int ich = ch-65;
+	switch (colourMap_)
+	{
+		case PhysicoChemicalMap:
+			switch (ch)
+			{
+				case 'A': case 'I': case 'L' : case 'V' : case 'G': case '-':case '!':case '.':
+				{
+					if (cellSelected)
+						txtColor.setRgb(0,0,0);
+					else
+						txtColor.setRgb(224,224,224);
+					break;
+				}
+				default:
+					txtColor.setRgb(PhysicoChemicalColours[ich][0],PhysicoChemicalColours[ich][1],PhysicoChemicalColours[ich][2]);
+					break;
+			}
 			break;
-		case 'Q': case 'N': // purple
-			txtColor.setRgb(255,0,255);
-			break; 
-		case 'M': case 'C': // yellow
-			txtColor.setRgb(255,255,0);
-			break; 
-		case 'A': case 'I': case 'L' : case 'V' : case 'G': case '-': 
-		case '!'://white
-			if (cellSelected)
-				txtColor.setRgb(0,0,0);
-			else
-				txtColor.setRgb(224,224,224);
-			break; 
-		case 'Y': case 'F': case 'W': // orange
-			txtColor.setRgb(254,172,0);
-			break; 
-		case 'P': // green
-			txtColor.setRgb(0,255,0);
+		case RasMolMap:
+			switch (ch)
+			{
+				case '-':case '!':case '.':
+				{
+					if (cellSelected)
+						txtColor.setRgb(0,0,0);
+					else
+						txtColor.setRgb(224,224,224);
+					break;
+				}
+				default:
+					txtColor.setRgb(RasMolColours[ich][0],RasMolColours[ich][1],RasMolColours[ich][2]);
+					break;
+			}
 			break;
-	};
+		case TaylorMap:
+			switch (ch)
+			{
+				case '-':case '!':case '.':
+				{
+					if (cellSelected)
+						txtColor.setRgb(0,0,0);
+					else
+						txtColor.setRgb(224,224,224);
+					break;
+				}
+				default:
+					txtColor.setRgb(TaylorColours[ich][0],TaylorColours[ich][1],TaylorColours[ich][2]);
+				  break;
+			}
+			break;
+	}
+	
+// 	switch (c.toLatin1()){
+// 		case 'D': case 'E': case 'S': case 'T':// red 
+// 			txtColor.setRgb(255,0,0);
+// 			break; 
+// 		case 'R': case 'K': case 'H': // sky blue
+// 			txtColor.setRgb(135,206,235);
+// 			break;
+// 		case 'Q': case 'N': // purple
+// 			txtColor.setRgb(255,0,255);
+// 			break; 
+// 		case 'M': case 'C': // yellow
+// 			txtColor.setRgb(255,255,0);
+// 			break; 
+// 		case 'A': case 'I': case 'L' : case 'V' : case 'G': case '-': 
+// 		case '!'://white
+// 			if (cellSelected)
+// 				txtColor.setRgb(0,0,0);
+// 			else
+// 				txtColor.setRgb(224,224,224);
+// 			break; 
+// 		case 'Y': case 'F': case 'W': // orange
+// 			txtColor.setRgb(254,172,0);
+// 			break; 
+// 		case 'P': // green
+// 			txtColor.setRgb(0,255,0);
+// 			break;
+// 	};
 
 		// FIXME not so useful if the group is not contiguous
 	//if (currSeq->group != NULL){
@@ -1318,7 +1438,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 				p->setPen(txtColor);
 				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				break;
-			case BlockView:
+			case SolidView:
 				if (!cellSelected && c.toLatin1() != '-'){
 					p->fillRect(0,2,w,h-2,txtColor);
 				}

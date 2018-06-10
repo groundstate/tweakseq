@@ -183,9 +183,7 @@ void SeqEditMainWin::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 	XMLHelper::addElement(doc,pelem,"editor_window_height",QString::number(splitterHeights.at(0)));
 	XMLHelper::addElement(doc,pelem,"message_window_height",QString::number(splitterHeights.at(1)));
 	
-	pelem = doc.createElement("sequence_editor_ui");
-	parentElem.appendChild(pelem);
-	XMLHelper::addElement(doc,pelem,"font",se->editorFont().toString());
+	se->writeSettings(doc,parentElem);
 }
 
 void SeqEditMainWin::readSettings(QDomDocument &doc)
@@ -215,20 +213,7 @@ void SeqEditMainWin::readSettings(QDomDocument &doc)
 		setGeometry(0,0,w,h);
 		split->setSizes(wsizes);
 	}
-
-	nl = doc.elementsByTagName("sequence_editor_ui");
-	if (nl.count() == 1){
-		QDomNode gNode = nl.item(0);
-		QDomElement elem = gNode.firstChildElement();
-		QFont editorFont = se->editorFont();
-		while (!elem.isNull()){
-			if (elem.tagName() == "font"){
-				editorFont.fromString(elem.text());
-			}
-			elem=elem.nextSiblingElement();
-		}
-		se->setEditorFont(editorFont);
-	}
+	se->readSettings(doc);
 }
 
 //
@@ -753,8 +738,9 @@ void SeqEditMainWin::editGroupSequences()
 {
 	statusBar()->clearMessage();
 	// Groups the current selection of sequences
-	if (!project_->groupSelectedSequences(se->getSequenceGroupColour())){
+	if (!project_->groupSelectedSequences(se->getNextGroupColour())){
 		statusBar()->showMessage("Grouping unsuccessful");
+		// FIXME the group colour should be released
 	}
 	se->repaint();
 }
@@ -903,21 +889,27 @@ void SeqEditMainWin::settingsEditorFont()
 	}
 }
 
-void SeqEditMainWin::settingsStandardView()
+
+void SeqEditMainWin::settingsViewTool(QAction *a)
 {
-	se->setResidueView(SequenceEditor::StandardView);
+	if (a->text()=="Standard")
+		se->setResidueView(SequenceEditor::StandardView);
+	else if (a->text() == "Inverted")
+		se->setResidueView(SequenceEditor::InvertedView);
+	else if (a->text() == "Solid")
+		se->setResidueView(SequenceEditor::SolidView);
 }
 
-void SeqEditMainWin::settingsInvertedView()
+void SeqEditMainWin::settingsColourMap(QAction *a)
 {
-	se->setResidueView(SequenceEditor::InvertedView);
+	if (a->text()=="Physico-chemical")
+		se->setColourMap(SequenceEditor::PhysicoChemicalMap);
+	else if (a->text()=="RasMol")
+		se->setColourMap(SequenceEditor::RasMolMap);
+	else if (a->text()=="Taylor")
+		se->setColourMap(SequenceEditor::TaylorMap);
 }
 
-void SeqEditMainWin::settingsBlockView()
-{
-	se->setResidueView(SequenceEditor::BlockView);
-}
-	
 void SeqEditMainWin::settingsAlignmentToolClustalO()
 {
 	if (project_->alignmentTool()->name() != "clustalo"){
@@ -1249,30 +1241,7 @@ void SeqEditMainWin::createActions()
 	settingsEditorFontAction->setStatusTip(tr("Choose the font used in the sequence editor"));
 	addAction(settingsEditorFontAction);
 	connect(settingsEditorFontAction, SIGNAL(triggered()), this, SLOT(settingsEditorFont()));
-	
-	QActionGroup *agView = new QActionGroup(this);
-	agView->setExclusive(true);
-	settingsStandardViewAction = new QAction( tr("Standard"), this);
-	settingsStandardViewAction->setStatusTip(tr("Standard residue view"));
-	addAction(settingsStandardViewAction);
-	connect(settingsStandardViewAction, SIGNAL(triggered()), this, SLOT(settingsStandardView()));
-	settingsStandardViewAction->setCheckable(true);
-	agView->addAction(settingsStandardViewAction);
-	settingsStandardViewAction->setChecked(true);
-	
-	settingsInvertedViewAction = new QAction( tr("Inverted"), this);
-	settingsInvertedViewAction->setStatusTip(tr("Inverted residue view"));
-	addAction(settingsInvertedViewAction);
-	connect(settingsInvertedViewAction, SIGNAL(triggered()), this, SLOT(settingsInvertedView()));
-	settingsInvertedViewAction->setCheckable(true);
-	agView->addAction(settingsInvertedViewAction);
-	
-	settingsBlockViewAction = new QAction( tr("Block"), this);
-	settingsBlockViewAction->setStatusTip(tr("Block residue view (no label)"));
-	addAction(settingsBlockViewAction);
-	connect(settingsBlockViewAction, SIGNAL(triggered()), this, SLOT(settingsBlockView()));
-	settingsBlockViewAction->setCheckable(true);
-	agView->addAction(settingsBlockViewAction);
+
 	
 	settingsAlignmentToolClustalOAction = new QAction( tr("ClustalO"), this);
 	settingsAlignmentToolClustalOAction->setStatusTip(tr("Select Clustal Omega"));
@@ -1407,9 +1376,44 @@ void SeqEditMainWin::createMenus()
 	settingsMenu->addAction(settingsEditorFontAction);
 	
 	QMenu* viewToolMenu = settingsMenu->addMenu(tr("Residue view"));
-	viewToolMenu->addAction(settingsStandardViewAction);
-	viewToolMenu->addAction(settingsInvertedViewAction);
-	viewToolMenu->addAction(settingsBlockViewAction);
+	QActionGroup *agView = new QActionGroup(this);
+	agView->setExclusive(true);
+	
+	QAction *viewAction = viewToolMenu->addAction("Standard");
+	viewAction->setStatusTip(tr("Standard residue view"));
+	viewAction->setCheckable(true);
+	viewAction->setChecked(true);
+	agView->addAction(viewAction);
+	
+	viewAction = viewToolMenu->addAction("Inverted");
+	viewAction->setStatusTip(tr("Inverted residue view"));
+	viewAction->setCheckable(true);
+	agView->addAction(viewAction);
+	
+	viewAction = viewToolMenu->addAction("Solid");
+	viewAction->setStatusTip(tr("Solid residue view (no label)"));
+	viewAction->setCheckable(true);
+	agView->addAction(viewAction);
+	
+	connect(viewToolMenu,SIGNAL(triggered(QAction*)),this,SLOT(settingsViewTool(QAction *)));
+	
+	QMenu *colourMapMenu = settingsMenu->addMenu(tr("Residue colour map"));
+	QActionGroup *ag = new QActionGroup(this);
+	ag->setExclusive(true);
+	QAction *colourMapAction = colourMapMenu->addAction("Physico-chemical");
+	colourMapAction->setCheckable(true);
+	colourMapAction->setChecked(true);
+	ag->addAction(colourMapAction);
+	
+	colourMapAction =colourMapMenu->addAction("RasMol");
+	colourMapAction->setCheckable(true);
+	ag->addAction(colourMapAction);
+	
+	colourMapAction =colourMapMenu->addAction("Taylor");
+	colourMapAction->setCheckable(true);
+	ag->addAction(colourMapAction);
+	
+	connect(colourMapMenu,SIGNAL(triggered(QAction*)),this,SLOT(settingsColourMap(QAction *)));
 	
 	settingsMenu->addSeparator();
 	

@@ -34,6 +34,8 @@
 
 #include "Sequence.h"
 
+class QDomDocument;
+class QDomElement;
 class QFont;
 class QKeyEvent;
 class QMouseEvent;
@@ -54,14 +56,21 @@ class SequenceEditor: public QWidget
 		SequenceEditor(Project*,QWidget *);
 		void setProject(Project *);
 		
+		void writeSettings(QDomDocument &,QDomElement &);
+		void readSettings(QDomDocument &);
+		
 		void setReadOnly(bool);
 		bool isReadOnly(){return readOnly_;}
 		
 		const QFont &editorFont(){return font();}
-		QColor getSequenceGroupColour();
-		
-		int  residueView(){return residueView_;}
+	
 		void setResidueView(int);
+		int  residueView(){return residueView_;}
+		
+		void setColourMap(int);
+		int  colourMap(){return colourMap_;}
+		
+		QColor getNextGroupColour();
 		
 		void cutSelectedResidues();
 		void cutSelectedSequences();
@@ -73,7 +82,8 @@ class SequenceEditor: public QWidget
 		void updateViewport();
 		void visibleRows(int *,int *);
 	
-		enum ResidueView {StandardView, InvertedView, BlockView};
+		enum ResidueView {StandardView, InvertedView,  SolidView};
+		enum ColourMap   {PhysicoChemicalMap,RasMolMap,TaylorMap};
 		
 	signals:
 	
@@ -153,6 +163,7 @@ class SequenceEditor: public QWidget
 		// properties
 		bool readOnly_;
 		int  residueView_;
+		int  colourMap_;
 		
 		// geometry
 		int numRows_,numCols_;
