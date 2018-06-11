@@ -49,6 +49,7 @@
 
 #define FLAGS_WIDTH 6
 #define LABEL_WIDTH 16
+#define HEADER_HEIGHT 2
 
 #define BOOKMARK_COL 0
 #define INDEX_COL    1 // but right justified
@@ -182,6 +183,7 @@ void SequenceEditor::setEditorFont(const QFont &f)
 	flagsWidth_= w*FLAGS_WIDTH;
 	labelWidth_= w*LABEL_WIDTH;
 	charWidth_ = w;
+	headerHeight_=rowHeight_*HEADER_HEIGHT;
 	
 	updateViewExtents();
 	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
@@ -505,6 +507,7 @@ void SequenceEditor::paintEvent(QPaintEvent *pev)
 	//t.start();
 	p.fillRect(pev->rect(),QColor(0,0,0));
 	
+	paintHeader(&p);
 	for (int r=firstVisibleRow_;r<=lastVisibleRow_;r++){
 		paintRow(&p,r);
 	}
@@ -746,8 +749,8 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 
 	QPoint pos;
 	int row,currRow,currCol;
-	int startRow,stopRow;
-	int startCol,stopCol;
+	//int startRow,stopRow;
+	//int startCol,stopCol;
 	int clickedRow,clickedCol;
 
 	totalWheelRotation_ = 0;
@@ -757,6 +760,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	pos = ev->pos();              		
 	clickedRow=rowAt( pos.y() + contentsRect().y());
 	clickedCol=columnAt(pos.x() + contentsRect().x());
+	
 	
 	// clamp to bounds
 	if (clickedRow < 0){
@@ -786,11 +790,11 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	if ((selectingSequences_ || selectingResidues_) && leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
 		// If we go out of the bounds of the window, then the view is scrolled at a rate proportional to the distance
 		// we have moved out of the window
-		if (pos.y() > height() || pos.y() < 0){ // scroll up/down
+		if (pos.y() > height() || pos.y() < headerHeight_){ // scroll up/down
 			if (!scrollRowTimer_.isActive()){
 				if (pos.y() > height())
 					scrollRowIncrement_=1;
-				else
+				else 
 					scrollRowIncrement_=-1;
 				scrollRowTimer_.start(); 
 			}
@@ -798,8 +802,8 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 				int newTimeout=baseTimeout_;
 				if (pos.y() > height())
 					newTimeout = baseTimeout_/rint(( pos.y() - height())/5); // scrolling is accelerated proportional to displacement
-				else if (pos.y() < 0)
-					newTimeout = baseTimeout_/rint( -pos.y()/5);
+				else if (pos.y() < headerHeight_)
+					newTimeout = baseTimeout_/rint( (headerHeight_-pos.y())/5);
 				if (newTimeout < 100) newTimeout=100;
 				if (newTimeout != currentTimeout_){
 					currentTimeout_=newTimeout;
@@ -832,14 +836,14 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 		}
 		else{ // the usual case
 			if (selectingSequences_){
-				if (scrollRowTimer_.isActive()) cleanupTimer();
+				cleanupTimer();
 				if (seqSelectionDrag_ != clickedRow){
 					seqSelectionDrag_=clickedRow;
 					repaint();
 				}
 			}
 			else if (selectingResidues_){
-				if (scrollColTimer_.isActive()) cleanupTimer();
+				cleanupTimer();
 				if (clickedCol < 0)
 					clickedCol = firstVisibleCol_;
 				currRow = clickedRow;    // map to row; set current cell
@@ -847,16 +851,17 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 				// Determine the bounds of the rectangle enclosing both
 				// the old highlight box and the new highlight box (so we redraw cells in the old box)
 				// Determine the vertical bounds
-				startRow = find_smallest_int(currRow,selAnchorRow_,selDragRow_);
-				stopRow  = find_largest_int(currRow,selAnchorRow_,selDragRow_);
+				//startRow = find_smallest_int(currRow,selAnchorRow_,selDragRow_);
+				//stopRow  = find_largest_int(currRow,selAnchorRow_,selDragRow_);
 				// Determine the horizontal bounds
-				startCol= find_smallest_int(currCol,selAnchorCol_,selDragCol_);
-				stopCol = find_largest_int(currCol,selAnchorCol_,selDragCol_);
+				//startCol= find_smallest_int(currCol,selAnchorCol_,selDragCol_);
+				//stopCol = find_largest_int(currCol,selAnchorCol_,selDragCol_);
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << currRow << " " << currCol;
 				selDragRow_=currRow;
 				selDragCol_=currCol;
 				
-				qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " <<
-					startCol << " " << stopCol;
+				//qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " <<
+				//	startCol << " " << stopCol;
 				repaint();
 			}
 		}
@@ -877,7 +882,7 @@ void SequenceEditor::mouseDoubleClickEvent(QMouseEvent *ev)
 	QPoint clickedPos = ev->pos();		
 	int clickedRow=rowAt( clickedPos.y() + contentsRect().y());
 
-	if (clickedPos.x() >= flagsWidth_ && clickedPos.x() <= flagsWidth_ + labelWidth_){
+	if (clickedRow >= 0 && clickedPos.x() >= flagsWidth_ && clickedPos.x() <= flagsWidth_ + labelWidth_){
 		Sequence *selseq = project_->sequences.visibleAt(clickedRow);
 		if (selseq->group){
 			project_->sequenceSelection->clear();
@@ -1114,6 +1119,7 @@ void SequenceEditor::init()
 	
 	flagsWidth_=charWidth_*FLAGS_WIDTH;
 	labelWidth_=charWidth_*LABEL_WIDTH;
+	headerHeight_=rowHeight_*HEADER_HEIGHT;
 	
 	enableUpdates_=true;
 	selectingSequences_=false;
@@ -1164,7 +1170,7 @@ void SequenceEditor::sortBookmarks()
 void SequenceEditor::updateViewExtents()
 {
 	// round up to catch fractional bits ?
-	int displayableRows=ceil((double)height()/((double) rowHeight_));
+	int displayableRows=ceil((double)(height()-headerHeight_)/((double) rowHeight_));
 	lastVisibleRow_ = firstVisibleRow_ + displayableRows-1; // zero indexed, so subtract 1
 	
 	numRows_ = project_->sequences.numVisible();
@@ -1247,7 +1253,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	
 	if (c.unicode()==0) return;
 	
-	int yrow = rowHeight_*(row-firstVisibleRow_);
+	int yrow = headerHeight_+ rowHeight_*(row-firstVisibleRow_);
 	int xcol = flagsWidth_ + labelWidth_ + (col-firstVisibleCol_)*colWidth_;
 	p->translate(xcol,yrow);
 	
@@ -1259,7 +1265,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	// If the cell is highlighted then do it
 	
 	if (selectingResidues_ && currSeq->visible){
-		
+		//qDebug() << trace.header(__PRETTY_FUNCTION__) << selAnchorRow_  << " " << selDragRow_;
 		if (selAnchorRow_ <= selDragRow_){ // dragging top to bottom
 			if (selAnchorCol_ <= selDragCol_){ // left to right
 				if (row >= selAnchorRow_ && row <= selDragRow_ && 
@@ -1454,7 +1460,7 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	Sequence *currSeq = project_->sequences.visibleAt(row);
 	if (currSeq == NULL) return; // this happens with an empty project
 	
-	int yrow = rowHeight_*(row-firstVisibleRow_);
+	int yrow = headerHeight_+rowHeight_*(row-firstVisibleRow_);
 	
 	if (project_->sequenceSelection->contains(currSeq)) // highlight if selected
 		p->fillRect(flagsWidth_, yrow, labelWidth_,rowHeight_,QColor(128,128,128)); // add one to fill properly
@@ -1511,9 +1517,21 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	
 }
 
+void SequenceEditor::paintHeader(QPainter *p)
+{
+	QColor txtColor(255,255,255);
+	p->setPen(txtColor);
+	int y0 = headerHeight_- rowHeight_;
+	int x0 = flagsWidth_+labelWidth_-firstVisibleCol_*colWidth_;
+	for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++){
+		p->drawText(x0+col*colWidth_,y0,colWidth_,rowHeight_,Qt::AlignCenter,QString::number(col % 10));
+	}
+}
+
 int SequenceEditor::rowAt(int ypos)
 {
-	return (int) (ypos/rowHeight_) + firstVisibleRow_;
+	if (ypos - headerHeight_ <0) return -1;
+	return (int) ((ypos-headerHeight_)/rowHeight_) + firstVisibleRow_;
 }
 
 int SequenceEditor::columnAt(int xpos)
@@ -1575,6 +1593,7 @@ void SequenceEditor::disconnectFromProject()
 
 void SequenceEditor::cleanupTimer()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	scrollRowTimer_.stop();
 	scrollRowTimer_.setInterval(baseTimeout_);
 	scrollColTimer_.stop();

@@ -143,6 +143,7 @@ class SequenceEditor: public QWidget
 		
 		void paintCell( QPainter* p, int, int,Sequence *currSeq );
 		void paintRow(QPainter *p,int);
+		void paintHeader(QPainter *p);
 		
 		int rowAt(int);
 		int columnAt(int);
@@ -170,6 +171,7 @@ class SequenceEditor: public QWidget
 		double rowPadding_,columnPadding_;
 		int rowHeight_,colWidth_,charWidth_;
 		int flagsWidth_,labelWidth_;
+		int headerHeight_;
 		
 		int firstVisibleRow_,lastVisibleRow_;
 		int firstVisibleCol_,lastVisibleCol_;
