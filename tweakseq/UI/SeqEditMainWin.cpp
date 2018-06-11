@@ -82,8 +82,6 @@
 #include "AlignmentCmd.h"
 #include "XMLHelper.h"
 
-#include "Resources/seqedit.xpm"
-
 using namespace std;
 
 // Tool button help
@@ -352,7 +350,7 @@ void SeqEditMainWin::filePrint(){
 	int lineSpc=0;      // extra interline spacing
 	int minBlockSpc=20;    // min spacing between residue blocks
 	double blockSpc; // to avoid rounding errors ...
-	double currBlockSpc;
+	double currBlockSpc=0;
 	int headerSpc=20;   // extra space underneath page header
 	int wrap; // number of residues to print per line
 	
@@ -468,7 +466,7 @@ void SeqEditMainWin::filePrint(){
 		
 		// Now layout the pages
 		resWidth = wrap*cw;
-	  	seqNameX0 = m.width()+leftMargin;
+	  seqNameX0 = m.width()+leftMargin;
 		resX0 = seqNameX0+10*cw;
 		
 		y=m.height()+topMargin+fm.ascent(); // subsequently add fm.lineSpacing()
@@ -659,8 +657,9 @@ void SeqEditMainWin::editUndo()
 
 void SeqEditMainWin::editRedo()
 {
-	project_->undoStack().redo();
+	project_->redo();
 	setupEditActions();
+	se->repaint();
 }
 
 void SeqEditMainWin::editCut()
@@ -1558,7 +1557,6 @@ void SeqEditMainWin::updateSettingsActions()
 	settingsAlignmentToolPropertiesAction->setText(project_->alignmentTool()->name());
 	
 	int view = se->residueView();
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << view;
 	for (int a=0;a<settingsViewActions.size();a++)
 		settingsViewActions.at(a)->setChecked(false);
 	for (int a=0;a<settingsViewActions.size();a++){
@@ -1576,7 +1574,25 @@ void SeqEditMainWin::updateSettingsActions()
 			break;
 		}
 	}
+	
 	int colourMap=se->colourMap();
+	for (int a=0;a<settingsColourMapActions.size();a++)
+		settingsColourMapActions.at(a)->setChecked(false);
+	for (int a=0;a<settingsColourMapActions.size();a++){
+		QAction *va = settingsColourMapActions.at(a);
+		if (va->text()=="Physico-chemical" && colourMap == SequenceEditor::PhysicoChemicalMap){
+			va->setChecked(true);
+			break;
+		}
+		else if (va->text() == "RasMol" && colourMap == SequenceEditor::RasMolMap){
+			va->setChecked(true);
+			break;
+		}
+		else if (va->text() == "Taylor" && colourMap == SequenceEditor::TaylorMap){
+			va->setChecked(true);
+			break;
+		}
+	}
 }
 
 

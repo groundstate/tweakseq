@@ -39,6 +39,7 @@
 #include "ClustalO.h"
 #include "CutSequencesCmd.h"
 #include "FASTAFile.h"
+#include "ImportCmd.h"
 #include "Muscle.h"
 #include "Project.h"
 #include "ResidueSelection.h"
@@ -113,7 +114,7 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 		}
 		else{
 			errmsg = "Unable to identify " + fname;
-			emit loadingSequences(false);
+			emit uiUpdatesEnabled(true);
 			return false;
 		}
 		
@@ -131,26 +132,27 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 				for (int i=0; i< dups.size()-1;i++)
 					errmsg = errmsg + dups.at(i) + ",";
 				errmsg=errmsg+dups.last() + "\nYou will have to fix this.";
-				emit loadingSequences(false);
+				emit uiUpdatesEnabled(true);
 				return false;
 			}
 			
-			emit loadingSequences(true);
+			emit uiUpdatesEnabled(false);
+			QList<Sequence *> newSeqs;
+			for (int i=0;i<seqnames.size();i++)
+				newSeqs.append(new Sequence(seqnames.at(i),seqs.at(i),comments.at(i),fname,true));
+		
+			undoStack_.push(new ImportCmd(this,newSeqs,"sequence import"));
 			
-			for (int i=0;i<seqnames.size();i++){
-				sequences.add(seqnames.at(i),seqs.at(i),comments.at(i),fname,true);
-			}
-			
-			qDebug() << trace.header(__PRETTY_FUNCTION__) << "added " <<sequences.size();
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "added " << newSeqs.size();
 			
 		}
 		else{
 			errmsg ="Error while trying to read " + fname;
-			emit loadingSequences(false);
+			emit uiUpdatesEnabled(true);
 			return false;
 		}
 	}
-	emit loadingSequences(false);
+	emit uiUpdatesEnabled(true);
 	return true;
 }
 
@@ -217,7 +219,7 @@ void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<Seq
 	
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	// Clear the selections because they will be meaningless post alignment
-	emit loadingSequences(true);
+	emit uiUpdatesEnabled(false);
 	residueSelection->clear();
 	sequenceSelection->clear();
 	
@@ -225,7 +227,7 @@ void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<Seq
 	sequences.forceCacheUpdate(); 
 	sequenceGroups = newGroups;
 	
-	emit loadingSequences(false);
+	emit uiUpdatesEnabled(true);
 	dirty_=true;
 }
 
@@ -590,6 +592,11 @@ void Project::undo()
 	undoStack_.undo();
 }
 
+void Project::redo()
+{
+	undoStack_.redo();
+}
+
 void Project::setAlignmentTool(const QString & atool)
 {
 	if (atool == "clustalo" && clustalOTool_)
@@ -602,9 +609,6 @@ void Project::setAlignmentTool(const QString & atool)
 //
 //
 
-//
-//	Public slots:
-//
 
 
 bool Project::save(QString &fpathname)
@@ -712,7 +716,7 @@ void Project::load(QString &fname)
 	QList<long> gids;
 	
 	// Get all the sequences
-	emit loadingSequences(true);
+	emit uiUpdatesEnabled(false);
 	QDomNodeList nl = doc.elementsByTagName("sequence");
 	for (int i=0;i<nl.count();i++){
 		QDomNode sNode = nl.item(i);
@@ -750,13 +754,13 @@ void Project::load(QString &fname)
 			}
 			elem=elem.nextSiblingElement();
 		}
-		Sequence *seq = sequences.add(sName,sResidues,sComment,sSrc,sVisible);
+		Sequence *seq = sequences.append(sName,sResidues,sComment,sSrc,sVisible);
 		seq->bookmarked=sBookmarked;
 		for (int x=0;x<exclusions.size()-1;x+=2)
 			seq->exclude(exclusions.at(x),exclusions.at(x+1));
 				 
 	}	
-	emit loadingSequences(false);
+	emit uiUpdatesEnabled(true);
 	
 	// Get all the groups
 	
@@ -867,7 +871,7 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 	QStringList newlabels,newseqs,newcomments;
 	fin.read(newlabels,newseqs,newcomments);
 	
-	// No need to emit loadingSequences(), because we are not modifying Project data here
+	// No need to emit uiUpdatesEnabled(), because we are not modifying Project data here
 	
 	QList<Sequence *>      oldSeqs   = sequences.sequences();
 	QList<SequenceGroup *> oldGroups = sequenceGroups;
@@ -974,10 +978,18 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 	}
 
 	// Pushing onto the stack triggers redo(), so this will finish things off (call setAlignment(), in particular
-	undoStack().push(new AlignmentCmd(this,oldSeqs,oldGroups,newSequences.sequences(),newGroups,"alignment"));
+	undoStack_.push(new AlignmentCmd(this,oldSeqs,oldGroups,newSequences.sequences(),newGroups,"alignment"));
 	
 }
 
+//
+//	Public slots:
+//
+
+void Project::enableUIupdates(bool enable)
+{
+	emit uiUpdatesEnabled(enable);
+}
 
 void Project::closeIt()
 {

@@ -344,21 +344,6 @@ void SequenceEditor::selectSequence(const QString &label)
 // Public slots
 //
 
-void SequenceEditor::sequenceAdded(Sequence *s)
-{
-	if (s->visible){
-		numRows_=numRows_+1;
-		numCols_=project_->sequences.maxLength();
-	}
-	
-	if (s->bookmarked){
-		bookmarks_.append(s); // FIXME check if already there ? Sort?
-	}
-	
-	if (!loadingSequences_){ // suppress viewport updates until loading is finished
-		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
-	}
-}
 
 void SequenceEditor::sequencesCleared()
 {
@@ -391,24 +376,16 @@ void SequenceEditor::postLoadTidy()
 	}
 	currGroupColour_=maxCol+1;
 	
-	// build a list of bookmarks
-	bookmarks_.clear();
-	for (int s=0;s<project_->sequences.size();s++){
-		Sequence *seq = project_->sequences.sequences().at(s);
-		if (seq->bookmarked)
-			bookmarks_.append(seq);
-	}
-	
-	sortBookmarks();
+	buildBookmarks();
 	
 }
 
-void SequenceEditor::loadingSequences(bool loading)
+void SequenceEditor::enableUpdates(bool enable)
 {
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << loading;
-	loadingSequences_= loading;
-	if (!loadingSequences_){ // done, so refresh the view
-		sortBookmarks(); 
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << enable;
+	enableUpdates_= enable;
+	if (enableUpdates_){ // refresh everything
+		buildBookmarks(); 
 		updateViewport();
 		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
 	}
@@ -1138,7 +1115,7 @@ void SequenceEditor::init()
 	flagsWidth_=charWidth_*FLAGS_WIDTH;
 	labelWidth_=charWidth_*LABEL_WIDTH;
 	
-	loadingSequences_=false;
+	enableUpdates_=true;
 	selectingSequences_=false;
 	selectingResidues_=false;
 	selAnchorRow_=selAnchorCol_=selDragRow_=selDragCol_=-1; 
@@ -1160,6 +1137,16 @@ void SequenceEditor::init()
 	scrollColTimer_.setInterval(baseTimeout_);
 	connect(&scrollColTimer_, SIGNAL(timeout()), this, SLOT(scrollCol()) );
 	
+}
+
+void SequenceEditor::buildBookmarks()
+{
+	bookmarks_.clear();
+	for (int s=0;s<project_->sequences.size();s++){
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (seq->bookmarked)
+			bookmarks_.append(seq);
+	}
 }
 
 void SequenceEditor::sortBookmarks()
@@ -1576,16 +1563,14 @@ int SequenceEditor::rowVisibleSequence(Sequence *seq)
 
 void SequenceEditor::connectToProject()
 {
-	connect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
-	connect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
+	connect(project_,SIGNAL(uiUpdatesEnabled(bool)),this,SLOT(enableUpdates(bool)));
 }
 
 void SequenceEditor::disconnectFromProject()
 {
-	disconnect(&(project_->sequences),SIGNAL(sequenceAdded(Sequence *)),this,SLOT(sequenceAdded(Sequence *)));
 	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
-	disconnect(project_,SIGNAL(loadingSequences(bool)),this,SLOT(loadingSequences(bool)));
+	disconnect(project_,SIGNAL(uiUpdatesEnabled(bool)),this,SLOT(enableUpdates(bool)));
 }
 
 void SequenceEditor::cleanupTimer()

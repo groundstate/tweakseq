@@ -109,8 +109,9 @@ class Project:public QObject
 		void unhideAllGroupMembers();
 		
 		void undo();
+		void redo();
 		
-		QUndoStack &undoStack(){return undoStack_;}
+		QUndoStack &undoStack(){return undoStack_;} // main window needs access to this to validate actions
 		
 		AlignmentTool*  alignmentTool(){return alignmentTool_;}
 		void setAlignmentTool(const QString &);
@@ -121,16 +122,16 @@ class Project:public QObject
 		
 		void readNewAlignment(QString,bool);
 	
-		
 	signals:
 		
-		void loadingSequences(bool);
+		void uiUpdatesEnabled(bool);
 		
 	public slots:
-	
+		
+		void enableUIupdates(bool);
 		
 		void closeIt();
-		
+
 		void createMainWindow();
 	
 		void mainWindowClosed();

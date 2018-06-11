@@ -24,76 +24,28 @@
 // THE SOFTWARE.
 //
 
+#ifndef __IMPORT_CMD_H_
+#define __IMPORT_CMD_H_
 
-#ifndef __SEQUENCES_H_
-#define __SEQUENCES_H_
-
-#include <QObject>
 #include <QList>
-#include <QString>
+
+#include "Command.h"
 
 class Sequence;
 class SequenceGroup;
 
-class Sequences:public QObject
+class ImportCmd: public Command
 {
-	Q_OBJECT
-	
 	public:
 		
-		Sequences();
-		~Sequences();
-		
-		QList<Sequence *> & sequences(){return sequences_;} 
-		
-		void  forceCacheUpdate();
-		
-		int index(Sequence *);
-		Sequence *getSequence(const QString &);
-		int visibleIndex(Sequence *);
-		
-		int getIndex(QString label);
-		QString getLabelAt(int);
-		
-		bool isEmpty();
-		int size(){return sequences_.size();}
-		int numVisible();
-		void clear();
-		Sequence * visibleAt(int);
-		int visibleToActual(int);
-		
-		int maxLength(bool recalculate=false);
-		
-		bool isSubGroup(int,int);
-		
-		Sequence * append(QString,QString,QString,QString,bool );
-		void  append(Sequence *);
-		void  append(QList<Sequence *> &);
-		void  remove(QString);
-		void  remove(QList<Sequence *> &);
-		void  insert(QString,QString,int);
-		void  insert(Sequence *,Sequence *,bool postInsert=true);
-		void  replace(QString,QString,QString);
-		void  move(int,int);
-		void  replaceResidues(QString ,int pos);
-		void  addInsertions(int,int,int,int);
-		void  addInsertions(Sequence *,int,int);
-		void  removeResidues(int,int,int,int);
-		
-		void  unhideAll();
-		
-	signals:
-	
-		void cleared();
-		void changed();
+		ImportCmd(Project *,const QList<Sequence *> &,const QString &);
+		virtual ~ImportCmd();
+
+		virtual void redo();
+		virtual void undo();
 		
 	private:
-		
-		void updateCachedVariables();
-		
-		QList<Sequence *> sequences_;
-		
-		int maxLen_;
+		QList<Sequence *>  seqs_;
 };
 
 #endif

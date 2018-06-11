@@ -156,13 +156,12 @@ bool Sequences::isSubGroup(int start,int stop)
 	return true;
 }
 
-Sequence * Sequences::add(QString l,QString r,QString c,QString f,bool h)
+Sequence * Sequences::append(QString l,QString r,QString c,QString f,bool h)
 {
 	Sequence * newSeq = new Sequence(l,r,c,f,h);
 	sequences_.append(newSeq);
 	if (r.length() > maxLen_)
 		maxLen_=r.length();
-	emit sequenceAdded(newSeq);
 	emit changed();
 	return newSeq;
 }
@@ -174,15 +173,29 @@ void  Sequences::append(Sequence *newSequence)
 	if (len > maxLen_)
 		maxLen_=len;
 	emit changed();
-	emit sequenceAdded(newSequence);
 }
 
+void Sequences::append(QList<Sequence *> &seqs)
+{
+	sequences_.append(seqs);
+	updateCachedVariables();
+	emit changed();
+}
 
 void Sequences::remove(QString)
 {
 	// FIXME not implemented
 	emit changed();
 }
+
+void Sequences::remove(QList<Sequence *> &seqs)
+{
+	for (int s=0;s<seqs.size();s++)
+		sequences_.removeOne(seqs.at(s));
+	updateCachedVariables();
+	emit changed();
+}
+
 
 void Sequences::insert(QString,QString,int)
 {
@@ -203,6 +216,7 @@ void  Sequences::insert(Sequence *seq,Sequence *after,bool postInsert)
 	int len = seq->residues.length();
 	if (len > maxLen_)
 		maxLen_=len;
+	emit changed();
 }
 
 
@@ -253,6 +267,7 @@ void  Sequences::addInsertions(Sequence *seq,int startPos,int nInsertions)
 	int len = seq->residues.length();
 	if (len > maxLen_)
 		maxLen_=len;
+	emit changed();
 }
 
 // Mainly used for removing insertions

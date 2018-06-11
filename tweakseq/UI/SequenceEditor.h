@@ -92,11 +92,10 @@ class SequenceEditor: public QWidget
 	
 	public slots:
 	
-		void sequenceAdded(Sequence *);
 		void sequencesCleared();
 
 		void postLoadTidy();
-		void loadingSequences(bool);
+		void enableUpdates(bool);
 		void setEditorFont(const QFont &); // this is a slot so that QFontDialog can be used for interactive preview
 	
 		void setFirstVisibleRow(int);
@@ -135,6 +134,7 @@ class SequenceEditor: public QWidget
 	
 		void init();
 
+		void buildBookmarks();
 		void sortBookmarks();
 		
 		void updateViewExtents();
@@ -178,7 +178,7 @@ class SequenceEditor: public QWidget
 		
 		QString lastInfo_;
 		
-		bool loadingSequences_;
+		bool enableUpdates_;
 		
 		// mouse state
 		bool selectingSequences_,selectingResidues_;
