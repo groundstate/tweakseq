@@ -34,7 +34,7 @@
 
 Command::Command(Project *p,const QString &txt):QUndoCommand(txt)
 {
-	prj_=p;
+	project_=p;
 }
 
 Command::~Command()

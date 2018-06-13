@@ -41,6 +41,7 @@ class SequenceSelection:public QObject
 		SequenceSelection();
 		~SequenceSelection();
 	
+		void set(QList<Sequence *> &);
 		void set(Sequence *);
 		void add(Sequence *);
 		void toggle(Sequence *);
@@ -52,6 +53,7 @@ class SequenceSelection:public QObject
 		Sequence * itemAt(int);
 		
 		QList<SequenceGroup *> uniqueGroups();
+		QList<Sequence *> & sequences(){return sel_;}
 		void order();
 		
 	signals:

@@ -30,6 +30,7 @@
 #include <QList>
 
 #include "Command.h"
+#include "SequenceSelection.h"
 
 class Sequence;
 class SequenceGroup;
@@ -38,7 +39,7 @@ class CutSequencesCmd: public Command
 {
 	public:
 		
-		CutSequencesCmd(Project *,const QList<Sequence *> &,const QList<int> &,const QString &);
+		CutSequencesCmd(Project *,const QString &);
 		virtual ~CutSequencesCmd();
 
 		virtual void redo();
@@ -47,8 +48,11 @@ class CutSequencesCmd: public Command
 	private:
 		
 		QList<Sequence *>  seqs_;
-		QList<int> positions_;
-	  Sequence *cutPosition_; // sequences were cut after this point - NULL flags beginning
+		QList<Sequence *>  cutSeqs_;
+		QList<Sequence *>  clipboardContents_;
+		SequenceSelection   sequenceSelection_;
+		QList<SequenceGroup *> preCutGroups_;
+		QList<SequenceGroup *> postCutGroups_;
 };
 
 #endif

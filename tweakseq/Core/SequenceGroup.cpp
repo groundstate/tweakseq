@@ -56,14 +56,22 @@ void SequenceGroup::addSequence(Sequence *s)
 	seqs_.append(s);
 }
 
-void SequenceGroup::removeSequence(Sequence *s)
+// This completely removes the sequence from the group
+void SequenceGroup::removeSequence(Sequence *seq)
 {
-	if (!(seqs_.contains(s)))
+	if (!(seqs_.contains(seq)))
 		return;
-	s->group = NULL; // out of the club :-)
-	seqs_.removeAll(s);
+	seq->group = NULL; // out of the club :-)
+	seqs_.removeOne(seq);
 	// the group may be empty now but we don't delete it here - maybe we have cleared it only temporarily
 }
+
+// This  detaches the sequence from the group, without losing the pointer to the group
+void SequenceGroup::cutSequence(Sequence *seq)
+{
+	seqs_.removeOne(seq);
+}
+
 
 bool SequenceGroup::contains(Sequence *s)
 {

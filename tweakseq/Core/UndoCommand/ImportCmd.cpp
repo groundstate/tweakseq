@@ -45,16 +45,16 @@ ImportCmd::~ImportCmd()
 void ImportCmd::redo()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	prj_->enableUIupdates(false);
-	prj_->sequences.append(seqs_);
-	prj_->enableUIupdates(true);
+	project_->enableUIupdates(false);
+	project_->sequences.append(seqs_);
+	project_->enableUIupdates(true);
 }
 
 void ImportCmd::undo()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	prj_->enableUIupdates(false);
-	prj_->sequences.remove(seqs_);
-	prj_->enableUIupdates(true);
+	project_->enableUIupdates(false);
+	project_->sequences.remove(seqs_);
+	project_->enableUIupdates(true);
 }
 		

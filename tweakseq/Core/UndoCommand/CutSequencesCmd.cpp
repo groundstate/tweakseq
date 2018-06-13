@@ -24,12 +24,25 @@
 // THE SOFTWARE.
 //
 
+#include <QtDebug>
+#include "DebuggingInfo.h"
+
+#include "Application.h"
+#include "CutSequencesCmd.h"
+#include "Clipboard.h"
+#include "Project.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
-#include "CutSequencesCmd.h"
+#include "SequenceSelection.h"
 
-CutSequencesCmd::CutSequencesCmd(Project *project,const QList<Sequence *> &seqs,const QList<int> &positions,const QString &txt):Command(project,txt)
+extern Application *app;
+
+CutSequencesCmd::CutSequencesCmd(Project *project, const QString &txt):Command(project,txt)
 {
+	// This is what we need to undo()
+	clipboardContents_ = app->clipboard().sequences(); // prior to cut
+	sequenceSelection_.set(project_->sequenceSelection->sequences());
+	seqs_=project_->sequences.sequences();
 }
 
 CutSequencesCmd::~CutSequencesCmd()
@@ -38,9 +51,103 @@ CutSequencesCmd::~CutSequencesCmd()
 
 void CutSequencesCmd::redo()
 {
+	
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	
+	
+	QList<Sequence*> &seqs = project_->sequences.sequences();
+	preCutGroups_= project_->sequenceGroups;
+	
+	int s=0;
+	QList<Sequence *> cutSeqs;
+	// Duplicating the list of cut sequences this way orders the selection in
+	// the correct order, recognizing that the selection may have been chosen in random order
+	for (s=0;s<seqs.size();s++){
+		if (project_->sequenceSelection->contains(seqs.at(s)))
+			cutSeqs.append(seqs.at(s));
+	}
+	
+	// Now we have to check whether any groups have been selected and include any
+	// non-visible items in the right order
+	// The convention is that if all of the visible items in a  a group have been selected
+	// then the whole group is selected
+	QList<SequenceGroup *> sgl =  project_->sequenceSelection->uniqueGroups();
+	for (int g = 0; g < sgl.size(); g++){
+		SequenceGroup *sg = sgl.at(g);
+		bool groupSelected=true;
+		for (s=0; s< sg->size(); s++){
+			Sequence *seq = sg->itemAt(s);
+			if (seq->visible && !project_->sequenceSelection->contains(seq)){
+				groupSelected=false;
+				break;
+			}
+		}
+		if (groupSelected){
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "all visible sequences in group were cut : size = " << sg->size();
+			// Create the ordered list of sequences in the group
+			QList<Sequence *> groupSeqs;
+			for (s=0;s<seqs.size();s++){
+				if (sg->contains(seqs.at(s))){
+					groupSeqs.append(seqs.at(s));
+				}
+			}
+			// Now remove the (duplicated) visible group members from the list of cut sequences
+			s=0;
+			while (s<cutSeqs.size()){
+				Sequence *seq = cutSeqs.at(s);
+				if (sg->contains(seq))
+					cutSeqs.takeAt(s);
+				else
+					s++;
+			}
+			for (s=0;s<groupSeqs.size();s++) // Don't try to insert in the 'right' place
+				cutSeqs.append(groupSeqs.at(s));
+		}
+		else{
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "group partially selected - removing sequences from the group before cut";
+			int s=0;
+			while ( s< sg->size()){
+				Sequence *seq = sg->itemAt(s);
+				if (project_->sequenceSelection->contains(seq))
+					sg->cutSequence(seq); // doesn't remove the group
+				else
+					s++;
+			}
+		}
+	}
+	
+	// Order the cut sequences (again)
+	// This is easier than trying to insert in the right place
+	
+	QList<Sequence *> orderedCutSeqs;
+	for (s=0;s<seqs.size();s++){
+		Sequence *seq = seqs.at(s);
+		if (cutSeqs.contains(seq)){
+			orderedCutSeqs.append(seq);
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << seq->label << " at " << s;
+		}
+	}
+
+	s=0;
+	while (s<seqs.size()){
+		if (cutSeqs.contains(seqs.at(s)))
+			seqs.takeAt(s);
+		else
+			s++;
+	}
+	
+	cutSeqs_=orderedCutSeqs;
+	
+	clipboardContents_ = app->clipboard().sequences(); // save the clipboard, so it can be restored
+	app->clipboard().setSequences(cutSeqs_); // this removes whatever was there
+	project_->sequenceSelection->clear(); // cut, so nothing is selected now
 }
 
 void CutSequencesCmd::undo()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	project_->sequences.set(seqs_);
+	project_->sequenceSelection->set(sequenceSelection_.sequences()); // restoring this means the selection will also be shown
+	app->clipboard().setSequences(clipboardContents_);
 }
 		

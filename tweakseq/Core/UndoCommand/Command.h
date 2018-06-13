@@ -39,7 +39,7 @@ class Command: public QUndoCommand
 		virtual ~Command();
 		
 	protected:
-		Project *prj_;
+		Project *project_;
 };
 
 #endif

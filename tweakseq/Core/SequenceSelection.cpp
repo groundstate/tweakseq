@@ -38,6 +38,7 @@ SequenceSelection::SequenceSelection()
 {
 }
 
+
 SequenceSelection::~SequenceSelection()
 {
 }
@@ -49,6 +50,14 @@ void SequenceSelection::set(Sequence *s)
 	sel_.append(s);
 	emit changed();
 }
+
+void SequenceSelection::set(QList<Sequence *> &sel)
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	sel_=sel;
+	emit changed();
+}
+
 
 void SequenceSelection::add(Sequence *s)
 {

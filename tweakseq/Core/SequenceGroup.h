@@ -41,6 +41,7 @@ class SequenceGroup
 		
 		void addSequence(Sequence *);
 		void removeSequence(Sequence *);
+		void cutSequence(Sequence *);
 		bool contains(Sequence *);
 		int size(){return seqs_.size();}
 		Sequence * itemAt(int);

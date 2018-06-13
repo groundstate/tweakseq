@@ -55,14 +55,14 @@ AlignmentCmd::~AlignmentCmd()
 void AlignmentCmd::redo()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__)  << seqPreAlign_.size() << " " << groupsPreAlign_.size();
-	prj_->setAlignment(seqPostAlign_,groupsPostAlign_);
+	project_->setAlignment(seqPostAlign_,groupsPostAlign_);
 	
 }
 
 void AlignmentCmd::undo()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << seqPreAlign_.size() << " " << groupsPreAlign_.size();
-	prj_->setAlignment(seqPreAlign_,groupsPreAlign_);
+	project_->setAlignment(seqPreAlign_,groupsPreAlign_);
 }
 
 

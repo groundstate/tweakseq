@@ -652,6 +652,7 @@ void SeqEditMainWin::editUndo()
 {
 	project_->undo();
 	setupEditActions(); // need this so that keyboard accelerators are enabled/disabled
+	se->updateViewport(); 
 	se->repaint();
 }
 
@@ -659,6 +660,7 @@ void SeqEditMainWin::editRedo()
 {
 	project_->redo();
 	setupEditActions();
+	se->updateViewport(); 
 	se->repaint();
 }
 

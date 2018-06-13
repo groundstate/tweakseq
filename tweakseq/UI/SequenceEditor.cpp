@@ -501,6 +501,7 @@ void SequenceEditor::resizeEvent(QResizeEvent *)
 
 void SequenceEditor::paintEvent(QPaintEvent *pev)
 {
+	//qDebug() << trace.header(__PRETTY_FUNCTION__);
 	QPainter p(this);
 
 	//QTime t;
@@ -761,12 +762,11 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	clickedRow=rowAt( pos.y() + contentsRect().y());
 	clickedCol=columnAt(pos.x() + contentsRect().x());
 	
-	
 	// clamp to bounds
 	if (clickedRow < 0){
-		if (pos.y() >=0) // clamp to bottom // FIXME looks like Qt3 cruft
-			clickedRow = numRows_ -1;
-		else // clamp to top
+		//if (pos.y() >=0) // clamp to bottom // FIXME looks like Qt3 cruft
+		//	clickedRow = numRows_ -1;
+		//else // clamp to top
 			clickedRow = 0;
 	}
 	
@@ -1524,7 +1524,8 @@ void SequenceEditor::paintHeader(QPainter *p)
 	int y0 = headerHeight_- rowHeight_;
 	int x0 = flagsWidth_+labelWidth_-firstVisibleCol_*colWidth_;
 	for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++){
-		p->drawText(x0+col*colWidth_,y0,colWidth_,rowHeight_,Qt::AlignCenter,QString::number(col % 10));
+		if (col % 10 == 0)
+			p->drawText(x0+(col-1)*colWidth_,y0,colWidth_*3,rowHeight_,Qt::AlignCenter,QString::number(col));
 	}
 }
 

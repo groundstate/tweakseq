@@ -69,6 +69,7 @@ class Sequences:public QObject
 		Sequence * append(QString,QString,QString,QString,bool );
 		void  append(Sequence *);
 		void  append(QList<Sequence *> &);
+		void  set(QList<Sequence *> &);
 		void  remove(QString);
 		void  remove(QList<Sequence *> &);
 		void  insert(QString,QString,int);

@@ -182,6 +182,13 @@ void Sequences::append(QList<Sequence *> &seqs)
 	emit changed();
 }
 
+void  Sequences::set(QList<Sequence *> &seqs)
+{
+	sequences_=seqs;
+	updateCachedVariables();
+	emit changed();
+}
+
 void Sequences::remove(QString)
 {
 	// FIXME not implemented
