@@ -47,14 +47,11 @@
 #include "Utility.h"
 #include "XMLHelper.h"
 
-#define FLAGS_WIDTH 6
+#define INDEX_WIDTH 3
 #define LABEL_WIDTH 16
 #define HEADER_HEIGHT 2
+#define MIN_FLAGS_COL_WIDTH 18 
 
-#define BOOKMARK_COL 0
-#define INDEX_COL    1 // but right justified
-#define LOCK_COL     4
-#define HIDE_COL     5
 
 #define N_GROUP_COLOURS 10
 
@@ -179,10 +176,19 @@ void SequenceEditor::setEditorFont(const QFont &f)
 	int w = h;
 	rowHeight_= (int) h*rowPadding_;
 	colWidth_= (int) w*columnPadding_;
-	
-	flagsWidth_= w*FLAGS_WIDTH;
-	labelWidth_= w*LABEL_WIDTH;
 	charWidth_ = w;
+	
+	flagsColWidth_=charWidth_;
+	if (flagsColWidth_ < MIN_FLAGS_COL_WIDTH)
+		flagsColWidth_ = MIN_FLAGS_COL_WIDTH;
+	
+	bookmarkPos_= 0;
+	indexPos_ = flagsColWidth_;
+	lockPos_= indexPos_+ INDEX_WIDTH*charWidth_;
+	expanderPos_=lockPos_+flagsColWidth_;
+	
+	flagsWidth_=expanderPos_+flagsColWidth_;
+	labelWidth_= charWidth_*LABEL_WIDTH;
 	headerHeight_=rowHeight_*HEADER_HEIGHT;
 	
 	updateViewExtents();
@@ -1116,8 +1122,16 @@ void SequenceEditor::init()
 	rowHeight_= h*rowPadding_;
 	colWidth_ = w*columnPadding_;
 	charWidth_ = w;
+	flagsColWidth_=charWidth_;
+	if (flagsColWidth_ < MIN_FLAGS_COL_WIDTH)
+		flagsColWidth_ = MIN_FLAGS_COL_WIDTH;
 	
-	flagsWidth_=charWidth_*FLAGS_WIDTH;
+	bookmarkPos_= 0;
+	indexPos_ = flagsColWidth_;
+	lockPos_= indexPos_+ INDEX_WIDTH*charWidth_;
+	expanderPos_=lockPos_+flagsColWidth_;
+	
+	flagsWidth_=expanderPos_+flagsColWidth_;
 	labelWidth_=charWidth_*LABEL_WIDTH;
 	headerHeight_=rowHeight_*HEADER_HEIGHT;
 	
@@ -1480,7 +1494,7 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 			//txtColor.setRgb(255,0,0);
 			//p->setPen(txtColor);
 			//p->drawText( 4*charWidth_, yrow, charWidth_, rowHeight_, Qt::AlignCenter, "L");
-			int xpm = LOCK_COL*charWidth_ + (charWidth_ - lockpm->width())/2;
+			int xpm = lockPos_ + (flagsColWidth_ - lockpm->width())/2;
 			int ypm = yrow + (rowHeight_ - lockpm->height())/2;
 			p->drawPixmap(xpm, ypm,*lockpm);
 		}
@@ -1489,7 +1503,7 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 			if (currSeq->group->hasHiddenSequences()){
 				txtColor.setRgb(255,215,0);
 				p->setPen(txtColor);
-				p->drawText( HIDE_COL*charWidth_, yrow, charWidth_, rowHeight_, Qt::AlignCenter, "+");
+				p->drawText( expanderPos_, yrow, flagsColWidth_, rowHeight_, Qt::AlignCenter, "+");
 			}
 		}
 		
@@ -1500,14 +1514,14 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	}
 	
 	if (currSeq->bookmarked){
-		int xpm = BOOKMARK_COL*charWidth_ + (charWidth_ - bookmarkpm->width())/2;
+		int xpm = bookmarkPos_ + (flagsColWidth_ - bookmarkpm->width())/2;
 		int ypm = yrow + (rowHeight_ - bookmarkpm->height())/2;
 		p->drawPixmap(xpm, ypm,*bookmarkpm);
 	}
 	
 	txtColor.setRgb(255,255,255);
 	p->setPen(txtColor);
-	p->drawText(INDEX_COL, yrow,charWidth_*4,rowHeight_, Qt::AlignRight, QString::number(row));
+	p->drawText(indexPos_, yrow,charWidth_*INDEX_WIDTH,rowHeight_, Qt::AlignRight, QString::number(row));
 	
 	p->setPen(labelColor);
 	p->drawText( flagsWidth_, yrow, labelWidth_,rowHeight_,Qt::AlignLeft, currSeq->label);

@@ -51,8 +51,7 @@ class CutSequencesCmd: public Command
 		QList<Sequence *>  cutSeqs_;
 		QList<Sequence *>  clipboardContents_;
 		SequenceSelection   sequenceSelection_;
-		QList<SequenceGroup *> preCutGroups_;
-		QList<SequenceGroup *> postCutGroups_;
+		QList<SequenceGroup *> cutGroups_;
 };
 
 #endif

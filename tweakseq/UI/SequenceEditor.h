@@ -170,7 +170,8 @@ class SequenceEditor: public QWidget
 		int numRows_,numCols_;
 		double rowPadding_,columnPadding_;
 		int rowHeight_,colWidth_,charWidth_;
-		int flagsWidth_,labelWidth_;
+		int flagsWidth_,flagsColWidth_,labelWidth_;
+		int bookmarkPos_,indexPos_,lockPos_,expanderPos_;
 		int headerHeight_;
 		
 		int firstVisibleRow_,lastVisibleRow_;

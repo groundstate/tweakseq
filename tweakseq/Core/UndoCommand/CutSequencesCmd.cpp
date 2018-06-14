@@ -56,7 +56,7 @@ void CutSequencesCmd::redo()
 	
 	
 	QList<Sequence*> &seqs = project_->sequences.sequences();
-	preCutGroups_= project_->sequenceGroups;
+	cutGroups_.clear();
 	
 	int s=0;
 	QList<Sequence *> cutSeqs;
@@ -72,7 +72,7 @@ void CutSequencesCmd::redo()
 	// The convention is that if all of the visible items in a  a group have been selected
 	// then the whole group is selected
 	QList<SequenceGroup *> sgl =  project_->sequenceSelection->uniqueGroups();
-	for (int g = 0; g < sgl.size(); g++){
+	for( int g=0; g < sgl.size(); g++ ){
 		SequenceGroup *sg = sgl.at(g);
 		bool groupSelected=true;
 		for (s=0; s< sg->size(); s++){
@@ -102,6 +102,9 @@ void CutSequencesCmd::redo()
 			}
 			for (s=0;s<groupSeqs.size();s++) // Don't try to insert in the 'right' place
 				cutSeqs.append(groupSeqs.at(s));
+			cutGroups_.append(sg);
+			project_->sequenceGroups.removeOne(sg);
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "cut group ";
 		}
 		else{
 			qDebug() << trace.header(__PRETTY_FUNCTION__) << "group partially selected - removing sequences from the group before cut";
@@ -146,6 +149,16 @@ void CutSequencesCmd::redo()
 void CutSequencesCmd::undo()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	
+	// Restore cut groups
+	for (int g=0;g<cutGroups_.size();g++)
+		project_->sequenceGroups.append(cutGroups_.at(g));
+	
+	// Restore cut sequences to their group (not necessary if the whole group was cut, but do it anyway)
+	for (int s=0;s<cutSeqs_.size();s++){
+		if (NULL != cutSeqs_.at(s)->group)
+			cutSeqs_.at(s)->group->addSequence(cutSeqs_.at(s)); // if already there, it's ignored
+	}
 	project_->sequences.set(seqs_);
 	project_->sequenceSelection->set(sequenceSelection_.sequences()); // restoring this means the selection will also be shown
 	app->clipboard().setSequences(clipboardContents_);
