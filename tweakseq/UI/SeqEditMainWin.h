@@ -87,19 +87,6 @@ private slots:
 	void editRedo();
 	void editCut();
 	void editPaste();
-	
-	void editGroupSequences();
-	void editUngroupSequences();
-	void editUngroupAll();
-	
-	void editExclude();
-	void editRemoveExclude();
-	void editLock();
-	void editUnlock();
-	void editHideNonSelectedGroupMembers();
-	void editUnhideAllGroupMembers();
-	void editUnhideAll();
-	
 	void editReadOnly();
 	
 	void setupAlignmentActions();

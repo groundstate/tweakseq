@@ -38,6 +38,7 @@
 #include <QTime>
 
 #include "AminoAcids.h"
+#include "Application.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "Sequence.h"
@@ -232,86 +233,6 @@ void SequenceEditor::updateViewport()
 	repaint();
 }
 
-void SequenceEditor::cutSelectedResidues()
-{
-}
-
-void SequenceEditor::cutSelectedSequences()
-{
-	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	// Before the sequences are removed, remove them from the current list of bookmarks
-	SequenceSelection *sel = project_->sequenceSelection;
-	for (int s=0;s<sel->size();s++){
-		if (bookmarks_.contains(sel->itemAt(s))){
-			removeBookmark(sel->itemAt(s));  // this sets bookmarked to false
-			sel->itemAt(s)->bookmarked=true; // so undo it - want to restore the bookmark if we paste the cut selection
-		}
-	}
-	project_->cutSelectedSequences();
-	updateViewport();
-}
-
-void SequenceEditor::excludeSelection()
-{
-	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	
-	int startRow=selAnchorRow_,stopRow=selDragRow_,
-			startCol=selAnchorCol_,stopCol=selDragCol_,row,col;
-			
-	if (selectingResidues_){ // flag selected residues as being excluded from the
-		selectingResidues_=false; // alignment
-		// Order start and stop so they can be used in loops
-		if (startRow > stopRow) swap_int(&startRow,&stopRow);
-		if (startCol > stopCol) swap_int(&startCol,&stopCol);
-		
-		// Create a new undo record
-		//project_->logOperation( new Operation(Operation::Mark,startRow,stopRow,
-		//	startCol,stopCol,1));
-			
-		// Mark the residues
-		for (row=startRow;row<=stopRow;row++){
-			int actualRow = project_->sequences.visibleToActual(row);
-			// Update past the deletion point only
-			for (col=startCol;col<=stopCol;col++){
-				setCellFlag(actualRow,col,true);
-				//updateCell(row,col);
-			}
-		}
-		update();	
-	}
-}
-
-void SequenceEditor::removeExcludeSelection()
-{
-	// Selected cells that are marked are unmarked
-	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	
-	int startRow=selAnchorRow_,stopRow=selDragRow_,
-			startCol=selAnchorCol_,stopCol=selDragCol_,row,col;
-			
-	if (selectingResidues_){ // flag selected residues as being excluded from the
-		selectingResidues_=false; // alignment
-		// Order start and stop so they can be used in loops
-		if (startRow > stopRow) swap_int(&startRow,&stopRow);
-		if (startCol > stopCol) swap_int(&startCol,&stopCol);
-		
-		// Create a new undo record
-		//undoStack.push( new TEditRec(Edit_Mark,startRow,stopRow,
-		//	startCol,stopCol,1));
-		
-		// Mark the residues
-		for (row=startRow;row<=stopRow;row++){
-			int actualRow = project_->sequences.visibleToActual(row);
-			// Update past the deletion point only
-			for (col=startCol;col<=stopCol;col++){
-			  setCellFlag(actualRow,col,false);
-				//updateCell(row,col);
-			}// of for (col=)
-		}
-		repaint();
-		
-	}	// of if (selectingResidues_)
-}
 
 bool SequenceEditor::isBookmarked(Sequence *seq)
 {
@@ -352,7 +273,172 @@ void SequenceEditor::selectSequence(const QString &label)
 // Public slots
 //
 
+void SequenceEditor::undo()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	project_->undo();
+	buildBookmarks(); 
+	updateViewport(); 
+}
 
+void SequenceEditor::redo()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	project_->redo();
+	buildBookmarks(); 
+	updateViewport(); 
+}
+
+void SequenceEditor::cutSelection()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	if (project_->residueSelection->isInsertionsOnly()){
+		// FIXME
+	}
+	else if (!project_->sequenceSelection->empty()){
+		SequenceSelection *sel = project_->sequenceSelection;
+		for (int s=0;s<sel->size();s++){
+			if (bookmarks_.contains(sel->itemAt(s))){
+				removeBookmark(sel->itemAt(s));  // this sets bookmarked to false
+				sel->itemAt(s)->bookmarked=true; // so undo it - want to restore the bookmark if we paste the cut selection
+			}
+		}
+		project_->cutSelectedSequences();
+	}
+	updateViewport();
+}
+
+void SequenceEditor::pasteClipboard()
+{
+	// FIXME need to be able to paste into an empty project ie nothing to select
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "clipboard contains : "<< app->clipboard().sequences().size();
+	QList<Sequence *> &seqs = app->clipboard().sequences();
+	Sequence *selSeq = project_->sequenceSelection->itemAt(0); // only one item
+	for (int s=0;s<seqs.size();s++){
+		Sequence *seq = seqs.at(s);
+		project_->sequences.insert(seq,selSeq);
+		selSeq = seq; // so that we insert after the last insertion
+	}
+	buildBookmarks();
+	updateViewport();
+	app->clipboard().clear();
+}
+
+void SequenceEditor::groupSequences()
+{
+	// Groups the current selection of sequences
+	if (!project_->groupSelectedSequences(getNextGroupColour())){
+		emit statusMessage("Grouping unsuccessful",0);
+		// FIXME the group colour should be released
+	}
+	repaint();
+}
+
+void SequenceEditor::ungroupSequences()
+{
+	if (!project_->ungroupSelectedSequences())
+		emit statusMessage("Ungrouping unsuccessful",0);
+	updateViewport(); // number of rows may have changed because of unhiding
+}
+
+void SequenceEditor::ungroupAllSequences()
+{
+	project_->ungroupAllSequences();
+	updateViewport();
+}
+
+void SequenceEditor::excludeSelectedResidues()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	
+	int startRow=selAnchorRow_,stopRow=selDragRow_,
+			startCol=selAnchorCol_,stopCol=selDragCol_,row,col;
+			
+	if (selectingResidues_){ // flag selected residues as being excluded from the
+		selectingResidues_=false; // alignment
+		// Order start and stop so they can be used in loops
+		if (startRow > stopRow) swap_int(&startRow,&stopRow);
+		if (startCol > stopCol) swap_int(&startCol,&stopCol);
+		
+		// Create a new undo record
+		//project_->logOperation( new Operation(Operation::Mark,startRow,stopRow,
+		//	startCol,stopCol,1));
+			
+		// Mark the residues
+		for (row=startRow;row<=stopRow;row++){
+			int actualRow = project_->sequences.visibleToActual(row);
+			// Update past the deletion point only
+			for (col=startCol;col<=stopCol;col++){
+				setCellFlag(actualRow,col,true);
+				//updateCell(row,col);
+			}
+		}
+		update();	
+	}
+}
+
+void SequenceEditor::removeExclusions()
+{
+	// Selected cells that are marked are unmarked
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	
+	int startRow=selAnchorRow_,stopRow=selDragRow_,
+			startCol=selAnchorCol_,stopCol=selDragCol_,row,col;
+			
+	if (selectingResidues_){ // flag selected residues as being excluded from the
+		selectingResidues_=false; // alignment
+		// Order start and stop so they can be used in loops
+		if (startRow > stopRow) swap_int(&startRow,&stopRow);
+		if (startCol > stopCol) swap_int(&startCol,&stopCol);
+		
+		// Create a new undo record
+		//undoStack.push( new TEditRec(Edit_Mark,startRow,stopRow,
+		//	startCol,stopCol,1));
+		
+		// Mark the residues
+		for (row=startRow;row<=stopRow;row++){
+			int actualRow = project_->sequences.visibleToActual(row);
+			// Update past the deletion point only
+			for (col=startCol;col<=stopCol;col++){
+			  setCellFlag(actualRow,col,false);
+				//updateCell(row,col);
+			}// of for (col=)
+		}
+		repaint();
+		
+	}	// of if (selectingResidues_)
+}
+
+void SequenceEditor::lockSelectedGroups()
+{
+	project_->lockSelectedGroups(true);
+	repaint();
+}
+
+void SequenceEditor::unlockSelectedGroups()
+{
+	project_->lockSelectedGroups(false);
+	repaint();
+}
+
+void SequenceEditor::hideNonSelectedGroupMembers()
+{
+	project_->hideNonSelectedGroupMembers();
+	updateViewport();
+}
+
+void SequenceEditor::unhideAllGroupMembers()
+{
+	project_->unhideAllGroupMembers();
+	updateViewport();
+}
+
+void SequenceEditor::unhideAll()
+{
+	project_->sequences.unhideAll();
+	updateViewport();
+}
+		
 void SequenceEditor::sequencesCleared()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
@@ -419,13 +505,25 @@ void SequenceEditor::setFirstVisibleColumn(int val)
 	repaint();
 }
 
+void SequenceEditor::buildBookmarks()
+{
+	// It's quicker to rebuild than to try to add a new bookmark in the right place
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
+	bookmarks_.clear();
+	for (int s=0;s<project_->sequences.size();s++){
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (seq->bookmarked)
+			bookmarks_.append(seq);
+	}
+}
+
 void SequenceEditor::createBookmark()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	if (project_->sequenceSelection->size() == 1){
 		// bookmarks need to be ordered so that they are traversed sequentially
 		project_->sequenceSelection->itemAt(0)->bookmarked=true;
-		bookmarks_.append(project_->sequenceSelection->itemAt(0));
-		sortBookmarks();
+		buildBookmarks();
 		repaint();
 	}
 }
@@ -436,15 +534,14 @@ void SequenceEditor::createBookmark(Sequence *seq)
 	
 	if (!(bookmarks_.contains(seq))){
 		seq->bookmarked=true;
-		bookmarks_.append(seq);
-		qDebug() << trace.header(__PRETTY_FUNCTION__) << "appended" << "n=" << bookmarks_.size();
-		sortBookmarks();
+		buildBookmarks();
 		repaint();
 	}
 }
 
 void SequenceEditor::removeBookmark()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	if (project_->sequenceSelection->size() == 1){
 		// may need to move the pointer to the current bookmark
 		int index = bookmarks_.indexOf(project_->sequenceSelection->itemAt(0));
@@ -461,6 +558,7 @@ void SequenceEditor::removeBookmark()
 
 void SequenceEditor::removeBookmark(Sequence *seq)
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	int index = bookmarks_.indexOf(seq);
 	if (index == -1) return; // FIXME warning
 	if (currBookmark_ > index){
@@ -1159,27 +1257,9 @@ void SequenceEditor::init()
 	
 }
 
-void SequenceEditor::buildBookmarks()
-{
-	bookmarks_.clear();
-	for (int s=0;s<project_->sequences.size();s++){
-		Sequence *seq = project_->sequences.sequences().at(s);
-		if (seq->bookmarked)
-			bookmarks_.append(seq);
-	}
-}
 
-void SequenceEditor::sortBookmarks()
-{
-	QList<Sequence *> &seqs = project_->sequences.sequences();
-	QList<Sequence *> sorted; // FIXME shared
-	
-	for (int s=0;s<seqs.size();s++){
-		if (bookmarks_.contains(seqs.at(s)))
-			sorted.append(seqs.at(s));
-	}
-	bookmarks_=sorted;
-}
+
+
 
 void SequenceEditor::updateViewExtents()
 {

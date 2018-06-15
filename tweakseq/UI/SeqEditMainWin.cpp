@@ -650,109 +650,30 @@ void SeqEditMainWin::setupEditActions()
 
 void SeqEditMainWin::editUndo()
 {
-	project_->undo();
+	// order is important here - need the Actions to reflect the Project state after the undo
+	se->undo();
 	setupEditActions(); // need this so that keyboard accelerators are enabled/disabled
-	se->updateViewport(); 
-	se->repaint();
 }
 
 void SeqEditMainWin::editRedo()
 {
-	project_->redo();
+	se->redo();
 	setupEditActions();
-	se->updateViewport(); 
-	se->repaint();
 }
 
 void SeqEditMainWin::editCut()
 {
-	if (project_->residueSelection->isInsertionsOnly())
-		se->cutSelectedResidues();
-	else if (!project_->sequenceSelection->empty())
-		se->cutSelectedSequences();
+	se->cutSelection();
 	cutAction->setEnabled(false);
 }
 
 void SeqEditMainWin::editPaste()
 {
-	// FIXME need to be able to paste into an empty project ie nothing to select
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << "n="<< app->clipboard().sequences().size();
-	QList<Sequence *> &seqs = app->clipboard().sequences();
-	Sequence *selSeq = project_->sequenceSelection->itemAt(0); // only one item
-	for (int s=0;s<seqs.size();s++){
-		Sequence *seq = seqs.at(s);
-		project_->sequences.insert(seq,selSeq);
-		if (seq->bookmarked) se->createBookmark(seq); // do this after so that sortBookmarks() sees the added sequence..
-		selSeq = seq; // so that we insert after the last insertion
-	}
-	app->clipboard().clear();
-	pasteAction->setEnabled(false); // can't paste sequences twice
-	se->repaint();
-}
-
-void SeqEditMainWin::editGroupSequences()
-{
-	statusBar()->clearMessage();
-	// Groups the current selection of sequences
-	if (!project_->groupSelectedSequences(se->getNextGroupColour())){
-		statusBar()->showMessage("Grouping unsuccessful");
-		// FIXME the group colour should be released
-	}
-	se->repaint();
-}
-
-void SeqEditMainWin::editUngroupSequences()
-{
-	statusBar()->clearMessage();
-	// Ungroups the current selection of sequences
-	if (!project_->ungroupSelectedSequences())
-		statusBar()->showMessage("Ungrouping unsuccessful");
-	se->updateViewport(); // number of rows may have changed because of unhiding
-}
-
-void SeqEditMainWin::editUngroupAll()
-{
-	project_->ungroupAllSequences();
-	se->updateViewport();
-}
-
-void SeqEditMainWin::editLock(){
-	project_->lockSelectedGroups(true);
-	se->repaint();
-}
-
-void SeqEditMainWin::editUnlock(){
-	project_->lockSelectedGroups(false);
-	se->repaint();
-}
-
-void SeqEditMainWin::editHideNonSelectedGroupMembers()
-{
-	project_->hideNonSelectedGroupMembers();
-	se->updateViewport();
-}
-
-void SeqEditMainWin::editUnhideAllGroupMembers(){
-	project_->unhideAllGroupMembers();
-	se->updateViewport();
-}
-	
-void SeqEditMainWin::editUnhideAll()
-{
-	project_->sequences.unhideAll();
-	se->updateViewport();
-}
-	
-void SeqEditMainWin::editExclude(){
-	se->excludeSelection();
-}
-
-void SeqEditMainWin::editRemoveExclude(){
-	se->removeExcludeSelection();
+	se->pasteClipboard();
+	pasteAction->setEnabled(false); // can't paste sequences twice;
 }
 
 void SeqEditMainWin::editReadOnly(){
-	
 	se->setReadOnly(readOnlyAction->isChecked());
 }
 
@@ -979,8 +900,7 @@ void SeqEditMainWin::updateScrollBars(int startRow,int stopRow,int numRows,int s
 	hscroller_->setPageStep(nviscol);
 	hscroller_->setMaximum(numCols-nviscol);
 	hscroller_->setValue(startCol);
-	
-	
+
 }
 
 void SeqEditMainWin::sequenceSelectionChanged()
@@ -1000,7 +920,7 @@ void SeqEditMainWin::residueSelectionChanged()
 	qDebug() << trace.header() << "SeqEditMainWin::residueSelectionChanged()";
 	// We can only cut insertions
 	// So check that the selection is insertions only
-	 cutAction->setEnabled(project_->residueSelection->isInsertionsOnly());
+	cutAction->setEnabled(project_->residueSelection->isInsertionsOnly());
 }
 	
 //
@@ -1100,56 +1020,56 @@ void SeqEditMainWin::createActions()
 	groupSequencesAction = new QAction( tr("Group sequences"), this);
 	groupSequencesAction->setStatusTip(tr("Group the selected sequences"));
 	addAction(groupSequencesAction);
-	connect(groupSequencesAction, SIGNAL(triggered()), this, SLOT(editGroupSequences()));
+	connect(groupSequencesAction, SIGNAL(triggered()), se, SLOT(groupSequences()));
 	groupSequencesAction->setEnabled(false);
 	
 	ungroupSequencesAction = new QAction( tr("Ungroup sequences"), this);
 	ungroupSequencesAction->setStatusTip(tr("Ungroup the selected sequences"));
 	addAction(ungroupSequencesAction);
-	connect(ungroupSequencesAction, SIGNAL(triggered()), this, SLOT(editUngroupSequences()));
+	connect(ungroupSequencesAction, SIGNAL(triggered()), se, SLOT(ungroupSequences()));
 	ungroupSequencesAction->setEnabled(false);
 	
 	ungroupAllAction = new QAction( tr("Ungroup all sequences"), this);
 	ungroupAllAction->setStatusTip(tr("Ungroup all sequences"));
 	addAction(ungroupAllAction);
-	connect(ungroupAllAction, SIGNAL(triggered()), this, SLOT(editUngroupAll()));
+	connect(ungroupAllAction, SIGNAL(triggered()), se, SLOT(ungroupAllSequences()));
 	ungroupAllAction->setEnabled(true);
 	
 	lockAction = new QAction( tr("Lock groups(s)"), this);
 	lockAction->setStatusTip(tr("Lock selected group(s)"));
 	//lockAction->setIcon(QIcon(lock_xpm));
 	addAction(lockAction);
-	connect(lockAction, SIGNAL(triggered()), this, SLOT(editLock()));
+	connect(lockAction, SIGNAL(triggered()), se, SLOT(lockSelectedGroups()));
 	
 	unlockAction = new QAction( tr("Unlock groups(s)"), this);
 	unlockAction->setStatusTip(tr("Unlock selected group(s)"));
 	addAction(unlockAction);
-	connect(unlockAction, SIGNAL(triggered()), this, SLOT(editUnlock()));
+	connect(unlockAction, SIGNAL(triggered()), se, SLOT(unlockSelectedGroups()));
 	
 	hideNonSelectedGroupMembersAction = new QAction( tr("Hide non-selected"), this);
 	hideNonSelectedGroupMembersAction ->setStatusTip(tr("Hide non-selected sequences in the group"));
 	addAction(hideNonSelectedGroupMembersAction);
-	connect(hideNonSelectedGroupMembersAction, SIGNAL(triggered()), this, SLOT(editHideNonSelectedGroupMembers()));
+	connect(hideNonSelectedGroupMembersAction, SIGNAL(triggered()), se, SLOT(hideNonSelectedGroupMembers()));
 	
 	unhideAllGroupMembersAction = new QAction( tr("Unhide all in group"), this);
 	unhideAllGroupMembersAction ->setStatusTip(tr("Hide non-selected sequences in the group"));
 	addAction(unhideAllGroupMembersAction);
-	connect(unhideAllGroupMembersAction, SIGNAL(triggered()), this, SLOT(editUnhideAllGroupMembers()));
+	connect(unhideAllGroupMembersAction, SIGNAL(triggered()), se, SLOT(unhideAllGroupMembers()));
 	
 	unhideAllAction = new QAction( tr("Unhide all hidden sequences"), this);
 	unhideAllAction ->setStatusTip(tr("Unhide all hidden sequences"));
 	addAction(unhideAllAction);
-	connect(unhideAllAction, SIGNAL(triggered()), this, SLOT(editUnhideAll()));
+	connect(unhideAllAction, SIGNAL(triggered()), se, SLOT(unhideAll()));
 	
 	excludeAction = new QAction( tr("Exclude residues"), this);
 	excludeAction->setStatusTip(tr("Exclude residues"));
 	addAction(excludeAction);
-	connect(excludeAction, SIGNAL(triggered()), this, SLOT(editExclude()));
+	connect(excludeAction, SIGNAL(triggered()), se, SLOT(excludeSelectedResidues()));
 	
 	removeExcludeAction = new QAction( tr("Remove exclusion"), this);
 	removeExcludeAction->setStatusTip(tr("Remove exclusion"));
 	addAction(removeExcludeAction);
-	connect(removeExcludeAction, SIGNAL(triggered()), this, SLOT(editRemoveExclude()));
+	connect(removeExcludeAction, SIGNAL(triggered()), se, SLOT(removeExclusions()));
 	
 	readOnlyAction = new QAction( tr("Read only"), this);
 	readOnlyAction->setStatusTip(tr("Set the alignment to read only"));

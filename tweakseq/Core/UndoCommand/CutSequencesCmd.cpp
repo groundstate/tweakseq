@@ -35,8 +35,6 @@
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
 
-extern Application *app;
-
 CutSequencesCmd::CutSequencesCmd(Project *project, const QString &txt):Command(project,txt)
 {
 	// This is what we need to undo()

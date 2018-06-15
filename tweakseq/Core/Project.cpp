@@ -451,7 +451,7 @@ bool Project::cutSelectedResidues()
 
 bool Project::cutSelectedSequences()
 {
-	undoStack_.push(new CutSequencesCmd(this,"cut sequences"));
+undoStack_.push(new CutSequencesCmd(this,"cut sequences"));
 	dirty_ = true;
 	return true;
 }
@@ -936,6 +936,7 @@ void Project::mainWindowClosed()
 
 void Project::sequencesChanged()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	dirty_=true;
 }
 

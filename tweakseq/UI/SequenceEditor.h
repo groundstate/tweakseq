@@ -72,11 +72,6 @@ class SequenceEditor: public QWidget
 		
 		QColor getNextGroupColour();
 		
-		void cutSelectedResidues();
-		void cutSelectedSequences();
-		void excludeSelection();
-		void removeExcludeSelection();
-	
 		bool isBookmarked(Sequence *);
 		
 		void updateViewport();
@@ -89,9 +84,27 @@ class SequenceEditor: public QWidget
 	
 		void info(const QString &);
 		void viewExtentsChanged(int,int,int,int,int,int);
-	
+		void statusMessage(const QString &, int);
+		
 	public slots:
+
+		void undo();
+		void redo();
+		void cutSelection();
+		void pasteClipboard();
+		
+		void groupSequences();
+		void ungroupSequences();
+		void ungroupAllSequences();
+		void lockSelectedGroups();
+		void unlockSelectedGroups();
+		void hideNonSelectedGroupMembers();
+		void unhideAllGroupMembers();
+		void unhideAll();
 	
+		void excludeSelectedResidues();
+		void removeExclusions();
+		
 		void sequencesCleared();
 
 		void postLoadTidy();
@@ -101,6 +114,7 @@ class SequenceEditor: public QWidget
 		void setFirstVisibleRow(int);
 		void setFirstVisibleColumn(int);
 		
+		void buildBookmarks();
 		void createBookmark();
 		void createBookmark(Sequence *);
 		void removeBookmark();
@@ -108,7 +122,7 @@ class SequenceEditor: public QWidget
 		void moveToNextBookmark();
 		void moveToPreviousBookmark();
 		
-		void selectSequence(const QString &);
+		void selectSequence(const QString &); // connected eg to the Find tool
 		
 	protected:
 	
@@ -133,9 +147,6 @@ class SequenceEditor: public QWidget
 	private:
 	
 		void init();
-
-		void buildBookmarks();
-		void sortBookmarks();
 		
 		void updateViewExtents();
 		QChar cellContent(int, int, int,Sequence *currSeq );
