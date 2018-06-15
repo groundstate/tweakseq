@@ -85,9 +85,10 @@ class SequenceEditor: public QWidget
 		void info(const QString &);
 		void viewExtentsChanged(int,int,int,int,int,int);
 		void statusMessage(const QString &, int);
+		void edited();
 		
 	public slots:
-
+		
 		void undo();
 		void redo();
 		void cutSelection();

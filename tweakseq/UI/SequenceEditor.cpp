@@ -278,7 +278,8 @@ void SequenceEditor::undo()
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	project_->undo();
 	buildBookmarks(); 
-	updateViewport(); 
+	updateViewport();
+	emit edited();  // signal must be emitted AFTER all editing is done
 }
 
 void SequenceEditor::redo()
@@ -286,7 +287,8 @@ void SequenceEditor::redo()
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	project_->redo();
 	buildBookmarks(); 
-	updateViewport(); 
+	updateViewport();
+	emit edited();
 }
 
 void SequenceEditor::cutSelection()
@@ -296,16 +298,11 @@ void SequenceEditor::cutSelection()
 		// FIXME
 	}
 	else if (!project_->sequenceSelection->empty()){
-		SequenceSelection *sel = project_->sequenceSelection;
-		for (int s=0;s<sel->size();s++){
-			if (bookmarks_.contains(sel->itemAt(s))){
-				removeBookmark(sel->itemAt(s));  // this sets bookmarked to false
-				sel->itemAt(s)->bookmarked=true; // so undo it - want to restore the bookmark if we paste the cut selection
-			}
-		}
 		project_->cutSelectedSequences();
+		buildBookmarks();
 	}
 	updateViewport();
+	emit edited();
 }
 
 void SequenceEditor::pasteClipboard()
@@ -322,6 +319,7 @@ void SequenceEditor::pasteClipboard()
 	buildBookmarks();
 	updateViewport();
 	app->clipboard().clear();
+	emit edited();
 }
 
 void SequenceEditor::groupSequences()
@@ -344,6 +342,36 @@ void SequenceEditor::ungroupSequences()
 void SequenceEditor::ungroupAllSequences()
 {
 	project_->ungroupAllSequences();
+	updateViewport();
+}
+
+void SequenceEditor::lockSelectedGroups()
+{
+	project_->lockSelectedGroups(true);
+	repaint();
+}
+
+void SequenceEditor::unlockSelectedGroups()
+{
+	project_->lockSelectedGroups(false);
+	repaint();
+}
+
+void SequenceEditor::hideNonSelectedGroupMembers()
+{
+	project_->hideNonSelectedGroupMembers();
+	updateViewport();
+}
+
+void SequenceEditor::unhideAllGroupMembers()
+{
+	project_->unhideAllGroupMembers();
+	updateViewport();
+}
+
+void SequenceEditor::unhideAll()
+{
+	project_->sequences.unhideAll();
 	updateViewport();
 }
 
@@ -373,7 +401,7 @@ void SequenceEditor::excludeSelectedResidues()
 				//updateCell(row,col);
 			}
 		}
-		update();	
+		repaint();	
 	}
 }
 
@@ -409,36 +437,6 @@ void SequenceEditor::removeExclusions()
 	}	// of if (selectingResidues_)
 }
 
-void SequenceEditor::lockSelectedGroups()
-{
-	project_->lockSelectedGroups(true);
-	repaint();
-}
-
-void SequenceEditor::unlockSelectedGroups()
-{
-	project_->lockSelectedGroups(false);
-	repaint();
-}
-
-void SequenceEditor::hideNonSelectedGroupMembers()
-{
-	project_->hideNonSelectedGroupMembers();
-	updateViewport();
-}
-
-void SequenceEditor::unhideAllGroupMembers()
-{
-	project_->unhideAllGroupMembers();
-	updateViewport();
-}
-
-void SequenceEditor::unhideAll()
-{
-	project_->sequences.unhideAll();
-	updateViewport();
-}
-		
 void SequenceEditor::sequencesCleared()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
@@ -1570,16 +1568,16 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	}
 		
 	if (currSeq->group != NULL){
-		if (currSeq->group->locked()){
-			//txtColor.setRgb(255,0,0);
-			//p->setPen(txtColor);
-			//p->drawText( 4*charWidth_, yrow, charWidth_, rowHeight_, Qt::AlignCenter, "L");
-			int xpm = lockPos_ + (flagsColWidth_ - lockpm->width())/2;
-			int ypm = yrow + (rowHeight_ - lockpm->height())/2;
-			p->drawPixmap(xpm, ypm,*lockpm);
-		}
+		
 		int groupBegin = rowFirstVisibleSequenceInGroup(currSeq->group);
 		if (row == groupBegin){
+			
+			if (currSeq->group->locked()){
+				int xpm = lockPos_ + (flagsColWidth_ - lockpm->width())/2;
+				int ypm = yrow + (rowHeight_ - lockpm->height())/2;
+				p->drawPixmap(xpm, ypm,*lockpm);
+			}
+		
 			if (currSeq->group->hasHiddenSequences()){
 				txtColor.setRgb(255,215,0);
 				p->setPen(txtColor);

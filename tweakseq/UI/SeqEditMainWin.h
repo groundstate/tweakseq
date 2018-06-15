@@ -83,10 +83,7 @@ private slots:
 	void fileClose();
 	
 	void setupEditActions();
-	void editUndo();
-	void editRedo();
-	void editCut();
-	void editPaste();
+	
 	void editReadOnly();
 	
 	void setupAlignmentActions();

@@ -422,6 +422,7 @@ void Project::lockSelectedGroups(bool lock){
 	for (int sg=0;sg<selgroups.size();sg++){
 		selgroups.at(sg)->lock(lock);
 	}
+	dirty_=true;
 }
 
 void Project::addGroupToSelection(SequenceGroup *selg)
@@ -446,12 +447,13 @@ bool Project::cutSelectedResidues()
 		resGroup->sequence->remove(resGroup->start,resGroup->stop-resGroup->start+1);
 	}
 	residueSelection->clear();
+	dirty_=true;
 	return true;
 }
 
 bool Project::cutSelectedSequences()
 {
-undoStack_.push(new CutSequencesCmd(this,"cut sequences"));
+	undoStack_.push(new CutSequencesCmd(this,"cut sequences"));
 	dirty_ = true;
 	return true;
 }
@@ -480,6 +482,7 @@ void Project::hideNonSelectedGroupMembers()
 			seq->visible=false;
 		}
 	}
+	dirty_=true;
 }
 
 void Project::unhideAllGroupMembers()
@@ -501,6 +504,7 @@ void Project::unhideAllGroupMembers()
 		Sequence *seq = selGroup->itemAt(s);
 		seq->visible = true;
 	}
+	dirty_=true;
 }
 
 void Project::undo()

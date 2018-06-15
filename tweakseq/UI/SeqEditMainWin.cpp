@@ -145,6 +145,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	
 	connect(vscroller_,SIGNAL(valueChanged(int)),se,SLOT(setFirstVisibleRow(int)));
 	connect(hscroller_,SIGNAL(valueChanged(int)),se,SLOT(setFirstVisibleColumn(int)));
+	connect(se,SIGNAL(edited()),this,SLOT(setupEditActions()));
 	
 	connect(findTool_,SIGNAL(find(const QString &)),se,SLOT(selectSequence(const QString &)));
 
@@ -648,30 +649,6 @@ void SeqEditMainWin::setupEditActions()
 	removeExcludeAction->setEnabled(!(project_->residueSelection->empty())); 
 }
 
-void SeqEditMainWin::editUndo()
-{
-	// order is important here - need the Actions to reflect the Project state after the undo
-	se->undo();
-	setupEditActions(); // need this so that keyboard accelerators are enabled/disabled
-}
-
-void SeqEditMainWin::editRedo()
-{
-	se->redo();
-	setupEditActions();
-}
-
-void SeqEditMainWin::editCut()
-{
-	se->cutSelection();
-	cutAction->setEnabled(false);
-}
-
-void SeqEditMainWin::editPaste()
-{
-	se->pasteClipboard();
-	pasteAction->setEnabled(false); // can't paste sequences twice;
-}
 
 void SeqEditMainWin::editReadOnly(){
 	se->setReadOnly(readOnlyAction->isChecked());
@@ -995,26 +972,26 @@ void SeqEditMainWin::createActions()
 	undoAction->setStatusTip(tr("Undo"));
 	undoAction->setShortcut(QKeySequence::Undo);
 	addAction(undoAction);
-	connect(undoAction, SIGNAL(triggered()), this, SLOT(editUndo()));
+	connect(undoAction, SIGNAL(triggered()), se, SLOT(undo()));
 	undoAction->setEnabled(false);
 	
 	redoAction = new QAction( tr("&Redo"), this);
 	redoAction->setStatusTip(tr("Redo"));
 	redoAction->setShortcut(QKeySequence::Redo);
 	addAction(redoAction);	
-	connect(redoAction, SIGNAL(triggered()), this, SLOT(editRedo()));
+	connect(redoAction, SIGNAL(triggered()), se, SLOT(redo()));
 	redoAction->setEnabled(false);
 	
 	cutAction = new QAction( tr("Cu&t"), this);
 	cutAction->setStatusTip(tr("Cut"));
 	addAction(cutAction);
-	connect(cutAction, SIGNAL(triggered()), this, SLOT(editCut()));
+	connect(cutAction, SIGNAL(triggered()), se, SLOT(cutSelection()));
 	cutAction->setEnabled(false);
 	
 	pasteAction = new QAction( tr("Paste"), this);
 	pasteAction->setStatusTip(tr("Paste"));
 	addAction(pasteAction);
-	connect(pasteAction, SIGNAL(triggered()), this, SLOT(editPaste()));
+	connect(pasteAction, SIGNAL(triggered()), se, SLOT(pasteClipboard()));
 	pasteAction->setEnabled(false);
 	
 	groupSequencesAction = new QAction( tr("Group sequences"), this);
