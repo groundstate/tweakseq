@@ -94,22 +94,21 @@ class Project:public QObject
 
 		void setAlignment(const QList<Sequence *> &,const QList<SequenceGroup *> &);
 		
+		void undo();
+		void redo();
+		bool cutSelectedResidues();
+		bool cutSelectedSequences();
+		void pasteClipboard(Sequence *);
+		
 		bool canGroupSelectedSequences();
 		bool groupSelectedSequences(QColor);
 		bool ungroupSelectedSequences();
 		void ungroupAllSequences();
-		
 		void addGroupToSelection(SequenceGroup *);
 		bool canToggleLock();
 		void lockSelectedGroups(bool);
-		bool cutSelectedResidues();
-		bool cutSelectedSequences();
-		
 		void hideNonSelectedGroupMembers();
 		void unhideAllGroupMembers();
-		
-		void undo();
-		void redo();
 		
 		QUndoStack &undoStack(){return undoStack_;} // main window needs access to this to validate actions
 		

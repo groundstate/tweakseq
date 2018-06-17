@@ -309,13 +309,7 @@ void SequenceEditor::pasteClipboard()
 {
 	// FIXME need to be able to paste into an empty project ie nothing to select
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << "clipboard contains : "<< app->clipboard().sequences().size();
-	QList<Sequence *> &seqs = app->clipboard().sequences();
-	Sequence *selSeq = project_->sequenceSelection->itemAt(0); // only one item
-	for (int s=0;s<seqs.size();s++){
-		Sequence *seq = seqs.at(s);
-		project_->sequences.insert(seq,selSeq);
-		selSeq = seq; // so that we insert after the last insertion
-	}
+	project_->pasteClipboard(project_->sequenceSelection->itemAt(0));
 	buildBookmarks();
 	updateViewport();
 	app->clipboard().clear();

@@ -41,6 +41,7 @@
 #include "FASTAFile.h"
 #include "ImportCmd.h"
 #include "Muscle.h"
+#include "PasteCmd.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "Sequence.h"
@@ -234,6 +235,42 @@ void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<Seq
 //
 //
 //
+
+void Project::undo()
+{
+	undoStack_.undo();
+}
+
+void Project::redo()
+{
+	undoStack_.redo();
+}
+
+bool Project::cutSelectedResidues()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	for (int rg=0;rg<residueSelection->size();rg++){
+		ResidueGroup *resGroup = residueSelection->itemAt(rg);
+		resGroup->sequence->remove(resGroup->start,resGroup->stop-resGroup->start+1);
+	}
+	residueSelection->clear();
+	dirty_=true;
+	return true;
+}
+
+bool Project::cutSelectedSequences()
+{
+	undoStack_.push(new CutSequencesCmd(this,"cut sequences"));
+	dirty_ = true;
+	return true;
+}
+
+void Project::pasteClipboard(Sequence *insertAfter)
+{
+	undoStack_.push(new PasteCmd(this,insertAfter,"paste sequences"));
+	dirty_=true;
+}
+
 
 bool Project::canGroupSelectedSequences()
 {
@@ -439,24 +476,7 @@ void Project::addGroupToSelection(SequenceGroup *selg)
 	dirty_=true;
 }
 
-bool Project::cutSelectedResidues()
-{
-	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	for (int rg=0;rg<residueSelection->size();rg++){
-		ResidueGroup *resGroup = residueSelection->itemAt(rg);
-		resGroup->sequence->remove(resGroup->start,resGroup->stop-resGroup->start+1);
-	}
-	residueSelection->clear();
-	dirty_=true;
-	return true;
-}
 
-bool Project::cutSelectedSequences()
-{
-	undoStack_.push(new CutSequencesCmd(this,"cut sequences"));
-	dirty_ = true;
-	return true;
-}
 
 void Project::hideNonSelectedGroupMembers()
 {
@@ -507,15 +527,7 @@ void Project::unhideAllGroupMembers()
 	dirty_=true;
 }
 
-void Project::undo()
-{
-	undoStack_.undo();
-}
 
-void Project::redo()
-{
-	undoStack_.redo();
-}
 
 void Project::setAlignmentTool(const QString & atool)
 {

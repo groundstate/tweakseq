@@ -110,7 +110,7 @@ void CutSequencesCmd::redo()
 			while ( s< sg->size()){
 				Sequence *seq = sg->itemAt(s);
 				if (project_->sequenceSelection->contains(seq))
-					sg->cutSequence(seq); // doesn't remove the group
+					sg->cutSequence(seq); // doesn't remove the group from the Sequence
 				else
 					s++;
 			}

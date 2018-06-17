@@ -37,6 +37,7 @@
 
 
 #include <QBoxLayout>
+#include <QClipboard>
 #include <QColor>
 #include <QCloseEvent>
 #include <QDateTime>
@@ -597,6 +598,7 @@ void SeqEditMainWin::setupEditActions()
 	}
 	
 	cutAction->setEnabled(project_->residueSelection->isInsertionsOnly() || (!project_->sequenceSelection->empty()));
+	copyAction->setEnabled(!project_->residueSelection->empty() || (!project_->sequenceSelection->empty()));
 	pasteAction->setEnabled(project_->sequenceSelection->size()==1 && (!app->clipboard().isEmpty()));
 	
 	if (project_->undoStack().canUndo()){
@@ -647,6 +649,35 @@ void SeqEditMainWin::setupEditActions()
 	}
 	excludeAction->setEnabled(!(project_->residueSelection->empty())); // sloppy - don't worry about already excluded etc.
 	removeExcludeAction->setEnabled(!(project_->residueSelection->empty())); 
+}
+
+void SeqEditMainWin::editCopy()
+{
+	// This only copies to the system clipboard
+	// If Sequences are selected, then label+sequence is copied as straight text
+	// If Residues are selected, then label+selected residues are copied
+	if (project_->sequenceSelection->size() > 0){
+		QString txt("");
+		for (int s=0;s<project_->sequenceSelection->size();s++){
+			Sequence *seq = project_->sequenceSelection->itemAt(s);
+			txt.append(seq->label);
+			txt.append(" ");
+			txt.append(seq->filter());
+			txt.append('\n'); // FIXME does this get translated ?
+		}
+		QApplication::clipboard()->setText(txt);
+	}
+	else if (project_->residueSelection->size() > 0){
+		QString txt("");
+		for (int r=0;r<project_->residueSelection->size();r++){
+			ResidueGroup *rg = project_->residueSelection->itemAt(r);
+			txt.append(rg->sequence->label);
+			txt.append(" ");
+			txt.append(rg->sequence->filter().mid(rg->start,rg->stop-rg->start+1));
+			txt.append('\n');
+		}
+		QApplication::clipboard()->setText(txt);
+	}
 }
 
 
@@ -988,6 +1019,12 @@ void SeqEditMainWin::createActions()
 	connect(cutAction, SIGNAL(triggered()), se, SLOT(cutSelection()));
 	cutAction->setEnabled(false);
 	
+	copyAction = new QAction( tr("Copy (to system clipboard)"), this);
+	copyAction->setStatusTip(tr("Copy"));
+	addAction(copyAction);
+	connect(copyAction, SIGNAL(triggered()), this, SLOT(editCopy()));
+	copyAction->setEnabled(false);
+	
 	pasteAction = new QAction( tr("Paste"), this);
 	pasteAction->setStatusTip(tr("Paste"));
 	addAction(pasteAction);
@@ -1181,6 +1218,7 @@ void SeqEditMainWin::createMenus()
 	editMenu->addSeparator();
 	
 	editMenu->addAction(cutAction);
+	editMenu->addAction(copyAction);
 	editMenu->addAction(pasteAction);
 	editMenu->addSeparator();
 	

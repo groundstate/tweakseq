@@ -33,6 +33,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/Command.h \
 								 include/AlignmentCmd.h \
 								 include/CutSequencesCmd.h \
+								 include/PasteCmd.h \
 								 include/ImportCmd.h \
 								 include/Utility.h \
 								 include/Version.h \
@@ -59,7 +60,8 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/AlignmentCmd.cpp \
 									Core/UndoCommand/CutSequencesCmd.cpp \
-									Core/UndoCommand/ImportCmd.cpp
+									Core/UndoCommand/ImportCmd.cpp \
+									Core/UndoCommand/PasteCmd.cpp
 									
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/AlignmentToolDlg.cpp \

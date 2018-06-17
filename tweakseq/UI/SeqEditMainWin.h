@@ -84,6 +84,7 @@ private slots:
 	
 	void setupEditActions();
 	
+	void editCopy();
 	void editReadOnly();
 	
 	void setupAlignmentActions();
@@ -139,7 +140,7 @@ private:
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
 	QAction  *alignAllAction,*alignSelectionAction,*alignStopAction,*undoLastAction;
-	QAction  *undoAction,*redoAction,*cutAction,*pasteAction;
+	QAction  *undoAction,*redoAction,*cutAction,*copyAction,*pasteAction;
 	QAction  *excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
 	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction,*unhideAllAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction,*ungroupAllAction;
