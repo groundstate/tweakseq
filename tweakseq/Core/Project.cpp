@@ -39,6 +39,7 @@
 #include "ClustalO.h"
 #include "CutSequencesCmd.h"
 #include "FASTAFile.h"
+#include "GroupCmd.h"
 #include "ImportCmd.h"
 #include "Muscle.h"
 #include "PasteCmd.h"
@@ -316,7 +317,7 @@ bool Project::groupSelectedSequences(QColor gcol){
 	
 	// If the selection wholly contains one or more existing groups, then
 	// the selection is merged into a single group
-	QList<SequenceGroup *> selgroups;
+	QList<SequenceGroup *> mergeGroups;
 	for (int g=0;g<sequenceGroups.size();g++){
 		SequenceGroup *sg = sequenceGroups.at(g);
 		bool contained = true;
@@ -336,27 +337,12 @@ bool Project::groupSelectedSequences(QColor gcol){
 		}
 		
 		if (contained){
-			selgroups.append(sg);
+			mergeGroups.append(sg);
 			qDebug() << trace.header(__PRETTY_FUNCTION__) << "group selected for merging";  
 		}
 	}
 	
-	for (int g=0;g<selgroups.size();g++){
-		SequenceGroup *sg = selgroups.at(g);
-		sequenceGroups.removeOne(sg);
-		delete sg;
-	}
-	
-	// All sorted, so create the group
-
-	SequenceGroup *sg = new SequenceGroup();
-	sg->setTextColour(gcol);
-	sequenceGroups.append(sg);
-	for ( int s=0;s<sequenceSelection->size();s++){
-		Sequence *seq = sequenceSelection->itemAt(s);
-		sg->addSequence(seq);
-	}
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << "new group ";
+	undoStack_.push(new GroupCmd(this,sequenceSelection->sequences(),mergeGroups,gcol,"group sequences"));
 	dirty_=true;
 	return true;
 }
