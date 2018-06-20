@@ -162,7 +162,10 @@ class SequenceEditor: public QWidget
 		
 		int rowFirstVisibleSequenceInGroup(SequenceGroup *);
 		int rowLastVisibleSequenceInGroup(SequenceGroup *);
+		
 		int rowVisibleSequence(Sequence *seq);
+		int rowFirstVisibleSequence(QList<Sequence *> &);
+		int rowLastVisibleSequence(QList<Sequence *> &);
 		
 		void connectToProject();
 		void disconnectFromProject();

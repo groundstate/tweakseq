@@ -666,15 +666,30 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 						seqSelectionAnchor_=seqSelectionDrag_=clickedRow;
 						break;
 					case Qt::ShiftModifier:
-						if (project_->sequenceSelection->contains(selSeq))
-							project_->sequenceSelection->toggle(selSeq);
-						else{
-							project_->sequenceSelection->set(selSeq);
+					{
+						// don't clear selection
+						// if there is something in the selection, then this defines
+						// the current anchor
+						// But we need to scrub non-visible sequences from the selection
+						QList<Sequence *> visSeqs ;
+						for (int s=0;s< project_->sequenceSelection->size();s++){
+							Sequence *seq = project_->sequenceSelection->sequences().at(s);
+							if (seq->visible) visSeqs.append(seq);
 						}
+						int firstSeqInSelection = rowFirstVisibleSequence(visSeqs);
+						int lastSeqInSelection = rowLastVisibleSequence(visSeqs);
+						if (clickedRow <= firstSeqInSelection)
+							seqSelectionAnchor_=lastSeqInSelection;
+						else if (clickedRow >= lastSeqInSelection)
+							seqSelectionAnchor_= firstSeqInSelection;
+						else // in between
+							seqSelectionAnchor_= firstSeqInSelection;
+						seqSelectionDrag_=clickedRow;
 						break;
+					}
 					case Qt::ControlModifier:
-						project_->sequenceSelection->toggle(selSeq);
-						selectingSequences_=false;
+						// don't clear selection
+						seqSelectionAnchor_=seqSelectionDrag_=clickedRow;
 						break;
 					default:
 						break;
@@ -757,7 +772,8 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 	cleanupTimer();
 	
 	if (readOnly_) return;
-	
+	bool controlModifier = (ev->modifiers() == Qt::ControlModifier);
+	bool shiftModifier = (ev->modifiers() == Qt::ShiftModifier);
 	switch (ev->button()){
 		case Qt::LeftButton:
 		{
@@ -781,6 +797,7 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 			}
 			else if (selectingSequences_){
 				selectingSequences_=false;
+			
 				int startRow = seqSelectionAnchor_,stopRow=seqSelectionDrag_;
 				if (stopRow < startRow) swap_int(&startRow,&stopRow);
 				int visStart = startRow,visStop=stopRow;
@@ -800,6 +817,7 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 				
 				// If all visible members of a group are in the selection, select the whole group
 				bool cleared = false;
+				QList<Sequence*> groupedSequences;
 				for (int g=0;g<groups.size();g++){
 					SequenceGroup *sg = groups.at(g);
 					int s;
@@ -815,30 +833,46 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 					// without one test at least
 					if (s==sg->size()){
 						qDebug() << trace.header(__PRETTY_FUNCTION__) << "group selected";
-						if (!cleared){
+						if (!cleared && !controlModifier &&!shiftModifier){
 							project_->sequenceSelection->clear();
 							cleared=true;
 						}
-						for (s=0;s<sg->size();s++)
-							project_->sequenceSelection->add(sg->itemAt(s));
+						for (s=0;s<sg->size();s++){
+							if (controlModifier || shiftModifier){
+								project_->sequenceSelection->toggle(sg->itemAt(s));
+								groupedSequences.append(sg->itemAt(s));
+							}
+							else
+								project_->sequenceSelection->add(sg->itemAt(s));
+						}
 					}
 				}
 				// Hidden members are part of groups and will have been added to the selection
 				// in the previous step.
-				// Select only the visible members in this step (duplicates will be skipped by add() )
-				if (!cleared){
+				// Select only the visible members in this step )
+				if (!cleared && !controlModifier &&!shiftModifier){
 					project_->sequenceSelection->clear();
 					cleared=true;
 				}
 				for (int r=startRow;r<=stopRow;r++){
-					if (project_->sequences.sequences().at(r)->visible)
-						project_->sequenceSelection->add(project_->sequences.sequences().at(r));
+					if (project_->sequences.sequences().at(r)->visible){
+						if (controlModifier){
+							// don't toggle any gruped sequences - already done
+							if (!(groupedSequences.contains(project_->sequences.sequences().at(r))))
+								project_->sequenceSelection->toggle(project_->sequences.sequences().at(r));
+						}
+						else{
+							// add()ing again is OK - this will result in no add due to the check in add()
+							project_->sequenceSelection->add(project_->sequences.sequences().at(r));
+						}
+					}
 				}
 			}
 			break;
 		}
 		default:break;
 	}
+	repaint();
 }
 
 void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
@@ -1640,13 +1674,16 @@ int SequenceEditor::rowFirstVisibleSequenceInGroup(SequenceGroup *sg)
 	return -1;
 }
 
+// FIXME this might be wrong
 int SequenceEditor::rowLastVisibleSequenceInGroup(SequenceGroup *sg)
 {
 	int visIndex=project_->sequences.numVisible()-1;
 	for (int s=project_->sequences.size()-1;s>=0;s--){ // checked OK
 		Sequence *seq = project_->sequences.sequences().at(s);
-		if (sg==seq->group && seq->visible)
+		if (sg==seq->group && seq->visible){
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "row = " << visIndex;
 			return visIndex;
+		}
 		if (seq->visible)
 			visIndex--;
 	}
@@ -1663,9 +1700,38 @@ int SequenceEditor::rowVisibleSequence(Sequence *seq)
 		if (tmpseq->visible)
 			visIndex++;
 	}
+	
 	return -1;
 }
 
+int SequenceEditor::rowFirstVisibleSequence(QList<Sequence *> &seqs)
+{
+	int ret = 0;
+	for (int s=0;s<project_->sequences.size();s++){
+		if (seqs.contains(project_->sequences.sequences().at(s))){
+			break;
+		}
+		if (project_->sequences.sequences().at(s)->visible) ret++;
+	}
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "row = " << ret;
+	return ret;
+}
+
+int SequenceEditor::rowLastVisibleSequence(QList<Sequence *> &seqs)
+{
+	int visIndex=0;
+	int ret = visIndex;
+	for (int s=0;s<project_->sequences.size();s++){
+		if (seqs.contains(project_->sequences.sequences().at(s))){
+			ret=visIndex; // this gets the last match
+		}
+		if (project_->sequences.sequences().at(s)->visible) visIndex++;
+	}
+	
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << seqs.size() << " row = " << ret;
+	return ret;
+}
+		
 void SequenceEditor::connectToProject()
 {
 	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
