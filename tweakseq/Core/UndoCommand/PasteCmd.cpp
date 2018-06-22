@@ -37,6 +37,7 @@
 PasteCmd::PasteCmd(Project *project,Sequence *insertAfter,const QString &txt):Command(project,txt)
 {
 	insertAfter_=insertAfter;
+	clipboardContents_ = app->clipboard().sequences();
 }
 
 PasteCmd::~PasteCmd()
@@ -45,7 +46,7 @@ PasteCmd::~PasteCmd()
 
 void PasteCmd::redo()
 {
-	clipboardContents_ = app->clipboard().sequences();
+	
 	Sequence * lastSequence = insertAfter_;
 	for (int s=0;s<clipboardContents_.size();s++){
 		Sequence *seq = clipboardContents_.at(s);

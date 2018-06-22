@@ -36,6 +36,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/GroupCmd.h \
 								 include/PasteCmd.h \
 								 include/ImportCmd.h \
+								 include/UngroupCmd.h \
 								 include/Utility.h \
 								 include/Version.h \
 								 include/XMLHelper.h
@@ -63,7 +64,8 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/CutSequencesCmd.cpp \
 									Core/UndoCommand/GroupCmd.cpp \
 									Core/UndoCommand/ImportCmd.cpp \
-									Core/UndoCommand/PasteCmd.cpp
+									Core/UndoCommand/PasteCmd.cpp \
+									Core/UndoCommand/UngroupCmd.cpp
 									
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/AlignmentToolDlg.cpp \

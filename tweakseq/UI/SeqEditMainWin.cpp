@@ -709,6 +709,7 @@ void SeqEditMainWin::alignmentSelection()
 
 void SeqEditMainWin::alignmentStop()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	if (NULL != alignmentProc_){
 		alignmentProc_->kill();
 		// FIXME clean up ??
@@ -739,21 +740,29 @@ void SeqEditMainWin::alignmentReadyReadStdErr()
 	mw->addMessage(msg,MessageWin::Error);
 }
 
-void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus)
+void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus exitStatus)
 {
-	qDebug() << trace.header() << "SeqEditMainWin::alignmentFinished() exitCode=" << exitCode;
-	
-	QFile f(alignmentFileOut_->fileName());
-	if (alignmentProc_->state() == QProcess::NotRunning && f.exists()){
-		statusBar()->showMessage("Alignment finished");
-		// delete alignmentFileIn_; // FIXME reinstate
-		// alignmentFileIn_=NULL;
-		if (alignAll)
-			readNewAlignment(true);
-		else{
-			previewNewAlignment();
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << " exitCode=" << exitCode << " exitStatus=" << exitStatus;;
+	if (exitStatus == 0 && exitCode == 0){
+		QFile f(alignmentFileOut_->fileName());
+		if (alignmentProc_->state() == QProcess::NotRunning && f.exists()){
+			statusBar()->showMessage("Alignment finished");
+			// delete alignmentFileIn_; // FIXME reinstate
+			// alignmentFileIn_=NULL;
+			if (alignAll)
+				readNewAlignment(true);
+			else{
+				previewNewAlignment();
+			}
 		}
 	}
+	else{
+		QString msg = "Alignment not completed";
+		if (exitCode == 9) // FIXME linux specific
+			msg += " (user interrupted)";
+		statusBar()->showMessage(msg);
+	}
+	
 	alignAllAction->setEnabled(true);
 	alignStopAction->setEnabled(false);
 }
@@ -947,11 +956,11 @@ void SeqEditMainWin::createActions()
 	// File actions
 	
 	newProjectAction = new QAction( tr("&New project"), this);
-	newProjectAction->setStatusTip(tr("Open a new project"));
+	newProjectAction->setStatusTip(tr("Open a new sequence alignment project"));
 	addAction(newProjectAction);
 	connect(newProjectAction, SIGNAL(triggered()), this, SLOT(fileNewProject()));
 	
-	openProjectAction = new QAction( tr("&Open project"), this);
+	openProjectAction = new QAction( tr("&Open project ..."), this);
 	openProjectAction->setStatusTip(tr("Open an existing project"));
 	addAction(openProjectAction);
 	connect(openProjectAction, SIGNAL(triggered()), this, SLOT(fileOpenProject()));
@@ -962,27 +971,34 @@ void SeqEditMainWin::createActions()
 	addAction(saveProjectAction);
 	connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(fileSaveProject()));
 	
-	saveProjectAsAction = new QAction( tr("Save project as"), this);
+	saveProjectAsAction = new QAction( tr("Save project as ..."), this);
 	saveProjectAsAction->setStatusTip(tr("Save the project under a new name"));
 	addAction(saveProjectAsAction);
 	connect(saveProjectAsAction, SIGNAL(triggered()), this, SLOT(fileSaveProjectAs()));
 	
-	importAction = new QAction( tr("&Import sequences"), this);
-	importAction->setStatusTip(tr("Import a sequence file"));
+	if (project_->sequenceType() == Project::Proteins){
+		importAction = new QAction( tr("&Import protein sequences ..."), this);
+		importAction->setStatusTip(tr("Import a sequence file"));
+	}
+	else{
+		importAction = new QAction( tr("&Import DNA sequences ..."), this);
+		importAction->setStatusTip(tr("Import a DNA sequence file"));
+	}
+	
 	addAction(importAction);
 	connect(importAction, SIGNAL(triggered()), this, SLOT(fileImport()));
 	
-	exportFASTAAction = new QAction( tr("&Export as FASTA"), this);
+	exportFASTAAction = new QAction( tr("&Export as FASTA ..."), this);
 	exportFASTAAction->setStatusTip(tr("Export all project sequences in FASTA format"));
 	addAction(exportFASTAAction);
 	connect(exportFASTAAction, SIGNAL(triggered()), this, SLOT(fileExportFASTA()));
 	
-	exportClustalWAction = new QAction( tr("&Export as ClustalW"), this);
+	exportClustalWAction = new QAction( tr("&Export as ClustalW ..."), this);
 	exportClustalWAction->setStatusTip(tr("Export all project sequences in ClustalW format"));
 	addAction(exportClustalWAction);
 	connect(exportClustalWAction, SIGNAL(triggered()), this, SLOT(fileExportClustalW()));
 	
-	printAction = new QAction( tr("&Print"), this);
+	printAction = new QAction( tr("&Print ..."), this);
 	printAction->setStatusTip(tr("Print current "));
 	addAction(printAction);
 	connect(printAction, SIGNAL(triggered()), this, SLOT(filePrint()));

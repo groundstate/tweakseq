@@ -66,8 +66,11 @@ class Project:public QObject
 	
 	public:
 		
+		enum SequenceData {Proteins, DNA, Unknown};
+			
 		Project();
 		~Project();
+		
 		void setMainWindow(SeqEditMainWin *);
 		
 		bool save(QString &);
@@ -82,6 +85,8 @@ class Project:public QObject
 		bool empty();
 		bool isModified(){return dirty_;}
 		
+		int sequenceType(){return sequenceType_;}
+	
 		Sequences  sequences;
 		ResidueSelection *residueSelection;
 		SequenceSelection *sequenceSelection;
@@ -102,7 +107,7 @@ class Project:public QObject
 		
 		bool canGroupSelectedSequences();
 		bool groupSelectedSequences(QColor);
-		bool ungroupSelectedSequences();
+		void ungroupSelectedSequences();
 		void ungroupAllSequences();
 		void addGroupToSelection(SequenceGroup *);
 		bool canToggleLock();
@@ -158,6 +163,7 @@ class Project:public QObject
 		QString name_;
 		QDir path_;
 		
+		int sequenceType_;
 		int nAlignments;
 		AlignmentTool *alignmentTool_,*clustalOTool_,*muscleTool_;
 		QUndoStack undoStack_;

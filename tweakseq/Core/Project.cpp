@@ -49,6 +49,7 @@
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
 #include "SeqEditMainWin.h"
+#include "UngroupCmd.h"
 #include "XMLHelper.h"
 
 extern Application *app;
@@ -347,40 +348,10 @@ bool Project::groupSelectedSequences(QColor gcol){
 	return true;
 }
 
-bool Project::ungroupSelectedSequences()
+void  Project::ungroupSelectedSequences()
 {
-	// Make everything in the selection visible so that we don't lose the non-visible items after ungrouping
-	// If a full group has been selected, then all its members are presumed to be in the selection
-	for ( int s=0;s<sequenceSelection->size();s++)
-		sequenceSelection->itemAt(s)->visible=true;
-	
-	// Any grouped sequence that is in the selection is removed from its group
-	// If this leaves only one sequence in the group, this is OK
-	for ( int s=0;s<sequenceSelection->size();s++){
-		Sequence *seq = sequenceSelection->itemAt(s);
-		if (seq->group){
-			qDebug() << trace.header(__PRETTY_FUNCTION__) << "ungrouping " << seq->label;
-			SequenceGroup *sg = seq->group; // save this, cos removing it from the groups sets ptr to NULL
-			seq->group->removeSequence(seq); // this also removes the parent group from the sequence
-			// if we have now removed all of the visible sequences in the group, make the hidden sequences
-			// visible again
-			sg->enforceVisibility(); // some redundancy here because we have already made fully selected sequence visible
-		}
-	}
-	// Remove any empty groups
-	int g=0;
-	while (g<sequenceGroups.size()){
-		SequenceGroup *sg = sequenceGroups.at(g);
-		if (sg->size() == 0){
-			sequenceGroups.removeOne(sg); 
-			qDebug() << trace.header(__PRETTY_FUNCTION__)  << "removing empty group";
-		}
-		else
-			g++;
-	}
-	
+	undoStack_.push(new UngroupCmd(this,"ungroup sequences"));
 	dirty_=true;
-	return true;
 }
 
 void Project::ungroupAllSequences()
@@ -631,11 +602,28 @@ void Project::load(QString &fname)
 	
 	mainWindow_->readSettings(doc); // do this first so no jarring geometry changes
 	
+	QDomNodeList nl = doc.elementsByTagName("settings");
+	if (nl.count() == 1){
+		QDomNode sNode = nl.item(0);
+		QDomElement elem = sNode.firstChildElement();
+		QString txt;
+		while (!elem.isNull()){
+			if (elem.tagName() == "sequencedata"){
+				txt=elem.text().trimmed();
+				if (txt == "proteins")
+					sequenceType_=Project::Proteins;
+				else if (txt == "dna")
+					sequenceType_=Project::DNA;
+			}
+			elem=elem.nextSiblingElement();
+		}
+	}
+	
 	QList<long> gids;
 	
 	// Get all the sequences
 	emit uiUpdatesEnabled(false);
-	QDomNodeList nl = doc.elementsByTagName("sequence");
+	nl = doc.elementsByTagName("sequence");
 	for (int i=0;i<nl.count();i++){
 		QDomNode sNode = nl.item(i);
 		
@@ -950,10 +938,12 @@ void Project::init()
 {
 	residueSelection = new ResidueSelection();
 	sequenceSelection = new SequenceSelection();
+
 	named_=false;
 	dirty_=false;
 	name_="unnamed.tsq";
 	empty_=true;
+	sequenceType_=Project::Unknown;
 	
 	muscleTool_= NULL;
 	if (app->alignmentToolAvailable("MUSCLE"))

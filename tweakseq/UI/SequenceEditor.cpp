@@ -328,8 +328,7 @@ void SequenceEditor::groupSequences()
 
 void SequenceEditor::ungroupSequences()
 {
-	if (!project_->ungroupSelectedSequences())
-		emit statusMessage("Ungrouping unsuccessful",0);
+	project_->ungroupSelectedSequences();
 	updateViewport(); // number of rows may have changed because of unhiding
 }
 
@@ -829,7 +828,7 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 							if (index < visStart || index > visStop) break; // not in selection, so bail out
 						}
 					}
-					// At least sequence must have been visible and tested so we can't have got here
+					// At least one sequence must have been visible and tested so we can't have got here
 					// without one test at least
 					if (s==sg->size()){
 						qDebug() << trace.header(__PRETTY_FUNCTION__) << "group selected";
@@ -856,8 +855,8 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 				}
 				for (int r=startRow;r<=stopRow;r++){
 					if (project_->sequences.sequences().at(r)->visible){
-						if (controlModifier){
-							// don't toggle any gruped sequences - already done
+						if (controlModifier || shiftModifier){
+							// don't toggle any grouped sequences - already done
 							if (!(groupedSequences.contains(project_->sequences.sequences().at(r))))
 								project_->sequenceSelection->toggle(project_->sequences.sequences().at(r));
 						}
@@ -1674,11 +1673,12 @@ int SequenceEditor::rowFirstVisibleSequenceInGroup(SequenceGroup *sg)
 	return -1;
 }
 
-// FIXME this might be wrong
+// FIXME untested
 int SequenceEditor::rowLastVisibleSequenceInGroup(SequenceGroup *sg)
 {
-	int visIndex=project_->sequences.numVisible()-1;
-	for (int s=project_->sequences.size()-1;s>=0;s--){ // checked OK
+	int visIndex=0;
+	int ret=visIndex;
+	for (int s=0;s<project_->sequences.size();s++){ // checked OK
 		Sequence *seq = project_->sequences.sequences().at(s);
 		if (sg==seq->group && seq->visible){
 			qDebug() << trace.header(__PRETTY_FUNCTION__) << "row = " << visIndex;
