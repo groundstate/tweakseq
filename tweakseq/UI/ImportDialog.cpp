@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-/// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+// Copyright (c) 2000-2018 Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,55 +24,45 @@
 // THE SOFTWARE.
 //
 
+#include <QLabel>
+#include <QPushButton>
+#include <QRadioButton>
+#include <QVBoxLayout>
 
+#include "ImportDialog.h"
 #include "SequenceFile.h"
 
-// Base class for supported sequence alignment formats
-
-//
-//	Public members
-//		
-
-SequenceFile::SequenceFile(QString n)
+ImportDialog::ImportDialog(int defaultDataType,QWidget *parent,Qt::WindowFlags f):QDialog(parent,f)
 {
-	n_=n;
-	formatName_="unknown";
-	formatVersion_="unknown";
-	err_="";
-	dataType_=SequenceFile::Unknown;
+	QVBoxLayout *vb = new QVBoxLayout(this);
+
+	QLabel *l = new QLabel("Select the type of sequence data you want to import:",this);
+	vb->addWidget(l,0);
+	
+	// no need for button group - exclusive by default
+	proteinButton_= new QRadioButton("proteins",this);
+	proteinButton_->setChecked(defaultDataType==SequenceFile::Proteins);
+	vb->addWidget(proteinButton_);
+	
+	DNAButton_= new QRadioButton("DNA",this);
+	DNAButton_->setChecked(defaultDataType==SequenceFile::DNA);
+	vb->addWidget(DNAButton_);
+	
+	QHBoxLayout * hb = new QHBoxLayout();
+	vb->addLayout(hb);
+	
+	QPushButton *okb = new QPushButton("OK",this);
+	connect(okb,SIGNAL(clicked()),this,SLOT(accept()));
+	hb->addWidget(okb);
+	
+	QPushButton *cancelb = new QPushButton("Cancel",this);
+	connect(cancelb,SIGNAL(clicked()),this,SLOT(reject()));
+	hb->addWidget(cancelb);
 }
 
-SequenceFile::~SequenceFile()
+int ImportDialog::dataType()
 {
-}
-
-QStringList & SequenceFile::extensions(int dataFilter)
-{
-	if (dataFilter == SequenceFile::Proteins)
-		return proteinExtensions_;
-	else 
-		return DNAextensions_;
-}
-
-//
-//
-
-void SequenceFile::setExtensions(QStringList &e,int dataFilter)
-{
-	if (dataFilter == SequenceFile::Proteins)
-		proteinExtensions_=e;
-	else
-		DNAextensions_ =e;
-}
-
-bool SequenceFile::read(QStringList &,QStringList &,QStringList &)
-{
-	err_="";
-	return true;
-}
-
-bool SequenceFile::write(QStringList &,QStringList &,QStringList &)
-{
-	err_="";
-	return true;
+	if (DNAButton_->isChecked())
+		return SequenceFile::DNA;
+	return SequenceFile::Proteins;
 }

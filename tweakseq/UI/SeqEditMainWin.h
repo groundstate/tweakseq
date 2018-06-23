@@ -97,6 +97,7 @@ private slots:
 	void alignmentReadyReadStdErr();
 	void alignmentFinished(int,QProcess::ExitStatus);
 	
+	void setupColourMapMenu();
 	void settingsEditorFont();
 	void settingsViewTool(QAction *);
 	void settingsColourMap(QAction *);
@@ -109,9 +110,7 @@ private slots:
 	void helpAbout();
 	
 	void alignmentPreviewClosed(int);
-	
-	void test();
-	
+
 	void createContextMenu(const QPoint &);
 	
 	void updateScrollBars(int,int,int,int,int,int);
@@ -136,7 +135,8 @@ private:
 	
 	bool maybeSave();
 	
-	QMenu    *fileMenu,*alignmentMenu,*editMenu,*settingsMenu,*helpMenu,*testMenu;
+	QMenu    *fileMenu,*alignmentMenu,*editMenu,*settingsMenu,*helpMenu;
+	QMenu    *colourMapMenu;
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
 	QAction  *alignAllAction,*alignSelectionAction,*alignStopAction,*undoLastAction;
@@ -148,11 +148,11 @@ private:
 	QAction  *helpAction,*aboutAction;
 	QAction  *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
 	QList<QAction *> settingsViewActions;
-	QList<QAction *> settingsColourMapActions;
+	QList<QAction *> settingsProteinColourMapActions;
+	QList<QAction *> settingsDNAColourMapActions;
 	QAction  *settingsAlignmentToolPropertiesAction;
 
 	QAction *settingsSaveAppDefaultsAction;
-	QAction *testAction;
 	
 	QAction *createBookmarkAction,*removeBookmarkAction,*nextBookmarkAction,*prevBookmarkAction;
 	

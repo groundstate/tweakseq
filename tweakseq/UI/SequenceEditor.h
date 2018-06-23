@@ -70,6 +70,9 @@ class SequenceEditor: public QWidget
 		void setColourMap(int);
 		int  colourMap(){return colourMap_;}
 		
+		void setSequenceDataType(int);
+		int sequenceDataType(){return sequenceDataType_;}
+		
 		QColor getNextGroupColour();
 		
 		bool isBookmarked(Sequence *);
@@ -78,7 +81,8 @@ class SequenceEditor: public QWidget
 		void visibleRows(int *,int *);
 	
 		enum ResidueView {StandardView, InvertedView,  SolidView};
-		enum ColourMap   {PhysicoChemicalMap,RasMolMap,TaylorMap};
+		enum AminoColourMap   {PhysicoChemicalMap,RasMolMap,TaylorMap};
+		enum DNAColourMap {StandardDNAColourMap};
 		
 	signals:
 	
@@ -178,8 +182,11 @@ class SequenceEditor: public QWidget
 		
 		// properties
 		bool readOnly_;
+		int  sequenceDataType_;
 		int  residueView_;
 		int  colourMap_;
+		int  defaultProteinColourMap_;
+		int  defaultDNAColourMap_;
 		
 		// geometry
 		int numRows_,numCols_;

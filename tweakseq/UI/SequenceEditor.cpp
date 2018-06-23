@@ -39,11 +39,13 @@
 
 #include "AminoAcids.h"
 #include "Application.h"
+#include "DNA.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
 #include "SequenceEditor.h"
+#include "SequenceFile.h"
 #include "SequenceSelection.h"
 #include "Utility.h"
 #include "XMLHelper.h"
@@ -106,7 +108,7 @@ void SequenceEditor::setProject(Project *project)
 	
 	init();
 	project_=project;
-	
+	sequenceDataType_=project_->sequenceDataType();
 	connectToProject();
 	
 }
@@ -126,18 +128,44 @@ void SequenceEditor::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 	}
 	XMLHelper::addElement(doc,pelem,"view",view);
 	
+	QDomElement celem = doc.createElement("colourmaps");
+	pelem.appendChild(celem);
+	
 	QString colMap;
-	switch (colourMap_)
-	{
-		case PhysicoChemicalMap:colMap="physico-chemical";break;
-		case RasMolMap:colMap="rasmol";break;
-		case TaylorMap:colMap="taylor";break;
+	if (sequenceDataType_==SequenceFile::Proteins){
+		switch (colourMap_)
+		{
+			case PhysicoChemicalMap:colMap="physico-chemical";break;
+			case RasMolMap:colMap="rasmol";break;
+			case TaylorMap:colMap="taylor";break;
+		}
+		XMLHelper::addElement(doc,celem,"proteins",colMap);
+		
+		switch (defaultDNAColourMap_)// this is for "defaults.xml"
+		{
+			case StandardDNAColourMap:colMap="standard";break;
+		}
+		XMLHelper::addElement(doc,celem,"dna",colMap); 
 	}
-	XMLHelper::addElement(doc,pelem,"colourmap",colMap);
+	else if (sequenceDataType_==SequenceFile::DNA){
+		switch (colourMap_)
+		{
+			case StandardDNAColourMap:colMap="standard";break;
+		}
+		XMLHelper::addElement(doc,celem,"dna",colMap);
+		switch (defaultProteinColourMap_) // this is for "defaults.xml"
+		{
+			case PhysicoChemicalMap:colMap="physico-chemical";break;
+			case RasMolMap:colMap="rasmol";break;
+			case TaylorMap:colMap="taylor";break;
+		}
+		XMLHelper::addElement(doc,celem,"proteins",colMap);
+	}
 }
 
 void SequenceEditor::readSettings(QDomDocument &doc)
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	QDomNodeList nl = doc.elementsByTagName("sequence_editor_ui");
 	if (nl.count() == 1){
 		QDomNode gNode = nl.item(0);
@@ -155,18 +183,32 @@ void SequenceEditor::readSettings(QDomDocument &doc)
 				else if (elem.text()=="solid")
 					residueView_=SolidView;
 			}
-			else if (elem.tagName() == "colourmap"){
-				if (elem.text()=="physico-chemical")
-					colourMap_=PhysicoChemicalMap;
-				else if (elem.text()=="rasmol")
-					colourMap_ = RasMolMap;
-				else if (elem.text()=="taylor")
-					colourMap_=TaylorMap;
+			else if (elem.tagName() == "colourmaps"){
+				QDomElement celem = elem.firstChildElement();
+				while ((!celem.isNull())){
+					if (celem.tagName() == "proteins"){
+						if (celem.text()=="physico-chemical")
+							defaultProteinColourMap_=PhysicoChemicalMap;
+						else if (celem.text()=="rasmol")
+							defaultProteinColourMap_ = RasMolMap;
+						else if (celem.text()=="taylor")
+							defaultProteinColourMap_=TaylorMap;
+					}
+					else if (celem.tagName() == "dna"){
+						if (celem.text()=="standard"){
+							defaultDNAColourMap_=StandardDNAColourMap;
+						}
+					}
+					celem = celem.nextSiblingElement();
+				}
 			}
 			elem=elem.nextSiblingElement();
 		}
 		setEditorFont(editorFont);
 	}
+	
+
+
 }
 		
 void SequenceEditor::setEditorFont(const QFont &f)
@@ -225,7 +267,18 @@ void SequenceEditor::setColourMap(int colourMap)
 	colourMap_=colourMap;
 	repaint();
 }
-		
+
+// Normally only called once, when data is first imported into a new Project
+void SequenceEditor::setSequenceDataType(int dataType)
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "data = " << ((dataType==0)?"proteins":"DNA");
+	sequenceDataType_=dataType;
+	if (sequenceDataType_ == SequenceFile::Proteins)
+		colourMap_=defaultProteinColourMap_;
+	else if (sequenceDataType_ == SequenceFile::DNA)
+		colourMap_=defaultDNAColourMap_;
+}
+
 void SequenceEditor::updateViewport()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
@@ -442,6 +495,15 @@ void SequenceEditor::sequencesCleared()
 void SequenceEditor::postLoadTidy()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	
+	// Project data type is now known
+	sequenceDataType_ = project_->sequenceDataType();
+	
+	if (sequenceDataType_ ==SequenceFile::Proteins)
+		colourMap_=defaultProteinColourMap_;
+	else if (sequenceDataType_ ==SequenceFile::DNA)
+		colourMap_=defaultDNAColourMap_;
+	
 	// Determine the last group colour used so that currGroupColour_ can be set correctly
 	int maxCol =0;
 	for (int s=0;s<project_->sequences.size();s++){ // checked OK
@@ -1224,9 +1286,14 @@ void SequenceEditor::init()
 	project_=NULL;
 	
 	readOnly_=false;
+	
+	defaultProteinColourMap_= SequenceEditor::PhysicoChemicalMap;
+	defaultDNAColourMap_ = SequenceEditor::StandardDNAColourMap;
+	
+	sequenceDataType_= SequenceFile::Proteins;
 	residueView_ = SequenceEditor::StandardView;
-	colourMap_ = SequenceEditor::PhysicoChemicalMap;
-
+	colourMap_ = defaultProteinColourMap_;
+	
 	currBookmark_=-1;
 	
 	numRows_=0;
@@ -1425,56 +1492,81 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	
 	char ch = c.toLatin1();
 	int ich = ch-65;
-	switch (colourMap_)
+	
+	if (sequenceDataType_ == SequenceFile::DNA){
+		switch (colourMap_)
+		{
+			case StandardDNAColourMap:
+				switch (ch)
+				{
+					case '-':
+					{
+						if (cellSelected)
+							txtColor.setRgb(0,0,0);
+						else
+							txtColor.setRgb(224,224,224);
+						break;
+					}
+					default:
+						txtColor.setRgb(StandardDNAColours[ich][0],StandardDNAColours[ich][1],StandardDNAColours[ich][2]);
+						break;
+				}
+				break;
+		} // of switch
+	}
+	else if (sequenceDataType_ == SequenceFile::Proteins)
 	{
-		case PhysicoChemicalMap:
-			switch (ch)
-			{
-				case 'A': case 'I': case 'L' : case 'V' : case 'G': case '-':case '!':case '.':
+		switch (colourMap_)
+		{
+			case PhysicoChemicalMap:
+				switch (ch)
 				{
-					if (cellSelected)
-						txtColor.setRgb(0,0,0);
-					else
-						txtColor.setRgb(224,224,224);
-					break;
+					case 'A': case 'I': case 'L' : case 'V' : case 'G': case '-':case '!':case '.':
+					{
+						if (cellSelected)
+							txtColor.setRgb(0,0,0);
+						else
+							txtColor.setRgb(224,224,224);
+						break;
+					}
+					default:
+						txtColor.setRgb(PhysicoChemicalColours[ich][0],PhysicoChemicalColours[ich][1],PhysicoChemicalColours[ich][2]);
+						break;
 				}
-				default:
-					txtColor.setRgb(PhysicoChemicalColours[ich][0],PhysicoChemicalColours[ich][1],PhysicoChemicalColours[ich][2]);
-					break;
-			}
-			break;
-		case RasMolMap:
-			switch (ch)
-			{
-				case '-':case '!':case '.':
+				break;
+			case RasMolMap:
+				switch (ch)
 				{
-					if (cellSelected)
-						txtColor.setRgb(0,0,0);
-					else
-						txtColor.setRgb(224,224,224);
-					break;
+					case '-':case '!':case '.':
+					{
+						if (cellSelected)
+							txtColor.setRgb(0,0,0);
+						else
+							txtColor.setRgb(224,224,224);
+						break;
+					}
+					default:
+						txtColor.setRgb(RasMolColours[ich][0],RasMolColours[ich][1],RasMolColours[ich][2]);
+						break;
 				}
-				default:
-					txtColor.setRgb(RasMolColours[ich][0],RasMolColours[ich][1],RasMolColours[ich][2]);
-					break;
-			}
-			break;
-		case TaylorMap:
-			switch (ch)
-			{
-				case '-':case '!':case '.':
+				break;
+			case TaylorMap:
+				switch (ch)
 				{
-					if (cellSelected)
-						txtColor.setRgb(0,0,0);
-					else
-						txtColor.setRgb(224,224,224);
-					break;
+					case '-':case '!':case '.':
+					{
+						if (cellSelected)
+							txtColor.setRgb(0,0,0);
+						else
+							txtColor.setRgb(224,224,224);
+						break;
+					}
+					default:
+						txtColor.setRgb(TaylorColours[ich][0],TaylorColours[ich][1],TaylorColours[ich][2]);
+						break;
 				}
-				default:
-					txtColor.setRgb(TaylorColours[ich][0],TaylorColours[ich][1],TaylorColours[ich][2]);
-				  break;
-			}
-			break;
+				break;
+		}
 	}
 	
 // 	switch (c.toLatin1()){

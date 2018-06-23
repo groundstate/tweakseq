@@ -70,6 +70,7 @@
 #include "ClustalO.h"
 #include "FASTAFile.h"
 #include "FindTool.h"
+#include "ImportDialog.h"
 #include "MessageWin.h"
 #include "Muscle.h"
 #include "Project.h"
@@ -298,14 +299,29 @@ void SeqEditMainWin::fileSaveProjectAs()
 	
 void SeqEditMainWin::fileImport(){
 	
+	// This will only run the first time sequence are imported
+	if (project_->sequenceDataType() == SequenceFile::Unknown){
+		ImportDialog idlg(SequenceFile::Proteins,this);
+		if (QDialog::Accepted == idlg.exec()){
+			int ret = idlg.dataType();
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << ret;
+			project_->setSequenceDataType(ret);
+			se->setSequenceDataType(ret);
+		}
+		else{
+			statusBar()->showMessage("The import was canceled");
+			return;
+		}
+	}
+	
 	FASTAFile ff;
 	ClustalFile cf;
 	
 	QString allext="";
-	QStringList ext = ff.extensions();
+	QStringList ext = ff.extensions(project_->sequenceDataType());
 	for (int s=0;s<ext.size();s++)
 		allext = allext + ext.at(s) + " ";
-	ext = cf.extensions();
+	ext = cf.extensions(project_->sequenceDataType());
 	for (int s=0;s<ext.size();s++)
 		allext = allext + ext.at(s) + " ";
 	allext.append(")");
@@ -317,8 +333,11 @@ void SeqEditMainWin::fileImport(){
 		if (!fi.absolutePath().isEmpty())
 			startDir = fi.absolutePath();
 	}
+	QString msg = "Open protein sequence";
+	if (project_->sequenceDataType() == SequenceFile::DNA)
+		msg = "Open DNA sequence";
 	QStringList files = QFileDialog::getOpenFileNames(this,
-    tr("Open Sequence"),startDir, allext);
+    msg,startDir, allext);
 	qDebug() << trace.header() << files;
 	if (files.isEmpty()) return;
 	QString errmsg;
@@ -767,6 +786,20 @@ void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus exitSta
 	alignStopAction->setEnabled(false);
 }
 
+void SeqEditMainWin::setupColourMapMenu()
+{
+	colourMapMenu->clear();
+	int dType = project_->sequenceDataType();
+	if (dType == SequenceFile::Proteins){
+		for (int a=0;a<settingsProteinColourMapActions.size();a++)
+			colourMapMenu->addAction(settingsProteinColourMapActions.at(a));
+	}
+	else if (dType == SequenceFile::DNA){
+		for (int a=0;a<settingsDNAColourMapActions.size();a++)
+			colourMapMenu->addAction(settingsDNAColourMapActions.at(a));
+	}
+}
+
 void SeqEditMainWin::settingsEditorFont()
 {
 	QFont currFont = se->editorFont();
@@ -796,6 +829,8 @@ void SeqEditMainWin::settingsColourMap(QAction *a)
 		se->setColourMap(SequenceEditor::RasMolMap);
 	else if (a->text()=="Taylor")
 		se->setColourMap(SequenceEditor::TaylorMap);
+	else if (a->text()=="Simple DNA")
+		se->setColourMap(SequenceEditor::StandardDNAColourMap);
 }
 
 void SeqEditMainWin::settingsAlignmentToolClustalO()
@@ -840,22 +875,6 @@ void SeqEditMainWin::alignmentPreviewClosed(int result)
 	}
 	se->setReadOnly(false);
 	alignmentMenu->setEnabled(true); // good to go 
-}
-
-void SeqEditMainWin::test(){
-	SeqPreviewDlg *pd = new SeqPreviewDlg(this); // parenting it keeps it on top
-	pd->setModal(false);
-	QStringList l,r;
-	for (int i=0;i<5;i++){
-		l.append(project_->sequences.sequences().at(i)->label);
-		r.append(project_->sequences.sequences().at(i)->residues);
-	}
-	pd->setPreviewFont(se->editorFont());
-	pd->setSequences(l,r);
-	pd->show();
-	pd->raise();
-	pd->activateWindow();
-	pd->setWidth(width());
 }
 
 void SeqEditMainWin::createContextMenu(const QPoint &)
@@ -976,15 +995,9 @@ void SeqEditMainWin::createActions()
 	addAction(saveProjectAsAction);
 	connect(saveProjectAsAction, SIGNAL(triggered()), this, SLOT(fileSaveProjectAs()));
 	
-	if (project_->sequenceType() == Project::Proteins){
-		importAction = new QAction( tr("&Import protein sequences ..."), this);
-		importAction->setStatusTip(tr("Import a sequence file"));
-	}
-	else{
-		importAction = new QAction( tr("&Import DNA sequences ..."), this);
-		importAction->setStatusTip(tr("Import a DNA sequence file"));
-	}
 	
+	importAction = new QAction( tr("&Import sequences ..."), this);
+	importAction->setStatusTip(tr("Import a sequence file"));
 	addAction(importAction);
 	connect(importAction, SIGNAL(triggered()), this, SLOT(fileImport()));
 	
@@ -1178,12 +1191,7 @@ void SeqEditMainWin::createActions()
 	addAction(aboutAction);
 	connect(aboutAction, SIGNAL(triggered()), this, SLOT(helpAbout()));
 	
-	testAction = new QAction( tr("Preview"), this);
-	testAction->setStatusTip(tr("Preview"));
-	addAction(testAction);
-	connect(testAction, SIGNAL(triggered()), this, SLOT(test()));
-	
-	
+
 	// Miscellaneous actions
 	createBookmarkAction = new QAction( tr("Create bookmark"), this);
 	createBookmarkAction->setStatusTip(tr("Bookmark the selected sequence"));
@@ -1206,6 +1214,33 @@ void SeqEditMainWin::createActions()
 	prevBookmarkAction->setIcon(QIcon(":/images/go-previous.png"));
 	addAction(prevBookmarkAction);
 	connect(prevBookmarkAction, SIGNAL(triggered()), se, SLOT(moveToPreviousBookmark()));
+	
+	ag = new QActionGroup(this);
+	ag->setExclusive(true);
+	QAction *colourMapAction = new QAction("Physico-chemical",this);
+	colourMapAction->setCheckable(true);
+	colourMapAction->setChecked(true);
+	ag->addAction(colourMapAction);
+	settingsProteinColourMapActions.append(colourMapAction);
+	
+	colourMapAction =new QAction("RasMol",this);
+	colourMapAction->setCheckable(true);
+	ag->addAction(colourMapAction);
+	settingsProteinColourMapActions.append(colourMapAction);
+	
+	colourMapAction =new QAction("Taylor",this);
+	colourMapAction->setCheckable(true);
+	ag->addAction(colourMapAction);
+	settingsProteinColourMapActions.append(colourMapAction);
+	
+	ag = new QActionGroup(this);
+	ag->setExclusive(true);
+	colourMapAction = new QAction("Simple DNA",this);
+	colourMapAction->setCheckable(true);
+	colourMapAction->setChecked(true);
+	ag->addAction(colourMapAction);
+	settingsDNAColourMapActions.append(colourMapAction);
+	
 }
 
 void SeqEditMainWin::createMenus()
@@ -1265,7 +1300,6 @@ void SeqEditMainWin::createMenus()
 	// Settings
 	//
 	settingsMenu = menuBar()->addMenu(tr("Settings"));
-	connect(settingsMenu,SIGNAL(aboutToShow()),this,SLOT(setupSettingsMenu()));
 	
 	settingsMenu->addAction(settingsEditorFontAction);
 	
@@ -1294,26 +1328,9 @@ void SeqEditMainWin::createMenus()
 	
 	connect(viewToolMenu,SIGNAL(triggered(QAction*)),this,SLOT(settingsViewTool(QAction *)));
 	
-	QMenu *colourMapMenu = settingsMenu->addMenu(tr("Residue colour map"));
-	QActionGroup *ag = new QActionGroup(this);
-	ag->setExclusive(true);
-	QAction *colourMapAction = colourMapMenu->addAction("Physico-chemical");
-	colourMapAction->setCheckable(true);
-	colourMapAction->setChecked(true);
-	ag->addAction(colourMapAction);
-	settingsColourMapActions.append(colourMapAction);
-	
-	colourMapAction =colourMapMenu->addAction("RasMol");
-	colourMapAction->setCheckable(true);
-	ag->addAction(colourMapAction);
-	settingsColourMapActions.append(colourMapAction);
-	
-	colourMapAction =colourMapMenu->addAction("Taylor");
-	colourMapAction->setCheckable(true);
-	ag->addAction(colourMapAction);
-	settingsColourMapActions.append(colourMapAction);
-	
+	colourMapMenu = settingsMenu->addMenu(tr("Residue colour map"));
 	connect(colourMapMenu,SIGNAL(triggered(QAction*)),this,SLOT(settingsColourMap(QAction *)));
+	connect(colourMapMenu,SIGNAL(aboutToShow()),this,SLOT(setupColourMapMenu()));
 	
 	settingsMenu->addSeparator();
 	
@@ -1332,8 +1349,8 @@ void SeqEditMainWin::createMenus()
 	helpMenu->addAction(helpAction);
 	helpMenu->addAction(aboutAction);
 	
-	//testMenu = menuBar()->addMenu(tr("Test"));
-	//testMenu->addAction(testAction);
+	for (int a=0;a<settingsDNAColourMapActions.size();a++)
+		colourMapMenu->addAction(settingsDNAColourMapActions.at(a));
 	
 }
 
@@ -1529,21 +1546,34 @@ void SeqEditMainWin::updateSettingsActions()
 	}
 	
 	int colourMap=se->colourMap();
-	for (int a=0;a<settingsColourMapActions.size();a++)
-		settingsColourMapActions.at(a)->setChecked(false);
-	for (int a=0;a<settingsColourMapActions.size();a++){
-		QAction *va = settingsColourMapActions.at(a);
-		if (va->text()=="Physico-chemical" && colourMap == SequenceEditor::PhysicoChemicalMap){
-			va->setChecked(true);
-			break;
+	if (project_->sequenceDataType() == SequenceFile::DNA){
+		for (int a=0;a<settingsDNAColourMapActions.size();a++)
+			settingsDNAColourMapActions.at(a)->setChecked(false);
+		for (int a=0;a<settingsDNAColourMapActions.size();a++){
+			QAction *va = settingsDNAColourMapActions.at(a);
+			if (va->text()=="Simple DNA" && colourMap == SequenceEditor::StandardDNAColourMap){
+				va->setChecked(true);
+				break;
+			}
 		}
-		else if (va->text() == "RasMol" && colourMap == SequenceEditor::RasMolMap){
-			va->setChecked(true);
-			break;
-		}
-		else if (va->text() == "Taylor" && colourMap == SequenceEditor::TaylorMap){
-			va->setChecked(true);
-			break;
+	}
+	else if (project_->sequenceDataType() == SequenceFile::Proteins){
+		for (int a=0;a<settingsProteinColourMapActions.size();a++)
+			settingsProteinColourMapActions.at(a)->setChecked(false);
+		for (int a=0;a<settingsProteinColourMapActions.size();a++){
+			QAction *va = settingsProteinColourMapActions.at(a);
+			if (va->text()=="Physico-chemical" && colourMap == SequenceEditor::PhysicoChemicalMap){
+				va->setChecked(true);
+				break;
+			}
+			else if (va->text() == "RasMol" && colourMap == SequenceEditor::RasMolMap){
+				va->setChecked(true);
+				break;
+			}
+			else if (va->text() == "Taylor" && colourMap == SequenceEditor::TaylorMap){
+				va->setChecked(true);
+				break;
+			}
 		}
 	}
 }

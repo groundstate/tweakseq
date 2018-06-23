@@ -47,8 +47,9 @@ extern Application *app;
 ClustalFile::ClustalFile(QString n):SequenceFile(n)
 {
 	QStringList ext;
-	ext << "*.aln" << "*.clustal";
-	setExtensions(ext);
+	ext << "*.aln";
+	setExtensions(ext,SequenceFile::Proteins);
+	setExtensions(ext,SequenceFile::DNA);
 }
 
 ClustalFile::~ClustalFile()
@@ -60,7 +61,8 @@ bool ClustalFile::isClustalFile(QString fname)
 	// FIXME for the moment just use the extension to identify the file
 	QFileInfo fi(fname);
 	QString ext = "*."+fi.suffix();
-	return extensions().contains(ext,Qt::CaseInsensitive);
+	return (extensions(SequenceFile::Proteins).contains(ext,Qt::CaseInsensitive) ||
+					extensions(SequenceFile::DNA).contains(ext,Qt::CaseInsensitive));
 }
 
 bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &)
@@ -93,7 +95,7 @@ bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &)
 	}
 	
 	if (ts.atEnd()){
-		qDebug() << trace.header() << "ClustalFile::read() not CLUSTAL format";
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << "not CLUSTAL format";
 		setError("Not CLUSTAL format");
 		return false;
 	}
@@ -102,6 +104,12 @@ bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &)
 	int seqcnt=0;
 	QRegExp ws = QRegExp("\\s+");
 
+	// FIXME no guess at data type
+	
+	//bool dataTypeIdentified=false;
+	//int dataType=SequenceFile::DNA;
+	//QRegExp regex("[EFIPQZ]");
+	
 	while (!ts.atEnd()){
 		s = ts.readLine().trimmed();
 		if (s.isEmpty()){ // new block follows
@@ -124,6 +132,16 @@ bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &)
 		else{
 			seqs.replace(seqcnt,seqs.at(seqcnt)+strl.at(1));
 		}
+		
+		// Try to identify the sequence data
+		// Protein specific codes are E,F,I,P,Q,Z
+		//if (!dataTypeIdentified){
+		//	if (strl.at(1).contains(regex)){
+		//		dataType=SequenceFile::Proteins;
+		//		dataTypeIdentified=true;
+		//		qDebug() << trace.header(__PRETTY_FUNCTION__) << "data type is PROTEIN";
+		//	}
+		//}
 		//qDebug() << trace.header() << strl.length() << strl.at(0);
 		
 		seqcnt++;

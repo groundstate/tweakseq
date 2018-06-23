@@ -9,13 +9,16 @@ DEPENDPATH=$$INCLUDEPATH
 HEADERS       =  include/AboutDialog.h \
 								 include/AlignmentTool.h \
 								 include/AlignmentToolDlg.h \
+								 include/AminoAcids.h \
 								 include/Application.h \
 								 include/Clipboard.h \
 								 include/ClustalFile.h \
 								 include/ClustalO.h \
+								 include/DNA.h \
 								 include/DebuggingInfo.h \
 								 include/FASTAFile.h \
 								 include/FindTool.h \
+								 include/ImportDialog.h \
 								 include/MessageWin.h \
 								 include/Muscle.h \
 								 include/Project.h \
@@ -70,6 +73,7 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/AlignmentToolDlg.cpp \
 									UI/FindTool.cpp \
+									UI/ImportDialog.cpp \
 									UI/MessageWin.cpp \
 									UI/SequenceEditor.cpp \
 									UI/SeqEditMainWin.cpp \

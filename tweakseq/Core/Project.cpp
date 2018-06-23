@@ -524,7 +524,18 @@ bool Project::save(QString &fpathname)
 	root.appendChild(el);
 	QDomText te = saveDoc.createTextNode(app->version());
 	el.appendChild(te);
-		
+	
+	el = saveDoc.createElement("settings");
+	root.appendChild(el);
+
+	tmp="unknown";
+	if (sequenceDataType_==SequenceFile::Proteins)
+		tmp="proteins";
+	else if (sequenceDataType_==SequenceFile::DNA)
+		tmp="dna";
+	
+	XMLHelper::addElement(saveDoc,el,"sequencedata",tmp);
+	
 	for (int s=0;s<sequences.size();s++){
 		Sequence *seq = sequences.sequences().at(s);
 		
@@ -611,9 +622,9 @@ void Project::load(QString &fname)
 			if (elem.tagName() == "sequencedata"){
 				txt=elem.text().trimmed();
 				if (txt == "proteins")
-					sequenceType_=Project::Proteins;
+					sequenceDataType_=SequenceFile::Proteins;
 				else if (txt == "dna")
-					sequenceType_=Project::DNA;
+					sequenceDataType_=SequenceFile::DNA;
 			}
 			elem=elem.nextSiblingElement();
 		}
@@ -943,7 +954,7 @@ void Project::init()
 	dirty_=false;
 	name_="unnamed.tsq";
 	empty_=true;
-	sequenceType_=Project::Unknown;
+	sequenceDataType_=SequenceFile::Unknown;
 	
 	muscleTool_= NULL;
 	if (app->alignmentToolAvailable("MUSCLE"))

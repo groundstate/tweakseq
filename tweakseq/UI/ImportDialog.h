@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+// Copyright (c) 2000-2018 Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,57 +25,23 @@
 //
 
 
-#ifndef __SEQUENCE_FILE_H_
-#define __SEQUENCE_FILE_H_
+#ifndef __IMPORT_DIALOG_H_
+#define __IMPORT_DIALOG_H_
 
-#include <QString>
-#include <QStringList>
+#include <QDialog>
 
-// Base class for supported sequence alignment formats
-class SequenceFile
+class QRadioButton;
+
+class ImportDialog:public QDialog
 {
 	public:
 		
-		SequenceFile(QString n= QString());
-		~SequenceFile();
-		
-		enum DataType {Proteins, DNA,Unknown};
-		
-		QString name(){return n_;};
-		void setName(QString n){n_=n;}
-		
-		QString formatName(){return formatName_;}
-		QString formatVersion(){return formatVersion_;}
-		QString error(){return err_;}
-		
-		int dataType(){return dataType_;}
-		
-		QStringList & extensions(int dataFilter);
-		
-		virtual bool read(QStringList &,QStringList &,QStringList &);
-		virtual bool write(QStringList &,QStringList &,QStringList &);
-	
-	protected:
-		
-		void setFormatName(QString n){formatName_=n;}
-		void setFormatVersion(QString n){formatVersion_=n;}
-		void setError(QString e){err_=e;}
-		void setExtensions(QStringList &e,int dataFilter);
-		void setDataType(int dType){dataType_=dType;}
+		ImportDialog(int defaultDataType,QWidget *parent=0,Qt::WindowFlags f=0);
+		int dataType();
 		
 	private:
 		
-		QString n_;
-		
-		QString formatName_;
-		QString formatVersion_;
-		
-		QStringList proteinExtensions_;
-		QStringList DNAextensions_;
-		
-		QString err_;
-		
-		int dataType_;
+		QRadioButton *proteinButton_,*DNAButton_;
 };
 
 #endif

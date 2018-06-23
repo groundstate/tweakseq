@@ -45,8 +45,11 @@
 FASTAFile::FASTAFile(QString n):SequenceFile(n)
 {
 	QStringList ext;
-	ext << "*.fa" << "*.faa" << "*.fasta";
-	setExtensions(ext);
+	ext << "*.faa" << "*.mpfa" << "*.fasta" << "*.fa" << "*.fas" << "*.seq" << "*.fsa";
+	setExtensions(ext,SequenceFile::Proteins);
+	QStringList ext2;
+	ext2 << "*.fna" << "*.ffn"  << "*.frn" << "*.fasta" << "*.fa" << "*.fas" << "*.seq" << "*.fsa";
+	setExtensions(ext2,SequenceFile::DNA);
 }
 
 FASTAFile::~FASTAFile()
@@ -57,7 +60,8 @@ bool FASTAFile::isFASTAFile(QString fname)
 {
 	QFileInfo fi(fname);
 	QString ext = "*."+fi.suffix();
-	return extensions().contains(ext,Qt::CaseInsensitive);
+	return (extensions(SequenceFile::Proteins).contains(ext,Qt::CaseInsensitive) ||
+					extensions(SequenceFile::DNA).contains(ext,Qt::CaseInsensitive));
 }
 
 #define SEEKING_COMMENT 0
@@ -69,6 +73,17 @@ bool FASTAFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comme
 	QString s;
 	
 	qDebug() << trace.header() << "FASTAFile::read() " << name();
+	
+	// Guess the sequence data type from the extension
+	int seqData=SequenceFile::DNA;
+	QFileInfo fi(name());
+	QString suffix = fi.suffix().toLower();
+	if ( suffix == "faa" || suffix == "mpfa" ){
+		seqData=SequenceFile::Proteins;
+	}
+	else if (suffix == "fasta"){
+		seqData=SequenceFile::Unknown;
+	}
 	
 	setError("");
 	
@@ -127,7 +142,7 @@ bool FASTAFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comme
 	//for (int i=0;i<seqnames.size();i++){
 	//	qDebug() << trace.header() << seqnames.at(i) << " " << seqs.at(i).size();
 	//}
-		
+	setDataType(seqData);
 	return true;
 }
 

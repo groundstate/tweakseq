@@ -66,8 +66,6 @@ class Project:public QObject
 	
 	public:
 		
-		enum SequenceData {Proteins, DNA, Unknown};
-			
 		Project();
 		~Project();
 		
@@ -85,8 +83,8 @@ class Project:public QObject
 		bool empty();
 		bool isModified(){return dirty_;}
 		
-		int sequenceType(){return sequenceType_;}
-	
+		int sequenceDataType(){return sequenceDataType_;}
+		void setSequenceDataType(int seqData){sequenceDataType_=seqData;}
 		Sequences  sequences;
 		ResidueSelection *residueSelection;
 		SequenceSelection *sequenceSelection;
@@ -163,7 +161,7 @@ class Project:public QObject
 		QString name_;
 		QDir path_;
 		
-		int sequenceType_;
+		int sequenceDataType_;
 		int nAlignments;
 		AlignmentTool *alignmentTool_,*clustalOTool_,*muscleTool_;
 		QUndoStack undoStack_;
