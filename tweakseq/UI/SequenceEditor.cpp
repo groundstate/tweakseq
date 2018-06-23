@@ -766,6 +766,8 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 					if (!project_->sequenceSelection->contains(selSeq)){
 						project_->sequenceSelection->set(selSeq);
 					}
+					selectingResidues_=false;	
+					selectingSequences_=false;
 			}
 			default:
 				break;
