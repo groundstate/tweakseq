@@ -84,6 +84,8 @@
 #include "AlignmentCmd.h"
 #include "XMLHelper.h"
 
+#include "Consensus.h"
+
 using namespace std;
 
 // Tool button help
@@ -809,7 +811,24 @@ void SeqEditMainWin::settingsEditorFont()
 	}
 }
 
+//
+//
+//
 
+void SeqEditMainWin::setupAnnotationMenu()
+{
+	annotationConsensusAction->setEnabled(project_->aligned());
+}
+
+void SeqEditMainWin::annotationConsensus()
+{
+	Consensus c(&(project_->sequences));
+	c.calculate();
+}
+
+//
+//
+//
 void SeqEditMainWin::settingsViewTool(QAction *a)
 {
 	if (a->text()=="Standard")
@@ -1179,6 +1198,13 @@ void SeqEditMainWin::createActions()
 	addAction(settingsSaveAppDefaultsAction);
 	connect(settingsSaveAppDefaultsAction, SIGNAL(triggered()), this, SLOT(settingsSaveAppDefaults()));
 	
+	// Annotations 
+	
+	annotationConsensusAction = new QAction( tr("Consensus sequence"), this);
+	annotationConsensusAction->setStatusTip(tr("Enable display and calculation of the consensus sequence"));
+	addAction(annotationConsensusAction);
+	connect(annotationConsensusAction, SIGNAL(triggered()), this, SLOT(annotationConsensus()));;
+	
 	// Help actions
 	helpAction = new QAction( tr("&Help"), this);
 	helpAction->setStatusTip(tr("Help"));
@@ -1294,6 +1320,10 @@ void SeqEditMainWin::createMenus()
 	alignmentMenu->addAction(alignSelectionAction);
 	alignmentMenu->addAction(alignStopAction);
 	//alignmentMenu->addAction(undoLastAction);
+	
+	annotationMenu = menuBar()->addMenu(tr("Annotations"));
+	connect(annotationMenu,SIGNAL(aboutToShow()),this,SLOT(setupAnnotationMenu()));
+	annotationMenu->addAction(annotationConsensusAction);
 	
 	//
 	// Settings

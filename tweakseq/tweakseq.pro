@@ -42,7 +42,8 @@ HEADERS       =  include/AboutDialog.h \
 								 include/UngroupCmd.h \
 								 include/Utility.h \
 								 include/Version.h \
-								 include/XMLHelper.h
+								 include/XMLHelper.h \
+								 include/Consensus.h
 								 
 SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/Application.cpp \
@@ -69,7 +70,9 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/ImportCmd.cpp \
 									Core/UndoCommand/PasteCmd.cpp \
 									Core/UndoCommand/UngroupCmd.cpp
-									
+
+SOURCES				+=  Core/Annotations/Consensus.cpp
+
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/AlignmentToolDlg.cpp \
 									UI/FindTool.cpp \

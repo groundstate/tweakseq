@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+// Copyright (c) 2000-2018 Michael J. Wouters, Merridee A. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,22 +24,33 @@
 // THE SOFTWARE.
 //
 
+#ifndef __CONSENSUS_H_
+#define __CONSENSUS_H_
 
-#include "Project.h"
-#include "Command.h"
+class Sequences;
 
-//
-//	Public
-//
-
-Command::Command(Project *p,const QString &txt):QUndoCommand(txt)
-{
-	project_=p;
-	oldAligned_=p->aligned();
-}
-
-Command::~Command()
-{
-}
+class Consensus{
+	
+	public:
 		
-
+		Consensus(Sequences *);
+		~Consensus();
+		
+		void calculate();
+		
+		void setSequences(Sequences *);
+		
+		QString scoringMatrixName();
+		
+		double plurality(){return plurality_;}
+		void   setPlurality(double p);
+		
+		QString sequence();
+		
+	private:
+		
+		double plurality_;
+		Sequences *sequences_;
+		QString consensusSequence_;
+};
+#endif

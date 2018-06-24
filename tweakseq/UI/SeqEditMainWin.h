@@ -97,6 +97,9 @@ private slots:
 	void alignmentReadyReadStdErr();
 	void alignmentFinished(int,QProcess::ExitStatus);
 	
+	void setupAnnotationMenu();
+	void annotationConsensus();
+	
 	void setupColourMapMenu();
 	void settingsEditorFont();
 	void settingsViewTool(QAction *);
@@ -135,7 +138,7 @@ private:
 	
 	bool maybeSave();
 	
-	QMenu    *fileMenu,*alignmentMenu,*editMenu,*settingsMenu,*helpMenu;
+	QMenu    *fileMenu,*alignmentMenu,*editMenu,*annotationMenu,*settingsMenu,*helpMenu;
 	QMenu    *colourMapMenu;
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
@@ -145,6 +148,7 @@ private:
 	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction,*unhideAllAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction,*ungroupAllAction;
 	QAction  *readOnlyAction;
+	QAction  *annotationConsensusAction;
 	QAction  *helpAction,*aboutAction;
 	QAction  *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
 	QList<QAction *> settingsViewActions;

@@ -46,6 +46,7 @@ PasteCmd::~PasteCmd()
 
 void PasteCmd::redo()
 {
+	oldAligned_ = project_->aligned();
 	
 	Sequence * lastSequence = insertAfter_;
 	for (int s=0;s<clipboardContents_.size();s++){
@@ -96,5 +97,6 @@ void PasteCmd::undo()
 		project_->sequenceGroups.removeOne(cutGroups_.at(g));
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << project_->sequenceGroups.size();
 	app->clipboard().setSequences(clipboardContents_);
+	project_->setAligned(oldAligned_);
 }
 

@@ -52,6 +52,7 @@ void CutSequencesCmd::redo()
 	
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	
+	oldAligned_ = project_->aligned();
 	
 	QList<Sequence*> &seqs = project_->sequences.sequences();
 	cutGroups_.clear();
@@ -142,6 +143,7 @@ void CutSequencesCmd::redo()
 	clipboardContents_ = app->clipboard().sequences(); // save the clipboard, so it can be restored
 	app->clipboard().setSequences(cutSeqs_); // this removes whatever was there
 	project_->sequenceSelection->clear(); // cut, so nothing is selected now
+	project_->setAligned(false);
 }
 
 void CutSequencesCmd::undo()
@@ -160,5 +162,6 @@ void CutSequencesCmd::undo()
 	project_->sequences.set(seqs_);
 	project_->sequenceSelection->set(sequenceSelection_.sequences()); // restoring this means the selection will also be shown
 	app->clipboard().setSequences(clipboardContents_);
+	project_->setAligned(oldAligned_);
 }
 		

@@ -97,6 +97,11 @@ bool Project::empty(){
 	return sequences.isEmpty();
 }
 
+void Project::setAligned(bool a)
+{
+	aligned_=a;
+}
+
 bool Project::importSequences(QStringList &files,QString &errmsg)
 {
 	FASTAFile ff;
@@ -525,6 +530,7 @@ bool Project::save(QString &fpathname)
 	QDomText te = saveDoc.createTextNode(app->version());
 	el.appendChild(te);
 	
+	
 	el = saveDoc.createElement("settings");
 	root.appendChild(el);
 
@@ -535,6 +541,7 @@ bool Project::save(QString &fpathname)
 		tmp="dna";
 	
 	XMLHelper::addElement(saveDoc,el,"sequencedata",tmp);
+	XMLHelper::addElement(saveDoc,el,"aligned",XMLHelper::boolToString(aligned_));
 	
 	for (int s=0;s<sequences.size();s++){
 		Sequence *seq = sequences.sequences().at(s);
@@ -547,9 +554,9 @@ bool Project::save(QString &fpathname)
 		XMLHelper::addElement(saveDoc,se,"residues",seq->filter());
 		XMLHelper::addElement(saveDoc,se,"source",seq->source);
 		if (!seq->visible)
-			XMLHelper::addElement(saveDoc,se,"visible",(seq->visible?"yes":"no"));
+			XMLHelper::addElement(saveDoc,se,"visible",XMLHelper::boolToString(seq->visible));
 		if (seq->bookmarked)
-			XMLHelper::addElement(saveDoc,se,"bookmarked",(seq->bookmarked?"yes":"no"));
+			XMLHelper::addElement(saveDoc,se,"bookmarked",XMLHelper::boolToString(seq->bookmarked));
 		QList<int> x = seq->exclusions();
 		QString xs="";
 		for (int xi=0;xi<x.size()-1;xi+=2){
@@ -557,7 +564,6 @@ bool Project::save(QString &fpathname)
 			if (xi < x.size()-2) xs += ",";
 		}
 		XMLHelper::addElement(saveDoc,se,"exclusions",xs);
-		
 	}
 	
 	for (int g=0;g<sequenceGroups.size();g++){
@@ -625,6 +631,9 @@ void Project::load(QString &fname)
 					sequenceDataType_=SequenceFile::Proteins;
 				else if (txt == "dna")
 					sequenceDataType_=SequenceFile::DNA;
+			}
+			else if (elem.tagName() == "aligned"){
+				aligned_=XMLHelper::stringToBool(elem.text().trimmed());
 			}
 			elem=elem.nextSiblingElement();
 		}
@@ -798,6 +807,8 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 		
 	if (isFullAlignment){
 	
+		aligned_=true;
+		
 		// Create the new sequences, in the order of the new alignment
 		for (int snew=0;snew<newseqs.size();snew++){
 			Sequence *oldSeq = sequences.getSequence(newlabels.at(snew));
@@ -955,6 +966,7 @@ void Project::init()
 	name_="unnamed.tsq";
 	empty_=true;
 	sequenceDataType_=SequenceFile::Unknown;
+	aligned_=false;
 	
 	muscleTool_= NULL;
 	if (app->alignmentToolAvailable("MUSCLE"))

@@ -60,6 +60,7 @@ class Sequence
 		SequenceGroup *group;
 		
 		QString source; // file sequence was originally sourced from
+		
 };
 
 #endif

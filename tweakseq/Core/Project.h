@@ -83,6 +83,9 @@ class Project:public QObject
 		bool empty();
 		bool isModified(){return dirty_;}
 		
+		bool aligned(){return aligned_;}
+		void setAligned(bool);
+		
 		int sequenceDataType(){return sequenceDataType_;}
 		void setSequenceDataType(int seqData){sequenceDataType_=seqData;}
 		Sequences  sequences;
@@ -155,6 +158,7 @@ class Project:public QObject
 		// Widgets we keep track of
 		SeqEditMainWin *mainWindow_;
 		
+		bool aligned_;
 		bool empty_;
 		bool dirty_;
 		bool named_;

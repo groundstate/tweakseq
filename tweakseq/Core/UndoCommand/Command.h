@@ -40,6 +40,7 @@ class Command: public QUndoCommand
 		
 	protected:
 		Project *project_;
+		bool  oldAligned_;
 };
 
 #endif
