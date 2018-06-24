@@ -194,7 +194,7 @@ class SequenceEditor: public QWidget
 		int rowHeight_,colWidth_,charWidth_;
 		int flagsWidth_,flagsColWidth_,labelWidth_;
 		int bookmarkPos_,indexPos_,lockPos_,expanderPos_;
-		int headerHeight_;
+		int headerHeight_,footerHeight_;
 		
 		int firstVisibleRow_,lastVisibleRow_;
 		int firstVisibleCol_,lastVisibleCol_;
@@ -217,5 +217,6 @@ class SequenceEditor: public QWidget
 		int totalWheelRotation_;
 		
 		QString numStr_; 
+		
 };
 #endif

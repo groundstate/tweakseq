@@ -152,7 +152,6 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	connect(findTool_,SIGNAL(find(const QString &)),se,SLOT(selectSequence(const QString &)));
 
 	statusBar()->showMessage("Ready");
-
 }
 
 SeqEditMainWin::~SeqEditMainWin(){

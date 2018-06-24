@@ -30,6 +30,7 @@
 #include <cmath>
 
 #include <QFont>
+#include <QLabel>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
@@ -53,8 +54,8 @@
 #define INDEX_WIDTH 3
 #define LABEL_WIDTH 16
 #define HEADER_HEIGHT 2
+#define FOOTER_HEIGHT 8
 #define MIN_FLAGS_COL_WIDTH 18 
-
 
 #define N_GROUP_COLOURS 10
 
@@ -100,6 +101,7 @@ SequenceEditor::SequenceEditor(Project *project,QWidget *parent): QWidget(parent
 	setMinimumSize(400,600);
 	
 	connectToProject();
+	
 }
 
 void SequenceEditor::setProject(Project *project)
@@ -233,6 +235,7 @@ void SequenceEditor::setEditorFont(const QFont &f)
 	flagsWidth_=expanderPos_+flagsColWidth_;
 	labelWidth_= charWidth_*LABEL_WIDTH;
 	headerHeight_=rowHeight_*HEADER_HEIGHT;
+	footerHeight_=rowHeight_*FOOTER_HEIGHT;
 	
 	updateViewExtents();
 	emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
@@ -983,9 +986,9 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	if ((selectingSequences_ || selectingResidues_) && leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
 		// If we go out of the bounds of the window, then the view is scrolled at a rate proportional to the distance
 		// we have moved out of the window
-		if (pos.y() > height() || pos.y() < headerHeight_){ // scroll up/down
+		if (pos.y() > height()-footerHeight_ || pos.y() < headerHeight_){ // scroll up/down
 			if (!scrollRowTimer_.isActive()){
-				if (pos.y() > height())
+				if (pos.y() > height()-footerHeight_)
 					scrollRowIncrement_=1;
 				else 
 					scrollRowIncrement_=-1;
@@ -993,8 +996,8 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 			}
 			else{
 				int newTimeout=baseTimeout_;
-				if (pos.y() > height())
-					newTimeout = baseTimeout_/rint(( pos.y() - height())/5); // scrolling is accelerated proportional to displacement
+				if (pos.y() > height()-footerHeight_)
+					newTimeout = baseTimeout_/rint(( pos.y() - (height()-footerHeight_))/5); // scrolling is accelerated proportional to displacement
 				else if (pos.y() < headerHeight_)
 					newTimeout = baseTimeout_/rint( (headerHeight_-pos.y())/5);
 				if (newTimeout < 100) newTimeout=100;
@@ -1358,7 +1361,7 @@ void SequenceEditor::init()
 void SequenceEditor::updateViewExtents()
 {
 	// round up to catch fractional bits ?
-	int displayableRows=ceil((double)(height()-headerHeight_)/((double) rowHeight_));
+	int displayableRows=ceil((double)(height()-headerHeight_-footerHeight_)/((double) rowHeight_));
 	lastVisibleRow_ = firstVisibleRow_ + displayableRows-1; // zero indexed, so subtract 1
 	
 	numRows_ = project_->sequences.numVisible();
@@ -1745,6 +1748,7 @@ void SequenceEditor::paintHeader(QPainter *p)
 int SequenceEditor::rowAt(int ypos)
 {
 	if (ypos - headerHeight_ <0) return -1;
+	if (ypos > height()-FOOTER_HEIGHT) return -1;
 	return (int) ((ypos-headerHeight_)/rowHeight_) + firstVisibleRow_;
 }
 
