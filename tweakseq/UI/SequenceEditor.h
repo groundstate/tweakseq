@@ -157,9 +157,11 @@ class SequenceEditor: public QWidget
 		QChar cellContent(int, int, int,Sequence *currSeq );
 		void setCellFlag(int row,int col,bool exclude);
 		
+		void getResidueColour(int ch,QColor &,bool);
 		void paintCell( QPainter* p, int, int,Sequence *currSeq );
 		void paintRow(QPainter *p,int);
 		void paintHeader(QPainter *p);
+		void paintConsensusSequence(QPainter *p);
 		
 		int rowAt(int);
 		int columnAt(int);

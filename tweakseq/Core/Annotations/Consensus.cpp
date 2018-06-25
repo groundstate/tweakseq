@@ -68,17 +68,9 @@ static int BLOSUM62map[26]=
  21
 };
 
-Consensus::Consensus(Sequences *s)
+Consensus::Consensus()
 {
-	sequences_=s;
-	// calculate the default plurality
-	QList<Sequence *> &ss = sequences_->sequences();
-	plurality_=0.0;
-	for (int s=0;s<ss.size();s++){
-		double weight=1.0; // FIXME
-		plurality_ += weight;
-	}
-	plurality_ /= 2.0;
+	valid_=false;
 }
 
 Consensus::~Consensus()
@@ -87,6 +79,8 @@ Consensus::~Consensus()
 
 void Consensus::calculate()
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	
 	// Assuming here that aligned sequences are all the same length
 	QList<Sequence *> &ss = sequences_->sequences();
 	int slen = ss.at(0)->residues.length();
@@ -154,7 +148,7 @@ void Consensus::calculate()
 		if (riMatches >= plurality_)
 			consensusSequence_[c]=QChar(ss.at(riHiScore)->residues[c].unicode() & 0xff);
 		else
-			consensusSequence_[c]=QChar('!');
+			consensusSequence_[c]=QChar('?'); // not standard - for internal use
 	}
 	
 	delete[] scores;
@@ -163,11 +157,20 @@ void Consensus::calculate()
 		delete[] rindex[i];
 	delete[] rindex;
 	//qDebug() << consensusSequence_;
+	valid_=true;
 }
 
 void Consensus::setSequences(Sequences *s)
 {
 	sequences_=s;
+	// calculate the default plurality
+	QList<Sequence *> &ss = sequences_->sequences();
+	plurality_=0.0;
+	for (int s=0;s<ss.size();s++){
+		double weight=1.0; // FIXME
+		plurality_ += weight;
+	}
+	plurality_ /= 2.0;
 }
 
 
@@ -181,9 +184,9 @@ void Consensus::setPlurality(double p)
 	plurality_=p;
 }
 
-QString Consensus::sequence()
+QString &Consensus::sequence()
 {
-	return "";
+	return consensusSequence_;
 }
 
 

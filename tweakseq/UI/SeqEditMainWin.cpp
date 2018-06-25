@@ -822,8 +822,8 @@ void SeqEditMainWin::setupAnnotationMenu()
 
 void SeqEditMainWin::annotationConsensus()
 {
-	Consensus c(&(project_->sequences));
-	c.calculate();
+	//Consensus c(&(project_->sequences));
+	//c.calculate();
 }
 
 //
@@ -1323,7 +1323,7 @@ void SeqEditMainWin::createMenus()
 	
 	annotationMenu = menuBar()->addMenu(tr("Annotations"));
 	connect(annotationMenu,SIGNAL(aboutToShow()),this,SLOT(setupAnnotationMenu()));
-	annotationMenu->addAction(annotationConsensusAction);
+	//annotationMenu->addAction(annotationConsensusAction);
 	
 	//
 	// Settings

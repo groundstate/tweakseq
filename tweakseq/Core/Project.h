@@ -38,6 +38,7 @@
 #include <QUndoStack>
 
 #include "AlignmentTool.h"
+#include "Consensus.h"
 #include "Sequences.h"
 
 #define KEEP_FLAGS 0XFFFF // TO DO change all this to allow higher order bits
@@ -127,6 +128,8 @@ class Project:public QObject
 		
 		void readNewAlignment(QString,bool);
 	
+		Consensus consensusSequence;
+		
 	signals:
 		
 		void uiUpdatesEnabled(bool);

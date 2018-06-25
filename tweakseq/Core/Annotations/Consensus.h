@@ -33,8 +33,11 @@ class Consensus{
 	
 	public:
 		
-		Consensus(Sequences *);
+		Consensus();
 		~Consensus();
+		
+		bool isValid(){return valid_;}
+		void setValid(bool v){valid_=v;}
 		
 		void calculate();
 		
@@ -45,12 +48,14 @@ class Consensus{
 		double plurality(){return plurality_;}
 		void   setPlurality(double p);
 		
-		QString sequence();
+		QString &sequence();
 		
 	private:
 		
 		double plurality_;
 		Sequences *sequences_;
 		QString consensusSequence_;
+		bool valid_;
+		
 };
 #endif

@@ -100,6 +100,13 @@ bool Project::empty(){
 void Project::setAligned(bool a)
 {
 	aligned_=a;
+	if (aligned_){
+		consensusSequence.setSequences(&sequences);
+		consensusSequence.calculate();
+	}
+	else{
+		consensusSequence.setValid(false);
+	}
 }
 
 bool Project::importSequences(QStringList &files,QString &errmsg)

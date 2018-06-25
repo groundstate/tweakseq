@@ -1431,6 +1431,93 @@ void SequenceEditor::setCellFlag(int row,int col,bool exclude)
 	}
 }
 
+void SequenceEditor::getResidueColour(int ch,QColor &colour,bool cellSelected)
+{
+	int ich = ch-65;
+	
+	if (sequenceDataType_ == SequenceFile::DNA){
+		switch (colourMap_)
+		{
+			case StandardDNAColourMap:
+				switch (ch)
+				{
+					case '-':
+					{
+						if (cellSelected)
+							colour.setRgb(0,0,0);
+						else
+							colour.setRgb(224,224,224);
+						break;
+					}
+					case '?': // internal use only
+						colour.setRgb(0,0,0);
+						break;
+					default:
+						colour.setRgb(StandardDNAColours[ich][0],StandardDNAColours[ich][1],StandardDNAColours[ich][2]);
+						break;
+				}
+				break;
+		} // of switch
+	}
+	else if (sequenceDataType_ == SequenceFile::Proteins)
+	{
+		switch (colourMap_)
+		{
+			case PhysicoChemicalMap:
+				switch (ch)
+				{
+					case 'A': case 'I': case 'L' : case 'V' : case 'G': case '-':case '!':case '.':
+					{
+						if (cellSelected)
+							colour.setRgb(0,0,0);
+						else
+							colour.setRgb(224,224,224);
+						break;
+					}
+					case '?': // internal use only
+						colour.setRgb(0,0,0);
+						break;
+					default:
+						colour.setRgb(PhysicoChemicalColours[ich][0],PhysicoChemicalColours[ich][1],PhysicoChemicalColours[ich][2]);
+						break;
+				}
+				break;
+			case RasMolMap:
+				switch (ch)
+				{
+					case '-':case '!':case '.':
+					{
+						if (cellSelected)
+							colour.setRgb(0,0,0);
+						else
+							colour.setRgb(224,224,224);
+						break;
+					}
+					default:
+						colour.setRgb(RasMolColours[ich][0],RasMolColours[ich][1],RasMolColours[ich][2]);
+						break;
+				}
+				break;
+			case TaylorMap:
+				switch (ch)
+				{
+					case '-':case '!':case '.':
+					{
+						if (cellSelected)
+							colour.setRgb(0,0,0);
+						else
+							colour.setRgb(224,224,224);
+						break;
+					}
+					default:
+						colour.setRgb(TaylorColours[ich][0],TaylorColours[ich][1],TaylorColours[ich][2]);
+						break;
+				}
+				break;
+		}
+	}
+}
+
 void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq )
 {
 	QChar c,cwflags;
@@ -1496,112 +1583,8 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	// Physico-chemical properties 
 	
 	char ch = c.toLatin1();
-	int ich = ch-65;
+	getResidueColour(ch,txtColor,cellSelected);
 	
-	if (sequenceDataType_ == SequenceFile::DNA){
-		switch (colourMap_)
-		{
-			case StandardDNAColourMap:
-				switch (ch)
-				{
-					case '-':
-					{
-						if (cellSelected)
-							txtColor.setRgb(0,0,0);
-						else
-							txtColor.setRgb(224,224,224);
-						break;
-					}
-					default:
-						txtColor.setRgb(StandardDNAColours[ich][0],StandardDNAColours[ich][1],StandardDNAColours[ich][2]);
-						break;
-				}
-				break;
-		} // of switch
-	}
-	else if (sequenceDataType_ == SequenceFile::Proteins)
-	{
-		switch (colourMap_)
-		{
-			case PhysicoChemicalMap:
-				switch (ch)
-				{
-					case 'A': case 'I': case 'L' : case 'V' : case 'G': case '-':case '!':case '.':
-					{
-						if (cellSelected)
-							txtColor.setRgb(0,0,0);
-						else
-							txtColor.setRgb(224,224,224);
-						break;
-					}
-					default:
-						txtColor.setRgb(PhysicoChemicalColours[ich][0],PhysicoChemicalColours[ich][1],PhysicoChemicalColours[ich][2]);
-						break;
-				}
-				break;
-			case RasMolMap:
-				switch (ch)
-				{
-					case '-':case '!':case '.':
-					{
-						if (cellSelected)
-							txtColor.setRgb(0,0,0);
-						else
-							txtColor.setRgb(224,224,224);
-						break;
-					}
-					default:
-						txtColor.setRgb(RasMolColours[ich][0],RasMolColours[ich][1],RasMolColours[ich][2]);
-						break;
-				}
-				break;
-			case TaylorMap:
-				switch (ch)
-				{
-					case '-':case '!':case '.':
-					{
-						if (cellSelected)
-							txtColor.setRgb(0,0,0);
-						else
-							txtColor.setRgb(224,224,224);
-						break;
-					}
-					default:
-						txtColor.setRgb(TaylorColours[ich][0],TaylorColours[ich][1],TaylorColours[ich][2]);
-						break;
-				}
-				break;
-		}
-	}
-	
-// 	switch (c.toLatin1()){
-// 		case 'D': case 'E': case 'S': case 'T':// red 
-// 			txtColor.setRgb(255,0,0);
-// 			break; 
-// 		case 'R': case 'K': case 'H': // sky blue
-// 			txtColor.setRgb(135,206,235);
-// 			break;
-// 		case 'Q': case 'N': // purple
-// 			txtColor.setRgb(255,0,255);
-// 			break; 
-// 		case 'M': case 'C': // yellow
-// 			txtColor.setRgb(255,255,0);
-// 			break; 
-// 		case 'A': case 'I': case 'L' : case 'V' : case 'G': case '-': 
-// 		case '!'://white
-// 			if (cellSelected)
-// 				txtColor.setRgb(0,0,0);
-// 			else
-// 				txtColor.setRgb(224,224,224);
-// 			break; 
-// 		case 'Y': case 'F': case 'W': // orange
-// 			txtColor.setRgb(254,172,0);
-// 			break; 
-// 		case 'P': // green
-// 			txtColor.setRgb(0,255,0);
-// 			break;
-// 	};
-
 		// FIXME not so useful if the group is not contiguous
 	//if (currSeq->group != NULL){
 	//	int start = rowFirstVisibleSequenceInGroup(currSeq->group);
@@ -1633,7 +1616,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				break;
 			case InvertedView:
-				if (!cellSelected  && c.toLatin1() != '-'){
+				if (!cellSelected  && ch != '-'){
 					p->fillRect(0,2,w,h-2,txtColor);
 				}
 				if ((cwflags.unicode() & EXCLUDE_CELL)){
@@ -1642,13 +1625,13 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 					p->drawLine(2,2,w-2,h-2); // X marks the spot ...
 					p->drawLine(w-2,2,2,h-2);
 				}
-				if (c.toLatin1() != '-')
+				if (ch != '-')
 					txtColor.setRgb(0,0,0);
 				p->setPen(txtColor);
 				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				break;
 			case SolidView:
-				if (!cellSelected && c.toLatin1() != '-'){
+				if (!cellSelected && ch != '-'){
 					p->fillRect(0,2,w,h-2,txtColor);
 				}
 				if ((cwflags.unicode() & EXCLUDE_CELL) ){
@@ -1657,7 +1640,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 					p->drawLine(2,2,w-2,h-2); // X marks the spot ...
 					p->drawLine(w-2,2,2,h-2);
 				}
-				if (c.toLatin1()=='-'){
+				if (ch=='-'){
 					p->setPen(txtColor);
 					p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				}
@@ -1737,11 +1720,63 @@ void SequenceEditor::paintHeader(QPainter *p)
 {
 	QColor txtColor(255,255,255);
 	p->setPen(txtColor);
-	int y0 = headerHeight_- rowHeight_;
+	int y0 = headerHeight_- 2*rowHeight_;
 	int x0 = flagsWidth_+labelWidth_-firstVisibleCol_*colWidth_;
 	for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++){
 		if (col % 10 == 0)
 			p->drawText(x0+(col-1)*colWidth_,y0,colWidth_*3,rowHeight_,Qt::AlignCenter,QString::number(col));
+	}
+	
+	paintConsensusSequence(p);
+	
+}
+
+void SequenceEditor::paintConsensusSequence(QPainter *p)
+{
+	QColor txtColour,fillColour;
+	txtColour.setRgb(255,255,255);
+	p->setPen(txtColour);
+	int y0 = headerHeight_- rowHeight_;
+	int x0 = flagsWidth_+labelWidth_;
+	int tw = fontMetrics().width("Consensus");
+	p->drawText(x0-tw-4,y0,tw,rowHeight_,Qt::AlignRight,"Consensus");
+	
+	if (project_->consensusSequence.isValid()){
+		QString &seq = project_->consensusSequence.sequence();
+		for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++){
+			QChar c = seq[col];
+			char ch = c.toLatin1(); 
+			if (ch=='?') continue;
+			getResidueColour(ch,txtColour,false);
+			p->setPen(txtColour);
+			int xcol = x0 + (col-firstVisibleCol_)*colWidth_;
+			int w = colWidth_;
+			int h = rowHeight_;
+			switch (residueView_){
+				case StandardView:
+					p->drawText( xcol, y0, w, h, Qt::AlignCenter, c);
+					break;
+				case InvertedView:
+					if (ch != '-'){
+						p->fillRect(xcol,y0+2,w,h-2,txtColour);
+						txtColour.setRgb(0,0,0);
+					}
+					p->setPen(txtColour);
+					p->drawText( xcol, y0, w, h, Qt::AlignCenter, c);
+					break;
+				case SolidView:
+					if (ch=='-')
+						p->drawText( xcol, y0, w, h, Qt::AlignCenter, c);
+					else
+						p->fillRect(xcol,y0,w,h-2,txtColour);
+					break;
+			}
+			
+		}
+	}
+	else{
+		fillColour.setRgb(128,128,128);
+		p->fillRect(x0,y0,width()-x0,rowHeight_,fillColour);
 	}
 }
 
