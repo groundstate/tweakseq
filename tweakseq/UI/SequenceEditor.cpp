@@ -720,7 +720,7 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 		project_->residueSelection->clear(); // FIXME better done with a signal ?
 		selectingResidues_=false;	
 		selectingSequences_=true;
-
+		currFocus_ = SequenceView;
 		switch (ev->button()){
 			case Qt::LeftButton:
 			{
@@ -782,7 +782,7 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 	
 	// The user has clicked inside the sequence area so start selecting residues
 	project_->sequenceSelection->clear(); // clear the current selection
-	
+	currFocus_ = ResidueView;
 	switch (ev->button()){
 		case Qt::LeftButton:
 			leftDown_=true;
@@ -1216,6 +1216,71 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 				} // end of if ... else
 			} // end of if
 			break;
+		//case Qt::Key_Tab: case Qt::Key_Backtab:
+		//{
+		//	if (currFocus_== SequenceView)
+		//		currFocus_=ResidueView;
+		//	else
+		//		currFocus_=SequenceView;
+		//	break;
+		//	qDebug() << "Focus";
+		//}
+		case Qt::Key_Up:
+		{
+			if (currFocus_== ResidueView && startCol == stopCol && startRow==stopRow){
+				selAnchorRow_--;
+				if (selAnchorRow_ <0) selAnchorRow_=0;
+				selDragRow_=selAnchorRow_;
+				if (selAnchorRow_ == firstVisibleRow_-1){
+					scrollRowIncrement_=-1;
+					scrollRow();
+				}
+			}
+			repaint();
+			break;
+		}
+		case Qt::Key_Down:
+		{
+			if (currFocus_== ResidueView && startCol == stopCol && startRow==stopRow){
+				selAnchorRow_++;
+				if (selAnchorRow_ >=numRows_) selAnchorRow_=numRows_-1;
+				selDragRow_=selAnchorRow_;
+				if (selAnchorRow_ == lastVisibleRow_+1){
+					scrollRowIncrement_=1;
+					scrollRow();
+				}
+			}
+			repaint();
+			break;
+		}
+		case Qt::Key_Right:
+		{
+			if (currFocus_== ResidueView && startCol == stopCol && startRow==stopRow){
+				selAnchorCol_++;
+				if (selAnchorCol_ >=numCols_) selAnchorCol_=numCols_-1;
+				selDragCol_=selAnchorCol_;
+				if (selAnchorCol_ == lastVisibleCol_+1){
+					scrollColIncrement_=1;
+					scrollCol();
+				}
+			}
+			repaint();
+			break;
+		}
+		case Qt::Key_Left:
+		{
+			if (currFocus_== ResidueView && startCol == stopCol && startRow==stopRow){
+				selAnchorCol_--;
+				if (selAnchorCol_ < 0) selAnchorCol_= 0;
+				selDragCol_=selAnchorCol_;
+				if (selAnchorCol_ == firstVisibleCol_-1){
+					scrollColIncrement_=-1;
+					scrollCol();
+				}
+			}
+			repaint();
+			break;
+		}
 	} // end of switch()		
 }
 
@@ -1351,6 +1416,8 @@ void SequenceEditor::init()
 	
 	scrollColTimer_.setInterval(baseTimeout_);
 	connect(&scrollColTimer_, SIGNAL(timeout()), this, SLOT(scrollCol()) );
+	
+	currFocus_ = SequenceView;
 	
 }
 
@@ -1741,41 +1808,41 @@ void SequenceEditor::paintConsensusSequence(QPainter *p)
 	int tw = fontMetrics().width("Consensus");
 	p->drawText(x0-tw-4,y0,tw,rowHeight_,Qt::AlignRight,"Consensus");
 	
-	if (project_->consensusSequence.isValid()){
-		QString &seq = project_->consensusSequence.sequence();
-		for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++){
-			QChar c = seq[col];
-			char ch = c.toLatin1(); 
-			if (ch=='?') continue;
-			getResidueColour(ch,txtColour,false);
-			p->setPen(txtColour);
-			int xcol = x0 + (col-firstVisibleCol_)*colWidth_;
-			int w = colWidth_;
-			int h = rowHeight_;
-			switch (residueView_){
-				case StandardView:
+	QString &seq = project_->consensusSequence.sequence();
+	for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++){
+		if (col >= seq.size()) break;
+		QChar c = seq[col];
+		char ch = c.toLatin1(); 
+		if (ch=='?') continue;
+		getResidueColour(ch,txtColour,false);
+		p->setPen(txtColour);
+		int xcol = x0 + (col-firstVisibleCol_)*colWidth_;
+		int w = colWidth_;
+		int h = rowHeight_;
+		switch (residueView_){
+			case StandardView:
+				p->drawText( xcol, y0, w, h, Qt::AlignCenter, c);
+				break;
+			case InvertedView:
+				if (ch != '-'){
+					p->fillRect(xcol,y0+2,w,h-2,txtColour);
+					txtColour.setRgb(0,0,0);
+				}
+				p->setPen(txtColour);
+				p->drawText( xcol, y0, w, h, Qt::AlignCenter, c);
+				break;
+			case SolidView:
+				if (ch=='-')
 					p->drawText( xcol, y0, w, h, Qt::AlignCenter, c);
-					break;
-				case InvertedView:
-					if (ch != '-'){
-						p->fillRect(xcol,y0+2,w,h-2,txtColour);
-						txtColour.setRgb(0,0,0);
-					}
-					p->setPen(txtColour);
-					p->drawText( xcol, y0, w, h, Qt::AlignCenter, c);
-					break;
-				case SolidView:
-					if (ch=='-')
-						p->drawText( xcol, y0, w, h, Qt::AlignCenter, c);
-					else
-						p->fillRect(xcol,y0,w,h-2,txtColour);
-					break;
-			}
-			
+				else
+					p->fillRect(xcol,y0,w,h-2,txtColour);
+				break;
 		}
 	}
-	else{
-		fillColour.setRgb(128,128,128);
+	
+	
+	if (!project_->consensusSequence.isValid() && seq.size() > 0){
+		fillColour.setRgb(128,128,128,128);
 		p->fillRect(x0,y0,width()-x0,rowHeight_,fillColour);
 	}
 }

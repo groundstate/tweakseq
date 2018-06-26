@@ -994,22 +994,26 @@ void SeqEditMainWin::createActions()
 	
 	newProjectAction = new QAction( tr("&New project"), this);
 	newProjectAction->setStatusTip(tr("Open a new sequence alignment project"));
+	newProjectAction->setShortcut(QKeySequence::New);
 	addAction(newProjectAction);
 	connect(newProjectAction, SIGNAL(triggered()), this, SLOT(fileNewProject()));
 	
 	openProjectAction = new QAction( tr("&Open project ..."), this);
 	openProjectAction->setStatusTip(tr("Open an existing project"));
+	openProjectAction->setShortcut(QKeySequence::Open);
 	addAction(openProjectAction);
 	connect(openProjectAction, SIGNAL(triggered()), this, SLOT(fileOpenProject()));
 	openProjectAction->setEnabled(true);
 	
 	saveProjectAction = new QAction( tr("&Save project"), this);
 	saveProjectAction->setStatusTip(tr("Save the project"));
+	saveProjectAction->setShortcut(QKeySequence::Save);
 	addAction(saveProjectAction);
 	connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(fileSaveProject()));
 	
 	saveProjectAsAction = new QAction( tr("Save project as ..."), this);
 	saveProjectAsAction->setStatusTip(tr("Save the project under a new name"));
+	saveProjectAsAction->setShortcut(QKeySequence::SaveAs);
 	addAction(saveProjectAsAction);
 	connect(saveProjectAsAction, SIGNAL(triggered()), this, SLOT(fileSaveProjectAs()));
 	
@@ -1036,6 +1040,7 @@ void SeqEditMainWin::createActions()
 	
 	closeAction = new QAction( tr("Close"), this);
 	closeAction->setStatusTip(tr("Close the project "));
+	closeAction->setShortcut(QKeySequence::Close);
 	addAction(closeAction);
 	connect(closeAction, SIGNAL(triggered()), this, SLOT(fileClose()));
 	
@@ -1062,6 +1067,7 @@ void SeqEditMainWin::createActions()
 	
 	cutAction = new QAction( tr("Cu&t"), this);
 	cutAction->setStatusTip(tr("Cut"));
+	cutAction->setShortcut(QKeySequence::Cut);
 	addAction(cutAction);
 	connect(cutAction, SIGNAL(triggered()), se, SLOT(cutSelection()));
 	cutAction->setEnabled(false);
@@ -1074,6 +1080,7 @@ void SeqEditMainWin::createActions()
 	
 	pasteAction = new QAction( tr("Paste"), this);
 	pasteAction->setStatusTip(tr("Paste"));
+	pasteAction->setShortcut(QKeySequence::Paste);
 	addAction(pasteAction);
 	connect(pasteAction, SIGNAL(triggered()), se, SLOT(pasteClipboard()));
 	pasteAction->setEnabled(false);
@@ -1319,10 +1326,9 @@ void SeqEditMainWin::createMenus()
 	alignmentMenu->addAction(alignAllAction);
 	alignmentMenu->addAction(alignSelectionAction);
 	alignmentMenu->addAction(alignStopAction);
-	//alignmentMenu->addAction(undoLastAction);
 	
-	annotationMenu = menuBar()->addMenu(tr("Annotations"));
-	connect(annotationMenu,SIGNAL(aboutToShow()),this,SLOT(setupAnnotationMenu()));
+	//annotationMenu = menuBar()->addMenu(tr("Annotations"));
+	//connect(annotationMenu,SIGNAL(aboutToShow()),this,SLOT(setupAnnotationMenu()));
 	//annotationMenu->addAction(annotationConsensusAction);
 	
 	//

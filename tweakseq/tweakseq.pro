@@ -34,6 +34,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/SequenceSelection.h \
 								 include/SetupWizard.h \
 								 include/Command.h \
+								 include/AddInsertionsCmd.h \
 								 include/AlignmentCmd.h \
 								 include/CutSequencesCmd.h \
 								 include/GroupCmd.h \
@@ -64,6 +65,7 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/XMLHelper.cpp
 									
 SOURCES				+=  Core/UndoCommand/Command.cpp \
+									Core/UndoCommand/AddInsertionsCmd.cpp \
 									Core/UndoCommand/AlignmentCmd.cpp \
 									Core/UndoCommand/CutSequencesCmd.cpp \
 									Core/UndoCommand/GroupCmd.cpp \

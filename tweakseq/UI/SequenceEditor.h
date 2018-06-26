@@ -151,6 +151,8 @@ class SequenceEditor: public QWidget
 		
 	private:
 	
+		enum FocusRegion {ResidueView, SequenceView};
+		
 		void init();
 		
 		void updateViewExtents();
@@ -217,6 +219,9 @@ class SequenceEditor: public QWidget
 		int baseTimeout_, currentTimeout_;
 		
 		int totalWheelRotation_;
+		
+		// keyboard state
+		int currFocus_;
 		
 		QString numStr_; 
 		
