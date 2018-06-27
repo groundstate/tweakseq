@@ -667,6 +667,15 @@ void SequenceEditor::paintEvent(QPaintEvent *pev)
 	//QTime t;
 	//t.start();
 	p.fillRect(pev->rect(),QColor(0,0,0));
+
+	if (project_->sequences.isEmpty()){
+		QColor txtColor;
+		txtColor.setRgb(228,228,228);
+		p.setPen(txtColor);
+		QString joke("Choose the form of the destroyer");
+		p.drawText(width()/2,height()/2,fontMetrics().width(joke),fontMetrics().height(),Qt::AlignCenter,joke);
+		return;
+	}
 	
 	paintHeader(&p);
 	for (int r=firstVisibleRow_;r<=lastVisibleRow_;r++){
@@ -1225,6 +1234,28 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 		//	break;
 		//	qDebug() << "Focus";
 		//}
+		case Qt::Key_PageUp:
+		{
+			if (ev->modifiers() == Qt::AltModifier){ // scroll left EXCEL style
+				scrollColIncrement_ = - (lastVisibleCol_-firstVisibleCol_+1);
+				scrollCol();
+			}
+			else{ // scroll up
+				scrollRowIncrement_ = -(lastVisibleRow_-firstVisibleRow_+1);
+				scrollRow();
+			}
+			break;
+		}
+		case Qt::Key_PageDown:
+			if (ev->modifiers() == Qt::AltModifier){ // scroll right
+				scrollColIncrement_ =  (lastVisibleCol_-firstVisibleCol_+1);
+				scrollCol();
+			}
+			else{ // scroll down
+				scrollRowIncrement_ = (lastVisibleRow_-firstVisibleRow_+1);
+				scrollRow();
+			}
+			break;
 		case Qt::Key_Up:
 		{
 			if (currFocus_== ResidueView && startCol == stopCol && startRow==stopRow){
