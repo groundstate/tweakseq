@@ -735,8 +735,17 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 			{
 				switch (ev->modifiers()){
 					case Qt::NoModifier:
-						project_->sequenceSelection->clear();
-						seqSelectionAnchor_=seqSelectionDrag_=clickedRow;
+						// Check the selection: if we clicked on a contiguous selection, then
+						// it is likely that the selection is being dragged
+						if (project_->sequenceSelection->contains(selSeq)){
+							selectingSequences_=false;
+							draggingSequences_=true; // well,maybe
+							seqSelectionAnchor_=seqSelectionDrag_=clickedRow;
+						}
+						else{
+							project_->sequenceSelection->clear();
+							seqSelectionAnchor_=seqSelectionDrag_=clickedRow;
+						}
 						break;
 					case Qt::ShiftModifier:
 					{
@@ -870,6 +879,14 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 				project_->residueSelection->set(resSel);
 				// DO NOT delete the selection
 			}
+			else if (draggingSequences_){
+				draggingSequences_=false;
+				qDebug() << "Hello " << seqSelectionAnchor_ << " " << seqSelectionDrag_;
+				if (seqSelectionAnchor_ == seqSelectionDrag_){ // didn't move so presume intent was to select
+					Sequence *selSeq=project_->sequences.visibleAt(seqSelectionAnchor_);
+					project_->sequenceSelection->set(selSeq);
+				}
+			}
 			else if (selectingSequences_){
 				selectingSequences_=false;
 			
@@ -913,9 +930,13 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 							cleared=true;
 						}
 						for (s=0;s<sg->size();s++){
-							if (controlModifier || shiftModifier){
+							if (controlModifier ){
 								project_->sequenceSelection->toggle(sg->itemAt(s));
 								groupedSequences.append(sg->itemAt(s));
+							}
+							else if (shiftModifier){
+								project_->sequenceSelection->add(sg->itemAt(s));
+								//groupedSequences.append(sg->itemAt(s));
 							}
 							else
 								project_->sequenceSelection->add(sg->itemAt(s));
@@ -931,10 +952,13 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 				}
 				for (int r=startRow;r<=stopRow;r++){
 					if (project_->sequences.sequences().at(r)->visible){
-						if (controlModifier || shiftModifier){
+						if (controlModifier){
 							// don't toggle any grouped sequences - already done
 							if (!(groupedSequences.contains(project_->sequences.sequences().at(r))))
 								project_->sequenceSelection->toggle(project_->sequences.sequences().at(r));
+						}
+						else if (shiftModifier){
+							project_->sequenceSelection->add(project_->sequences.sequences().at(r));
 						}
 						else{
 							// add()ing again is OK - this will result in no add due to the check in add()
@@ -1098,6 +1122,14 @@ void SequenceEditor::mouseDoubleClickEvent(QMouseEvent *ev)
 	
 }
 
+void SequenceEditor::focusInEvent(QFocusEvent *ev)
+{
+	if (ev->reason() == Qt::TabFocusReason){
+		qDebug() << "tab";
+	}
+	QWidget::focusInEvent(ev);
+}
+
 void SequenceEditor::wheelEvent(QWheelEvent *ev)
 {
 
@@ -1227,12 +1259,12 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 			break;
 		//case Qt::Key_Tab: case Qt::Key_Backtab:
 		//{
-		//	if (currFocus_== SequenceView)
-		//		currFocus_=ResidueView;
-		//	else
-		//		currFocus_=SequenceView;
-		//	break;
-		//	qDebug() << "Focus";
+			//if (currFocus_== SequenceView)
+			//	currFocus_=ResidueView;
+			//else
+			//	currFocus_=SequenceView;
+			//qDebug() << "Focus";
+			//break;
 		//}
 		case Qt::Key_PageUp:
 		{
@@ -1267,6 +1299,21 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 					scrollRow();
 				}
 			}
+			else if (currFocus_ == SequenceView && (seqSelectionAnchor_==seqSelectionDrag_)){
+				if (ev->modifiers() == Qt::ShiftModifier){ // selection is moved up, if it continuous
+					
+				}
+				else{
+					seqSelectionAnchor_--;
+					if (seqSelectionAnchor_<0) seqSelectionAnchor_=0;
+					seqSelectionDrag_=seqSelectionAnchor_;
+					project_->sequenceSelection->set(project_->sequences.visibleAt(seqSelectionAnchor_));
+					if (seqSelectionAnchor_ == firstVisibleRow_-1){
+						scrollRowIncrement_=-1;
+						scrollRow();
+					}
+				}
+			}
 			repaint();
 			break;
 		}
@@ -1277,6 +1324,17 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 				if (selAnchorRow_ >=numRows_) selAnchorRow_=numRows_-1;
 				selDragRow_=selAnchorRow_;
 				if (selAnchorRow_ == lastVisibleRow_+1){
+					scrollRowIncrement_=1;
+					scrollRow();
+				}
+			}
+			else if (currFocus_ == SequenceView && (seqSelectionAnchor_==seqSelectionDrag_)){
+				
+				seqSelectionAnchor_++;
+				if (seqSelectionAnchor_>=numRows_) seqSelectionAnchor_=numRows_-1;
+				seqSelectionDrag_=seqSelectionAnchor_;
+				project_->sequenceSelection->set(project_->sequences.visibleAt(seqSelectionAnchor_));
+				if (seqSelectionAnchor_ == lastVisibleRow_+1){
 					scrollRowIncrement_=1;
 					scrollRow();
 				}
@@ -1312,6 +1370,9 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 			repaint();
 			break;
 		}
+		default:
+			QWidget::keyPressEvent(ev);
+			break;
 	} // end of switch()		
 }
 
@@ -1429,6 +1490,7 @@ void SequenceEditor::init()
 	enableUpdates_=true;
 	selectingSequences_=false;
 	selectingResidues_=false;
+	draggingSequences_=false;
 	selAnchorRow_=selAnchorCol_=selDragRow_=selDragCol_=-1; 
 	seqSelectionAnchor_=seqSelectionDrag_=-1;
 	leftDown_=false;

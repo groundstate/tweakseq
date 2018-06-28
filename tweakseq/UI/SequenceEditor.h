@@ -140,6 +140,8 @@ class SequenceEditor: public QWidget
 		void mouseMoveEvent(QMouseEvent *);
 		void mouseDoubleClickEvent(QMouseEvent *);
 		
+		void focusInEvent(QFocusEvent *);
+		
 		void wheelEvent(QWheelEvent *);
 	
 		void keyPressEvent( QKeyEvent* );
@@ -210,7 +212,7 @@ class SequenceEditor: public QWidget
 		bool enableUpdates_;
 		
 		// mouse state
-		bool selectingSequences_,selectingResidues_;
+		bool selectingSequences_,selectingResidues_,draggingSequences_;
 		int  selAnchorRow_,selAnchorCol_,selDragRow_,selDragCol_;
 		int  seqSelectionAnchor_,seqSelectionDrag_;
 		bool leftDown_;
