@@ -54,7 +54,6 @@ class SequenceSelection:public QObject
 		
 		QList<SequenceGroup *> uniqueGroups();
 		QList<Sequence *> & sequences(){return sel_;}
-		void order();
 		
 	signals:
 		

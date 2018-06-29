@@ -97,6 +97,7 @@ class SequenceEditor: public QWidget
 		void redo();
 		void cutSelection();
 		void pasteClipboard();
+		void moveSelection(int);
 		
 		void groupSequences();
 		void ungroupSequences();

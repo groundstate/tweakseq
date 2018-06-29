@@ -119,10 +119,3 @@ QList<SequenceGroup *> SequenceSelection::uniqueGroups()
 	
 
 
-// Sort the selection into visual order (sqeeunces may have been selected in a random order)
-// This is necessary for eg insertion of aligned sequences after aligning the Selection
-void SequenceSelection::order()
-{
-	// FIXME
-}
-

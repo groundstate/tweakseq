@@ -372,6 +372,54 @@ void SequenceEditor::pasteClipboard()
 	emit edited();
 }
 
+void SequenceEditor::moveSelection(int delta)
+{
+	// Find the first sequence in the selection
+	SequenceSelection *sel =  project_->sequenceSelection;
+	// Sort the selection into descending row order so that the logic of move operations is simpler
+	QList<Sequence *> sortsel;
+	
+	int first = numRows_-1; // it has to be <= to this
+	int last = 0; // it has to be >= to this
+	
+	for (int s=0;s<project_->sequences.size();s++){
+		Sequence *seq = project_->sequences.sequences().at(s);
+		if (sel->contains(seq)){
+			sortsel.append(seq);
+			if (seq->visible){
+				int row = project_->sequences.visibleIndex(seq);
+				if (row < first) first=row;
+				if (row > last)  last = row;
+			}
+		}
+	}
+	
+	// clamp delta and move
+	if (delta > 0){
+		if (last + delta >= numRows_){
+			delta = numRows_- 1 - last;
+			if (delta == 0) return;
+		}
+		for (int s=sortsel.size()-1;s>=0;s--){
+			int index = project_->sequences.index(sortsel.at(s));
+			project_->sequences.move(index, index+delta);
+		}
+	}
+	else if (delta < 0){
+		if (first + delta < 0){
+			delta = -first;
+			if (delta == 0) return;
+		}
+		for (int s=0;s<sortsel.size();s++){
+			int index = project_->sequences.index(sortsel.at(s));
+			project_->sequences.move(index, index+delta);
+		}
+	}
+	else // delta == 0
+		return;
+	
+}
+
 void SequenceEditor::groupSequences()
 {
 	// Groups the current selection of sequences
@@ -1016,7 +1064,7 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	
 	if (readOnly_) return;
 	
-	if ((selectingSequences_ || selectingResidues_) && leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
+	if ((selectingSequences_ || selectingResidues_ || draggingSequences_) && leftDown_){ // only scroll if we are selecting (and we can't select if the widget is read-only)
 		// If we go out of the bounds of the window, then the view is scrolled at a rate proportional to the distance
 		// we have moved out of the window
 		if (pos.y() > height()-footerHeight_ || pos.y() < headerHeight_){ // scroll up/down
@@ -1067,6 +1115,14 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 			if (selectingSequences_){
 				cleanupTimer();
 				if (seqSelectionDrag_ != clickedRow){
+					seqSelectionDrag_=clickedRow;
+					repaint();
+				}
+			}
+			else if (draggingSequences_){
+				cleanupTimer();
+				if (seqSelectionDrag_ != clickedRow){
+					moveSelection(clickedRow-seqSelectionDrag_);
 					seqSelectionDrag_=clickedRow;
 					repaint();
 				}
