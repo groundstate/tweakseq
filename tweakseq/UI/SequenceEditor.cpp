@@ -40,10 +40,12 @@
 
 #include "AminoAcids.h"
 #include "Application.h"
+#include "MoveCmd.h"
 #include "DNA.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "Sequence.h"
+#include "Sequences.h"
 #include "SequenceGroup.h"
 #include "SequenceEditor.h"
 #include "SequenceFile.h"
@@ -374,35 +376,28 @@ void SequenceEditor::pasteClipboard()
 
 void SequenceEditor::moveSelection(int delta)
 {
-	// Find the first sequence in the selection
-	SequenceSelection *sel =  project_->sequenceSelection;
-	// Sort the selection into descending row order so that the logic of move operations is simpler
-	QList<Sequence *> sortsel;
+	// Find the first and last sequence in the selection
 	
-	int first = numRows_-1; // it has to be <= to this
+	Sequences &allseqs = project_->sequences;
+	int first = allseqs.size()-1; // it has to be <= to this
 	int last = 0; // it has to be >= to this
-	
-	for (int s=0;s<project_->sequences.size();s++){
-		Sequence *seq = project_->sequences.sequences().at(s);
-		if (sel->contains(seq)){
-			sortsel.append(seq);
+	int nAllSeqs=allseqs.size();
+	for (int s=0;s<nAllSeqs;s++){
+		Sequence *seq = allseqs.sequences().at(s);
+		if (project_->sequenceSelection->contains(seq)){
 			if (seq->visible){
-				int row = project_->sequences.visibleIndex(seq);
+				int row = allseqs.visibleIndex(seq);
 				if (row < first) first=row;
 				if (row > last)  last = row;
 			}
 		}
 	}
 	
-	// clamp delta and move
+	// Clamp delta 
 	if (delta > 0){
-		if (last + delta >= numRows_){
-			delta = numRows_- 1 - last;
+		if (last + delta >= nAllSeqs){
+			delta = nAllSeqs- 1 - last;
 			if (delta == 0) return;
-		}
-		for (int s=sortsel.size()-1;s>=0;s--){
-			int index = project_->sequences.index(sortsel.at(s));
-			project_->sequences.move(index, index+delta);
 		}
 	}
 	else if (delta < 0){
@@ -410,14 +405,11 @@ void SequenceEditor::moveSelection(int delta)
 			delta = -first;
 			if (delta == 0) return;
 		}
-		for (int s=0;s<sortsel.size();s++){
-			int index = project_->sequences.index(sortsel.at(s));
-			project_->sequences.move(index, index+delta);
-		}
 	}
 	else // delta == 0
 		return;
 	
+	project_->undoStack().push(new MoveCmd(project_,project_->sequenceSelection->sequences(),delta,"move sequences"));
 }
 
 void SequenceEditor::groupSequences()
@@ -709,7 +701,7 @@ void SequenceEditor::resizeEvent(QResizeEvent *)
 
 void SequenceEditor::paintEvent(QPaintEvent *pev)
 {
-	//qDebug() << trace.header(__PRETTY_FUNCTION__);
+	//qDebug() << trace.header(__PRETTY_FUNCTION__) << pev->rect();
 	QPainter p(this);
 
 	//QTime t;
@@ -1122,7 +1114,9 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 			else if (draggingSequences_){
 				cleanupTimer();
 				if (seqSelectionDrag_ != clickedRow){
-					moveSelection(clickedRow-seqSelectionDrag_);
+					// Get the actual row of what we clicked on, so that non-visible sequences are skipped
+					int actualRow = project_->sequences.visibleToActual(clickedRow);
+					moveSelection(actualRow-project_->sequences.visibleToActual(seqSelectionDrag_));
 					seqSelectionDrag_=clickedRow;
 					repaint();
 				}
@@ -1319,7 +1313,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 			//	currFocus_=ResidueView;
 			//else
 			//	currFocus_=SequenceView;
-			//qDebug() << "Focus";
+			//qDebug() << "Focus";clickedRow
 			//break;
 		//}
 		case Qt::Key_PageUp:
@@ -1461,6 +1455,18 @@ void SequenceEditor::scrollRow()
 				selDragRow_ = lastVisibleRow_;
 			else
 				selDragRow_ = firstVisibleRow_;
+		}
+		else if (draggingSequences_){
+			int newDragPosition;
+			if (scrollRowIncrement_ > 0)
+				newDragPosition = lastVisibleRow_;
+			else
+				newDragPosition = firstVisibleRow_;
+			if (newDragPosition != seqSelectionDrag_){
+				int actualRow = project_->sequences.visibleToActual(newDragPosition);
+				moveSelection(actualRow-project_->sequences.visibleToActual(seqSelectionDrag_));
+				seqSelectionDrag_=newDragPosition;
+			}
 		}
 	}
 	
@@ -2095,7 +2101,7 @@ void SequenceEditor::disconnectFromProject()
 
 void SequenceEditor::cleanupTimer()
 {
-	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	//qDebug() << trace.header(__PRETTY_FUNCTION__);
 	scrollRowTimer_.stop();
 	scrollRowTimer_.setInterval(baseTimeout_);
 	scrollColTimer_.stop();

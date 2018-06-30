@@ -24,34 +24,30 @@
 // THE SOFTWARE.
 //
 
-#ifndef __ADD_INSERTIONS_CMD_H_
-#define __ADD_INSERTIONS_CMD_H_
-
-#include <QList>
+#ifndef __MOVE_CMD_H_
+#define __MOVE_CMD_H_
 
 #include "Command.h"
-#include "SequenceSelection.h"
 
 class Sequence;
 
-class AddInsertionsCmd: public Command
+class MoveCmd: public Command
 {
 	public:
 		
-		AddInsertionsCmd(Project *,int,int,QList<Sequence *> &,const QString &);
-		virtual ~AddInsertionsCmd();
+		MoveCmd(Project *,QList<Sequence *> &,int,const QString &);
+		virtual ~MoveCmd();
 
 		virtual void redo();
 		virtual void undo();
 		
-		virtual int id() const {return 1;}
+		virtual int id() const;
 		virtual bool mergeWith(const QUndoCommand *);
 		
 	private:
-	
-		QList<Sequence *> sequences_;
-		int startCol_;
-		int stopCol_;
+		
+		QList<Sequence *> sortseqs_;
+		int delta_;
 		
 };
 

@@ -40,6 +40,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/GroupCmd.h \
 								 include/PasteCmd.h \
 								 include/ImportCmd.h \
+								 include/MoveCmd.h \
 								 include/UngroupCmd.h \
 								 include/Utility.h \
 								 include/Version.h \
@@ -70,6 +71,7 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/CutSequencesCmd.cpp \
 									Core/UndoCommand/GroupCmd.cpp \
 									Core/UndoCommand/ImportCmd.cpp \
+									Core/UndoCommand/MoveCmd.cpp \
 									Core/UndoCommand/PasteCmd.cpp \
 									Core/UndoCommand/UngroupCmd.cpp
 
