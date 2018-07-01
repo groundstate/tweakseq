@@ -1222,6 +1222,22 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 				}
 			}
 			break;
+		case Qt::Key_Plus:
+		{ 
+			QFont f = font();
+			f.setPointSize(f.pointSize()+1);
+			setEditorFont(f);
+			break;
+		}
+		case Qt::Key_Minus:
+		{
+			QFont f = font();
+			int sz= f.pointSize()-1;
+			if (sz < 1) sz=1;
+			f.setPointSize(sz);
+			setEditorFont(f);
+			break;
+		}
 		case Qt::Key_Space: // add insertions
 			if (selectingResidues_){
 				
@@ -1293,7 +1309,9 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 			break;
 		case Qt::Key_PageUp:
 		{
-			if (ev->modifiers() == Qt::AltModifier){ // scroll left EXCEL style
+	
+			if (ev->modifiers() & Qt::AltModifier){ // scroll left EXCEL style
+				
 				scrollColIncrement_ = - (lastVisibleCol_-firstVisibleCol_+1);
 				scrollCol();
 			}
@@ -1304,7 +1322,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 			break;
 		}
 		case Qt::Key_PageDown:
-			if (ev->modifiers() == Qt::AltModifier){ // scroll right
+			if (ev->modifiers() & Qt::AltModifier){ // scroll right
 				scrollColIncrement_ =  (lastVisibleCol_-firstVisibleCol_+1);
 				scrollCol();
 			}

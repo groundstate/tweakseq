@@ -301,7 +301,9 @@ void SeqEditMainWin::fileSaveProjectAs()
 void SeqEditMainWin::fileImport(){
 	
 	// This will only run the first time sequence are imported
+	bool firstRun=false;
 	if (project_->sequenceDataType() == SequenceFile::Unknown){
+		firstRun=true;
 		ImportDialog idlg(SequenceFile::Proteins,this);
 		if (QDialog::Accepted == idlg.exec()){
 			int ret = idlg.dataType();
@@ -340,7 +342,13 @@ void SeqEditMainWin::fileImport(){
 	QStringList files = QFileDialog::getOpenFileNames(this,
     msg,startDir, allext);
 	qDebug() << trace.header() << files;
-	if (files.isEmpty()) return;
+	if (files.isEmpty()){ 
+		if (firstRun){ // cancelling means reset back to unknown 
+			project_->setSequenceDataType(SequenceFile::Unknown); 
+			se->setSequenceDataType(SequenceFile::Unknown);
+		}
+		return;
+	}
 	QString errmsg;
 	bool ok=project_->importSequences(files,errmsg);
 	if (!ok)
