@@ -117,6 +117,8 @@ class Project:public QObject
 		void hideNonSelectedGroupMembers();
 		void unhideAllGroupMembers();
 		
+		void addInsertions(QList<Sequence*> &,int,int,bool);
+		
 		QUndoStack &undoStack(){return undoStack_;} // main window needs access to this to validate actions
 		
 		AlignmentTool*  alignmentTool(){return alignmentTool_;}

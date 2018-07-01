@@ -410,6 +410,7 @@ void SequenceEditor::moveSelection(int delta)
 		return;
 	
 	project_->undoStack().push(new MoveCmd(project_,project_->sequenceSelection->sequences(),delta,"move sequences"));
+	emit edited();
 }
 
 void SequenceEditor::groupSequences()
@@ -1201,6 +1202,8 @@ void SequenceEditor::wheelEvent(QWheelEvent *ev)
 		
 void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	
 	if (readOnly_) return;
 	
 	QString l;
@@ -1229,20 +1232,15 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 				else{
 					if (startRow > stopRow) swap_int(&startRow,&stopRow);
 			
-					// The residue selection is contiguous but we could have selected part of a group at the beginning or end of the
-					// selection. The members of the group are not necessarily contiguous however.
-					// So create a list of all rows in which insertions will be made
-					// First, find all of the unique groups in the selection
-					
 					QList<SequenceGroup *> sgl = project_->residueSelection->uniqueSequenceGroups();
 					qDebug() << trace.header(__PRETTY_FUNCTION__) << "unique groups " << sgl.count(); 
-					
+
 					QList<Sequence *> insSeqs;
 					
 					// Add all of the sequences in each group to the list of sequences receiving insertions
 					int firstVisibleLockedSequence = startRow;
 					int lastVisibleLockedSequence= stopRow;
-					
+
 					for (int g=0;g<sgl.count();g++){
 						SequenceGroup *sg = sgl.at(g);
 						if (sg->locked()){
@@ -1260,7 +1258,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 						}
 						qDebug() << trace.header(__PRETTY_FUNCTION__) << insSeqs.size() << " seqs to insert in"; 
 					}
-					
+
 					// Now add in the rest of the selection to the list of sequences receiving insertions
 					for (row=startRow;row<=stopRow;++row){
 						Sequence *seq = project_->sequences.visibleAt(row);
@@ -1268,7 +1266,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 							insSeqs.append(seq);
 					}
 					qDebug() << trace.header(__PRETTY_FUNCTION__) << insSeqs.size() << " total seqs to insert in"; 
-				
+					
 					// Is there a numeric argument to the insertion ?
 					if (!(numStr_.isEmpty())){
 						stopCol=startCol+numStr_.toInt()-1;
@@ -1279,22 +1277,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 					
 					bool postInsert = !(ev->modifiers() & Qt::ShiftModifier);
 					
-					// Add 1 to startCol,stopCol because  post insertion is
-					// used and undo deletes [startCol,stopCol]
-					//project_->logOperation( new Operation(Operation::Insertion,startRow,stopRow,
-					//		startCol+1,stopCol+1,Q3StrList()));
-				
-					// Insertions across multiple rows are allowed
-					// Increase the size of the displayed area 
-					numCols_ = numCols_  + stopCol - startCol + 1;
-					
-					for (int s=0;s<insSeqs.size();s++){
-						if (postInsert)
-							project_->sequences.addInsertions(insSeqs.at(s),startCol+1,stopCol-startCol+1);
-						else
-							project_->sequences.addInsertions(insSeqs.at(s),startCol,stopCol-startCol+1);	
-					}
-					
+					project_->addInsertions(insSeqs,startCol,stopCol,postInsert);
 					updateViewExtents();
 					if (firstVisibleLockedSequence  < startRow) startRow = firstVisibleLockedSequence;
 					if (lastVisibleLockedSequence   > stopRow)   stopRow = lastVisibleLockedSequence;
@@ -1303,19 +1286,11 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 					//		updateCell(row,col);
 					//}	
 					repaint();
+					emit edited();
 				//emit alignmentChanged();
 				} // end of if ... else
 			} // end of if
 			break;
-		//case Qt::Key_Tab: case Qt::Key_Backtab:
-		//{
-			//if (currFocus_== SequenceView)
-			//	currFocus_=ResidueView;
-			//else
-			//	currFocus_=SequenceView;
-			//qDebug() << "Focus";clickedRow
-			//break;
-		//}
 		case Qt::Key_PageUp:
 		{
 			if (ev->modifiers() == Qt::AltModifier){ // scroll left EXCEL style
@@ -1422,8 +1397,11 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 		}
 		default:
 			QWidget::keyPressEvent(ev);
+			return;
 			break;
-	} // end of switch()		
+	} // end of switch()
+	
+	
 }
 
 //
@@ -1575,9 +1553,6 @@ void SequenceEditor::init()
 	currFocus_ = SequenceView;
 	
 }
-
-
-
 
 
 void SequenceEditor::updateViewExtents()

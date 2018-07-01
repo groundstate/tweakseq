@@ -287,6 +287,13 @@ void  Sequences::removeResidues(int startSequence,int stopSequence,int startPos,
 	emit changed();
 }
 
+void Sequences::removeResidues(Sequence *seq,int startPos,int nResidues)
+{
+	seq->residues.remove(startPos,nResidues);
+	updateCachedVariables(); // must recalculate
+	emit changed();
+}
+
 void  Sequences::unhideAll()
 {
 	for (int s=0;s<sequences_.count();s++)

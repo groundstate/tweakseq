@@ -38,7 +38,7 @@ class AddInsertionsCmd: public Command
 {
 	public:
 		
-		AddInsertionsCmd(Project *,int,int,QList<Sequence *> &,const QString &);
+		AddInsertionsCmd(Project *,QList<Sequence*> &,int,int,bool,const QString &);
 		virtual ~AddInsertionsCmd();
 
 		virtual void redo();
@@ -49,9 +49,9 @@ class AddInsertionsCmd: public Command
 		
 	private:
 	
-		QList<Sequence *> sequences_;
-		int startCol_;
-		int stopCol_;
+		QList<Sequence *> seqs_;
+		int startPos_;
+		int nInsertions_;
 		
 };
 

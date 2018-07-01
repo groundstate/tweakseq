@@ -32,6 +32,7 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+#include "AddInsertionsCmd.h"
 #include "AlignmentCmd.h"
 #include "AlignmentTool.h"
 #include "Application.h"
@@ -251,7 +252,8 @@ void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<Seq
 //
 
 void Project::undo()
-{
+{	
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	undoStack_.undo();
 }
 
@@ -496,6 +498,12 @@ void Project::unhideAllGroupMembers()
 	dirty_=true;
 }
 
+
+void Project::addInsertions(QList<Sequence*> &seqs,int startCol,int stopCol,bool postInsert)
+{
+	undoStack_.push(new AddInsertionsCmd(this,seqs,startCol,stopCol,postInsert,"insertions"));
+	dirty_=true;
+}
 
 
 void Project::setAlignmentTool(const QString & atool)

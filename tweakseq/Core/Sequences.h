@@ -80,6 +80,7 @@ class Sequences:public QObject
 		void  addInsertions(int,int,int,int);
 		void  addInsertions(Sequence *,int,int);
 		void  removeResidues(int,int,int,int);
+		void  removeResidues(Sequence *,int,int);
 		
 		void  unhideAll();
 		

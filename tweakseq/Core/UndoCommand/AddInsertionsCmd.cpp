@@ -28,13 +28,22 @@
 #include "DebuggingInfo.h"
 
 #include "AddInsertionsCmd.h"
+#include "Project.h"
+#include "Sequence.h"
+#include "Sequences.h"
 
-AddInsertionsCmd::AddInsertionsCmd(Project *project,int startCol,int stopCol,QList<Sequence *> &seqs,const QString &txt):
+AddInsertionsCmd::AddInsertionsCmd(Project *project,QList<Sequence *> &seqs,int startCol,int stopCol,bool postInsert,const QString &txt):
 	Command(project,txt)
 {
-	sequences_=seqs;
-	startCol_=startCol;
-	stopCol_=stopCol;
+	
+	nInsertions_=stopCol-startCol+1;
+	startPos_=startCol;
+	if (startCol > stopCol){
+		startPos_= stopCol;
+	}
+	if (postInsert) startPos_++;
+	seqs_=seqs;
+
 }
 
 AddInsertionsCmd::~AddInsertionsCmd()
@@ -44,20 +53,42 @@ AddInsertionsCmd::~AddInsertionsCmd()
 
 void AddInsertionsCmd::redo()
 {
+	for (int s=0;s<seqs_.size();s++){
+			project_->sequences.addInsertions(seqs_.at(s),startPos_,nInsertions_);
+	}
 }
 
 void AddInsertionsCmd::undo()
 {
+	for (int s=0;s<seqs_.size();s++){
+		project_->sequences.removeResidues(seqs_.at(s),startPos_,nInsertions_);
+	}
 }
 
 
 bool AddInsertionsCmd::mergeWith(const QUndoCommand *other)
 {
+	// NB 'other' is the newest
 	if (other->id() != id()) 
 		return false;
 	const AddInsertionsCmd *cmd = static_cast<const AddInsertionsCmd *>(other);
-	// presuming here that startCol is less than stopCol
-	if (cmd->startCol_ == stopCol_+1){
+	
+	qDebug() << trace.header(__PRETTY_FUNCTION__)  << startPos_ << " " << cmd->startPos_;
+	
+	// Sequences must match
+	if (cmd->seqs_.size() != seqs_.size()) return false;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "size ok";
+	for (int s=0;s<seqs_.size();s++){
+		if (!cmd->seqs_.contains(seqs_.at(s))) return false;
 	}
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "seqs match";
+	
+	
+	if (cmd->startPos_>=startPos_ && cmd->startPos_ <= startPos_ + nInsertions_){
+		qDebug() << "GOOD " << nInsertions_;
+		nInsertions_+= cmd->nInsertions_;
+		return true;
+	}
+	
 	return false;
 }
