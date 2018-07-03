@@ -40,6 +40,7 @@
 #include "ClustalO.h"
 #include "CutResiduesCmd.h"
 #include "CutSequencesCmd.h"
+#include "ExcludeResiduesCmd.h"
 #include "FASTAFile.h"
 #include "GroupCmd.h"
 #include "ImportCmd.h"
@@ -261,6 +262,13 @@ void Project::undo()
 void Project::redo()
 {
 	undoStack_.redo();
+}
+
+void Project::excludeSelectedResidues(bool add)
+{
+	undoStack_.push(new ExcludeResiduesCmd(this,residueSelection->residueGroups(),add,
+		(add?"exclude residues":"remove exclusions")));
+	dirty_=true;
 }
 
 bool Project::cutSelectedResidues()
@@ -694,7 +702,7 @@ void Project::load(QString &fname)
 		Sequence *seq = sequences.append(sName,sResidues,sComment,sSrc,sVisible);
 		seq->bookmarked=sBookmarked;
 		for (int x=0;x<exclusions.size()-1;x+=2)
-			seq->exclude(exclusions.at(x),exclusions.at(x+1));
+			seq->exclude(exclusions.at(x),exclusions.at(x+1),true);
 				 
 	}	
 	emit uiUpdatesEnabled(true);

@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+// Copyright (c) 2000-2018  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,43 +24,28 @@
 // THE SOFTWARE.
 //
 
+#ifndef __EXCLUDE_RESIDUES_CMD_H_
+#define __EXCLUDE_RESIDUES_CMD_H_
 
-#ifndef __SEQUENCE_H_
-#define __SEQUENCE_H_
+#include "Command.h"
 
-#include <QList>
-#include <QSharedPointer>
-#include <QWeakPointer>
-#include <QString>
+class ResidueGroup;
 
-class Sequence;
-class SequenceGroup;
-
-typedef QSharedPointer< Sequence > SequencePtr;
-
-class Sequence
+class ExcludeResiduesCmd: public Command
 {
 	public:
-		Sequence();
-		Sequence(QString,QString,QString c=QString(),QString f=QString(),bool vis=true);
-		~Sequence();
-		// comment is for a longer comment
-		QString label,residues,comment;
 		
-		QString filter(bool applyExclusions=false);
-		void exclude(int,int,bool);
-		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
+		ExcludeResiduesCmd(Project *,QList<ResidueGroup *> &,bool add,const QString &);
+		virtual ~ExcludeResiduesCmd();
+
+		virtual void redo();
+		virtual void undo();
+	
 		
-		void remove(int,int);
-		void insert(QString,int);
-		
-		bool visible;
-		bool bookmarked;
-		
-		SequenceGroup *group;
-		
-		QString source; // file sequence was originally sourced from
-		
+	private:
+
+		QList<ResidueGroup *> residues_;
+		bool add_;
 };
 
 #endif

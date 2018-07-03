@@ -63,12 +63,17 @@ QString Sequence::filter(bool applyExclusions)
 	return r;
 }
 
-void Sequence::exclude(int start,int stop)
+void Sequence::exclude(int start,int stop,bool add)
 {
 	if (start <0 || stop >= residues.size()) return;
 			
-	for (int i=start;i<=stop;i++)
-		residues[i] = residues[i].unicode() | EXCLUDE_CELL;
+	for (int i=start;i<=stop;i++){
+		if (add)
+			residues[i] = residues[i].unicode() | EXCLUDE_CELL;
+		else
+			residues[i] = residues[i].unicode() & (~EXCLUDE_CELL);
+	}
+	
 }
 
 // Returned as a flat list of [start,end] pairs

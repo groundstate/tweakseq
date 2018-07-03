@@ -468,29 +468,11 @@ void SequenceEditor::unhideAll()
 void SequenceEditor::excludeSelectedResidues()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	
-	int startRow=selAnchorRow_,stopRow=selDragRow_,
-			startCol=selAnchorCol_,stopCol=selDragCol_,row,col;
 			
 	if (selectingResidues_){ // flag selected residues as being excluded from the
 		selectingResidues_=false; // alignment
-		// Order start and stop so they can be used in loops
-		if (startRow > stopRow) swap_int(&startRow,&stopRow);
-		if (startCol > stopCol) swap_int(&startCol,&stopCol);
-		
-		// Create a new undo record
-		//project_->logOperation( new Operation(Operation::Mark,startRow,stopRow,
-		//	startCol,stopCol,1));
-			
-		// Mark the residues
-		for (row=startRow;row<=stopRow;row++){
-			int actualRow = project_->sequences.visibleToActual(row);
-			// Update past the deletion point only
-			for (col=startCol;col<=stopCol;col++){
-				setCellFlag(actualRow,col,true);
-				//updateCell(row,col);
-			}
-		}
+		project_->excludeSelectedResidues(true);
+		emit edited();
 		repaint();	
 	}
 }
@@ -499,32 +481,12 @@ void SequenceEditor::removeExclusions()
 {
 	// Selected cells that are marked are unmarked
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	
-	int startRow=selAnchorRow_,stopRow=selDragRow_,
-			startCol=selAnchorCol_,stopCol=selDragCol_,row,col;
-			
 	if (selectingResidues_){ // flag selected residues as being excluded from the
 		selectingResidues_=false; // alignment
-		// Order start and stop so they can be used in loops
-		if (startRow > stopRow) swap_int(&startRow,&stopRow);
-		if (startCol > stopCol) swap_int(&startCol,&stopCol);
-		
-		// Create a new undo record
-		//undoStack.push( new TEditRec(Edit_Mark,startRow,stopRow,
-		//	startCol,stopCol,1));
-		
-		// Mark the residues
-		for (row=startRow;row<=stopRow;row++){
-			int actualRow = project_->sequences.visibleToActual(row);
-			// Update past the deletion point only
-			for (col=startCol;col<=stopCol;col++){
-			  setCellFlag(actualRow,col,false);
-				//updateCell(row,col);
-			}// of for (col=)
-		}
-		repaint();
-		
-	}	// of if (selectingResidues_)
+		project_->excludeSelectedResidues(false);
+		emit edited();
+		repaint();	
+	}
 }
 
 void SequenceEditor::sequencesCleared()
@@ -1632,19 +1594,6 @@ QChar SequenceEditor::cellContent(int row, int col, int maskFlags, Sequence *cur
 
 }
 
-void SequenceEditor::setCellFlag(int row,int col,bool exclude)
-{
-	// TO DO - make portable the OR
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << " row=" << row << " col=" << col << " exclude=" << exclude;
-	QList<Sequence *> &seq = project_->sequences.sequences();
-	
-	if (exclude){
-		seq.at(row)->residues[col] = seq.at(row)->residues[col].unicode() | EXCLUDE_CELL;
-	}
-	else{
-		seq.at(row)->residues[col] = (seq.at(row)->residues[col].unicode() & (~EXCLUDE_CELL));
-	}
-}
 
 void SequenceEditor::getResidueColour(int ch,QColor &colour,bool cellSelected)
 {

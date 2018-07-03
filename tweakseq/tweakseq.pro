@@ -71,6 +71,7 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/AlignmentCmd.cpp \
 									Core/UndoCommand/CutResiduesCmd.cpp \
 									Core/UndoCommand/CutSequencesCmd.cpp \
+									Core/UndoCommand/ExcludeResiduesCmd.cpp \
 									Core/UndoCommand/GroupCmd.cpp \
 									Core/UndoCommand/ImportCmd.cpp \
 									Core/UndoCommand/MoveCmd.cpp \

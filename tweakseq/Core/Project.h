@@ -103,6 +103,7 @@ class Project:public QObject
 		
 		void undo();
 		void redo();
+		void excludeSelectedResidues(bool);
 		bool cutSelectedResidues();
 		bool cutSelectedSequences();
 		void pasteClipboard(Sequence *);
