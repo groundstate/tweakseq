@@ -108,6 +108,7 @@ void Sequence::remove(int start,int n)
 
 void Sequence::insert(QString,int)
 {
+	
 }
 
 		

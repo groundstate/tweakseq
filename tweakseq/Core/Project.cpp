@@ -38,6 +38,7 @@
 #include "Application.h"
 #include "ClustalFile.h"
 #include "ClustalO.h"
+#include "CutResiduesCmd.h"
 #include "CutSequencesCmd.h"
 #include "FASTAFile.h"
 #include "GroupCmd.h"
@@ -264,12 +265,7 @@ void Project::redo()
 
 bool Project::cutSelectedResidues()
 {
-	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	for (int rg=0;rg<residueSelection->size();rg++){
-		ResidueGroup *resGroup = residueSelection->itemAt(rg);
-		resGroup->sequence->remove(resGroup->start,resGroup->stop-resGroup->start+1);
-	}
-	residueSelection->clear();
+	undoStack_.push(new CutResiduesCmd(this,residueSelection->residueGroups(),"cut insertions"));
 	dirty_=true;
 	return true;
 }

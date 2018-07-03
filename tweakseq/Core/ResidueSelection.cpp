@@ -47,8 +47,7 @@ void ResidueSelection::set(QList<ResidueGroup *> &newSelection)
 
 void ResidueSelection::clear()
 {
-	while (!sel_.isEmpty())
-     delete sel_.takeFirst();
+	sel_.clear();
 	emit changed();
 }
 

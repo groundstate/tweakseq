@@ -36,6 +36,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/Command.h \
 								 include/AddInsertionsCmd.h \
 								 include/AlignmentCmd.h \
+								 include/CutResiduesCmd.h \
 								 include/CutSequencesCmd.h \
 								 include/GroupCmd.h \
 								 include/PasteCmd.h \
@@ -68,6 +69,7 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/AddInsertionsCmd.cpp \
 									Core/UndoCommand/AlignmentCmd.cpp \
+									Core/UndoCommand/CutResiduesCmd.cpp \
 									Core/UndoCommand/CutSequencesCmd.cpp \
 									Core/UndoCommand/GroupCmd.cpp \
 									Core/UndoCommand/ImportCmd.cpp \

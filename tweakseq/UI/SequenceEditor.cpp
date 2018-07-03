@@ -353,7 +353,7 @@ void SequenceEditor::cutSelection()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	if (project_->residueSelection->isInsertionsOnly()){
-		// FIXME
+		project_->cutSelectedResidues();
 	}
 	else if (!project_->sequenceSelection->empty()){
 		project_->cutSelectedSequences();

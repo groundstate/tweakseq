@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+// Copyright (c) 2000-2018  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,63 +24,41 @@
 // THE SOFTWARE.
 //
 
+#include <QtDebug>
+#include "DebuggingInfo.h"
 
-#ifndef __RESIDUE_SELECTION_H_
-#define __RESIDUE_SELECTION_H_
+#include "Command.h"
+#include "CutResiduesCmd.h"
+#include "Project.h"
+#include "ResidueSelection.h"
 
-#include <QObject>
-
-class Sequence;
-class SequenceGroup;
-
-class ResidueGroup
+CutResiduesCmd::CutResiduesCmd(Project *project,QList<ResidueGroup *> &residues,const QString &txt):Command(project,txt)
 {
-	public:
-		ResidueGroup(Sequence *s,int startResidueIndex,int stopResidueIndex)
-		{
-			sequence=s;
-			start=startResidueIndex;
-			stop=stopResidueIndex;
-		}
-		ResidueGroup(ResidueGroup *r)
-		{
-			sequence=r->sequence;
-			start=r->start;
-			stop=r->stop;
-		}
-		
-		Sequence *sequence;
-		int start,stop;
-};
+	residues_=residues;
+}
 
-class ResidueSelection:public QObject
+CutResiduesCmd::~CutResiduesCmd()
 {
-	Q_OBJECT
-	
-	public:
-		
-		ResidueSelection();
-		~ResidueSelection();
-	
-		// There's only one contiguous residue selection at any time so don't need toggle
-		void set(QList<ResidueGroup *> &);
-		void clear();
-		
-		bool isInsertionsOnly();
-		
-		bool empty(){return sel_.size() == 0;}
-		int  size(){return sel_.size();}
-		ResidueGroup * itemAt(int);
-		QList<ResidueGroup*> & residueGroups(){return sel_;}
-		QList<SequenceGroup *> uniqueSequenceGroups();
-		
-	signals:
-		
-		void changed();
-		
-	private:
-		
-		QList<ResidueGroup *> sel_;
-};
+}	
 
-#endif
+void CutResiduesCmd::redo()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	cutResidues_.clear();
+	for (int rg=0;rg<residues_.size();rg++){
+		ResidueGroup *resGroup = residues_.at(rg);
+		cutResidues_.append(resGroup->sequence->residues.mid(resGroup->start,resGroup->stop-resGroup->start+1));
+		resGroup->sequence->remove(resGroup->start,resGroup->stop-resGroup->start+1);
+	}
+	project_->residueSelection->clear();
+}
+
+void CutResiduesCmd::undo()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	for (int rg=0;rg<residues_.size();rg++){
+		ResidueGroup *resGroup = residues_.at(rg);
+		resGroup->sequence->residues.insert(resGroup->start,cutResidues_.at(rg));
+	}
+	project_->residueSelection->set(residues_);
+}

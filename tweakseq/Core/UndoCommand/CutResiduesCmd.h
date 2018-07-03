@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+// Copyright (c) 2000-2018  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,63 +24,31 @@
 // THE SOFTWARE.
 //
 
+#ifndef __CUT_RESIDUES_CMD_H_
+#define __CUT_RESIDUES_CMD_H_
 
-#ifndef __RESIDUE_SELECTION_H_
-#define __RESIDUE_SELECTION_H_
+#include <QList>
 
-#include <QObject>
+#include "Command.h"
+#include "Sequence.h"
 
-class Sequence;
-class SequenceGroup;
+class ResidueGroup;
 
-class ResidueGroup
+class CutResiduesCmd: public Command
 {
 	public:
-		ResidueGroup(Sequence *s,int startResidueIndex,int stopResidueIndex)
-		{
-			sequence=s;
-			start=startResidueIndex;
-			stop=stopResidueIndex;
-		}
-		ResidueGroup(ResidueGroup *r)
-		{
-			sequence=r->sequence;
-			start=r->start;
-			stop=r->stop;
-		}
 		
-		Sequence *sequence;
-		int start,stop;
-};
+		CutResiduesCmd(Project *,QList<ResidueGroup *> &,const QString &);
+		virtual ~CutResiduesCmd();
 
-class ResidueSelection:public QObject
-{
-	Q_OBJECT
-	
-	public:
-		
-		ResidueSelection();
-		~ResidueSelection();
-	
-		// There's only one contiguous residue selection at any time so don't need toggle
-		void set(QList<ResidueGroup *> &);
-		void clear();
-		
-		bool isInsertionsOnly();
-		
-		bool empty(){return sel_.size() == 0;}
-		int  size(){return sel_.size();}
-		ResidueGroup * itemAt(int);
-		QList<ResidueGroup*> & residueGroups(){return sel_;}
-		QList<SequenceGroup *> uniqueSequenceGroups();
-		
-	signals:
-		
-		void changed();
+		virtual void redo();
+		virtual void undo();
 		
 	private:
+	
+		QList<ResidueGroup *> residues_;
+		QList<QString>        cutResidues_;
 		
-		QList<ResidueGroup *> sel_;
 };
 
 #endif
