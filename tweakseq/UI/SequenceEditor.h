@@ -181,6 +181,7 @@ class SequenceEditor: public QWidget
 		void disconnectFromProject();
 		void cleanupTimer();
 		
+		QRect dirtyRowsRect(int,int);
 		// data
 		Project *project_;
 		QList<Sequence *> bookmarks_; // bookmarks move with a sequence FIXME shared pointer
@@ -225,7 +226,11 @@ class SequenceEditor: public QWidget
 		// keyboard state
 		int currFocus_;
 		
-		QString numStr_; 
+		QString numStr_;
+		
+		// 
+		bool repaintDirtyRows_;
+		int  firstDirtyRow_,lastDirtyRow_;
 		
 };
 #endif

@@ -681,9 +681,16 @@ void SequenceEditor::paintEvent(QPaintEvent *pev)
 	}
 	
 	paintHeader(&p);
-	for (int r=firstVisibleRow_;r<=lastVisibleRow_;r++){
+	int startRow=firstVisibleRow_;
+	int stopRow = lastVisibleRow_;
+	if (repaintDirtyRows_){
+		startRow=firstDirtyRow_;
+		stopRow=lastDirtyRow_;
+	}
+	for (int r=startRow;r<=stopRow;r++){
 		paintRow(&p,r);
 	}
+	repaintDirtyRows_=false;
 	//qDebug() << trace.header(__PRETTY_FUNCTION__) << t.elapsed() << "ms";
 }
 
@@ -1093,18 +1100,13 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 				// Determine the bounds of the rectangle enclosing both
 				// the old highlight box and the new highlight box (so we redraw cells in the old box)
 				// Determine the vertical bounds
-				//startRow = find_smallest_int(currRow,selAnchorRow_,selDragRow_);
-				//stopRow  = find_largest_int(currRow,selAnchorRow_,selDragRow_);
-				// Determine the horizontal bounds
-				//startCol= find_smallest_int(currCol,selAnchorCol_,selDragCol_);
-				//stopCol = find_largest_int(currCol,selAnchorCol_,selDragCol_);
-				qDebug() << trace.header(__PRETTY_FUNCTION__) << currRow << " " << currCol;
+				firstDirtyRow_ = find_smallest_int(currRow,selAnchorRow_,selDragRow_);
+				lastDirtyRow_  = find_largest_int(currRow,selAnchorRow_,selDragRow_);
 				selDragRow_=currRow;
 				selDragCol_=currCol;
-				
-				//qDebug() << trace.header(__PRETTY_FUNCTION__) << startRow << " " << stopRow << " " <<
-				//	startCol << " " << stopCol;
-				repaint();
+				repaintDirtyRows_=true;
+				if (firstDirtyRow_>lastDirtyRow_) swap_int(&firstDirtyRow_,&lastDirtyRow_);
+				repaint(dirtyRowsRect(firstDirtyRow_,lastDirtyRow_));
 			}
 		}
 	}	
@@ -1531,6 +1533,8 @@ void SequenceEditor::init()
 	connect(&scrollColTimer_, SIGNAL(timeout()), this, SLOT(scrollCol()) );
 	
 	currFocus_ = SequenceView;
+	
+	repaintDirtyRows_=false;
 	
 }
 
@@ -2049,4 +2053,14 @@ void SequenceEditor::cleanupTimer()
 	scrollColTimer_.stop();
 	scrollColTimer_.setInterval(baseTimeout_);
 	currentTimeout_ = baseTimeout_;
+}
+
+QRect SequenceEditor::dirtyRowsRect(int startRow,int stopRow)
+{
+	QRect r;
+	r.setX(0);
+	r.setY(headerHeight_+rowHeight_*(startRow-firstVisibleRow_));
+	r.setWidth(width());
+	r.setHeight(rowHeight_*(stopRow-startRow+1));
+	return r;
 }
