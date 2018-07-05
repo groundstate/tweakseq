@@ -33,7 +33,7 @@
 #include <QLabel>
 #include <QStringListModel>
 
-#include "FindTool.h"
+#include "GoToTool.h"
 #include "Project.h"
 #include "Sequence.h"
 #include "Sequences.h"
@@ -42,12 +42,12 @@
 // Public members
 //
 
-FindTool::FindTool(QWidget *parent):QWidget(parent)
+GoToTool::GoToTool(QWidget *parent):QWidget(parent)
 {
 	
 	QBoxLayout *layout = new QBoxLayout(QBoxLayout::LeftToRight,this);
 	layout->setContentsMargins(0,0,0,0);
-	QLabel *label = new QLabel("Find",this);
+	QLabel *label = new QLabel("Go to",this);
 	
 	layout->addWidget(label);
 	cb_=new QComboBox(this);
@@ -66,14 +66,14 @@ FindTool::FindTool(QWidget *parent):QWidget(parent)
 
 }
 
-void FindTool::setCompleterModel(QStringList &sl)
+void GoToTool::setCompleterModel(QStringList &sl)
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << sl.count();
 	model_->setStringList(sl);
 }
 
 
-// void FindTool::updateCompleterModel()
+// void GoToTool::updateCompleterModel()
 // {
 // 	QList<Sequence *> &sequences = project_->sequences.sequences();
 // 	QStringList labels;

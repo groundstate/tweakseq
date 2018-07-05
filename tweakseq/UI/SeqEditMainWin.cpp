@@ -69,7 +69,7 @@
 #include "ClustalFile.h"
 #include "ClustalO.h"
 #include "FASTAFile.h"
-#include "FindTool.h"
+#include "GoToTool.h"
 #include "ImportDialog.h"
 #include "MessageWin.h"
 #include "Muscle.h"
@@ -151,7 +151,7 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	connect(hscroller_,SIGNAL(valueChanged(int)),se,SLOT(setFirstVisibleColumn(int)));
 	connect(se,SIGNAL(edited()),this,SLOT(setupEditActions()));
 	
-	connect(findTool_,SIGNAL(find(const QString &)),se,SLOT(selectSequence(const QString &)));
+	connect(goToTool_,SIGNAL(find(const QString &)),se,SLOT(selectSequence(const QString &)));
 
 	statusBar()->showMessage("Ready");
 }
@@ -173,7 +173,7 @@ void SeqEditMainWin::postLoadTidy()
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	
 	se->postLoadTidy();
-	updateFindTool();
+	updateGoToTool();
 	setupAlignmentActions();
 	updateSettingsActions();
 	setWindowTitle("tweakseq - " + project_->name());
@@ -356,7 +356,7 @@ void SeqEditMainWin::fileImport(){
 	else
 		lastImportedFile=files.at(files.size()-1);
 	
-	updateFindTool();
+	updateGoToTool();
 	
 }
 
@@ -1402,8 +1402,8 @@ void SeqEditMainWin::createToolBars()
 {
 	seqEditTB =addToolBar("Sequence editor tools");
 	
-	findTool_ = new FindTool(this);
-	seqEditTB->addWidget(findTool_);
+	goToTool_ = new GoToTool(this);
+	seqEditTB->addWidget(goToTool_);
 	
 	seqEditTB->addAction(prevBookmarkAction);
 	seqEditTB->addAction(nextBookmarkAction);
@@ -1555,13 +1555,13 @@ void SeqEditMainWin::printRes( QPainter* p,QChar r,int x,int y)
 	p->setPen(oldPen);
 }
 
-void SeqEditMainWin::updateFindTool()
+void SeqEditMainWin::updateGoToTool()
 {
 	QList<Sequence *> &sequences = project_->sequences.sequences();
 	QStringList labels;
 	for (int s=0;s<sequences.count();s++)
 		labels.append(sequences.at(s)->label);
-	findTool_->setCompleterModel(labels);
+	goToTool_->setCompleterModel(labels);
 }
 
 void SeqEditMainWin::updateSettingsActions()

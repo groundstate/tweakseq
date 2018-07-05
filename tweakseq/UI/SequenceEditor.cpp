@@ -667,8 +667,8 @@ void SequenceEditor::paintEvent(QPaintEvent *pev)
 	//qDebug() << trace.header(__PRETTY_FUNCTION__) << pev->rect();
 	QPainter p(this);
 
-	//QTime t;
-	//t.start();
+	QTime t;
+	t.start();
 	p.fillRect(pev->rect(),QColor(0,0,0));
 
 	if (project_->sequences.isEmpty()){
@@ -691,7 +691,7 @@ void SequenceEditor::paintEvent(QPaintEvent *pev)
 		paintRow(&p,r);
 	}
 	repaintDirtyRows_=false;
-	//qDebug() << trace.header(__PRETTY_FUNCTION__) << t.elapsed() << "ms";
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << t.elapsed() << "ms";
 }
 
 void SequenceEditor::mousePressEvent( QMouseEvent *ev )
@@ -1077,18 +1077,38 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 			if (selectingSequences_){
 				cleanupTimer();
 				if (seqSelectionDrag_ != clickedRow){
+					currRow=clickedRow;
+					firstDirtyRow_ = find_smallest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
+					lastDirtyRow_  = find_largest_int(currRow,seqSelectionAnchor_,seqSelectionDrag_);
+					repaintDirtyRows_=true;
 					seqSelectionDrag_=clickedRow;
-					repaint();
+					repaint(dirtyRowsRect(firstDirtyRow_,lastDirtyRow_));
 				}
 			}
 			else if (draggingSequences_){
 				cleanupTimer();
 				if (seqSelectionDrag_ != clickedRow){
-					// Get the actual row of what we clicked on, so that non-visible sequences are skipped
-					int actualRow = project_->sequences.visibleToActual(clickedRow);
-					moveSelection(actualRow-project_->sequences.visibleToActual(seqSelectionDrag_));
+					// Get the actual row of what we clicked on, so that non-visible sequences are skitruepped
+					QList<Sequence *> & sel = project_->sequenceSelection->sequences();
+					int firstVis = rowFirstVisibleSequence(sel);
+					int lastVis  = rowLastVisibleSequence(sel); 
+					int delta = project_->sequences.visibleToActual(clickedRow) - project_->sequences.visibleToActual(seqSelectionDrag_);
+					currRow=clickedRow;
+					if (delta < 0){
+						firstDirtyRow_ =firstVis+delta;
+						if (firstDirtyRow_ < 0) firstDirtyRow_=0;
+						lastDirtyRow_  =lastVis;
+					}
+					else{
+						firstDirtyRow_ =firstVis;
+						lastDirtyRow_  =lastVis+delta; 
+						if (lastDirtyRow_ >= numRows_) lastDirtyRow_=numRows_-1;
+					}
+					repaintDirtyRows_=true;
+					moveSelection(delta);
 					seqSelectionDrag_=clickedRow;
-					repaint();
+					repaint(dirtyRowsRect(firstDirtyRow_,lastDirtyRow_));
+					//repaint();
 				}
 			}
 			else if (selectingResidues_){

@@ -38,7 +38,7 @@ class QSplitter;
 class QTemporaryFile;
 class QToolBar;
 
-class FindTool;
+class GoToTool;
 class MessageWin;
 class Project;
 class SequenceEditor;
@@ -133,7 +133,7 @@ private:
 	
 	void printRes( QPainter*,QChar,int,int );
 	
-	void updateFindTool();
+	void updateGoToTool();
 	void updateSettingsActions();
 	
 	bool maybeSave();
@@ -161,7 +161,7 @@ private:
 	QAction *createBookmarkAction,*removeBookmarkAction,*nextBookmarkAction,*prevBookmarkAction;
 	
 	QToolBar *seqEditTB;
-	FindTool *findTool_;
+	GoToTool *goToTool_;
 	
 	QScrollBar *vscroller_,*hscroller_;
 	QSplitter *split;

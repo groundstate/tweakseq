@@ -17,7 +17,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/DNA.h \
 								 include/DebuggingInfo.h \
 								 include/FASTAFile.h \
-								 include/FindTool.h \
+								 include/GoToTool.h \
 								 include/ImportDialog.h \
 								 include/MessageWin.h \
 								 include/Muscle.h \
@@ -82,7 +82,7 @@ SOURCES				+=  Core/Annotations/Consensus.cpp
 
 SOURCES       +=  UI/AboutDialog.cpp \
 									UI/AlignmentToolDlg.cpp \
-									UI/FindTool.cpp \
+									UI/GoToTool.cpp \
 									UI/ImportDialog.cpp \
 									UI/MessageWin.cpp \
 									UI/SequenceEditor.cpp \

@@ -25,8 +25,8 @@
 //
 
 
-#ifndef __FIND_TOOL_H_
-#define __FIND_TOOL_H_
+#ifndef __GOTO_TOOL_H_
+#define __GOTO_TOOL_H_
 
 #include <QWidget>
 
@@ -34,13 +34,13 @@ class QComboBox;
 class QCompleter;
 class QStringListModel;
 
-class FindTool: public QWidget
+class GoToTool: public QWidget
 {
 	Q_OBJECT
 	
 	public:
 		
-		FindTool(QWidget *parent=0);
+		GoToTool(QWidget *parent=0);
 		void setCompleterModel(QStringList &);
 		
 	signals:
