@@ -927,6 +927,27 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 	
 }
 
+int  Project::search(const QString &needle)
+{
+	while (!searchResults_.isEmpty()){
+		delete searchResults_.takeLast();
+	}
+	int len = needle.length();
+	QRegExp rx(needle);
+	for (int s=0;s<sequences.size();s++){
+		int pos = 0;
+		Sequence *seq = sequences.sequences().at(s);
+		while ((pos = rx.indexIn(seq->residues, pos)) != -1) {
+			searchResults_.append(new SearchResult(seq,pos,pos+len-1));
+			pos += rx.matchedLength();
+		}
+	}
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << " found " << searchResults_.size();
+	return searchResults_.size();
+	
+}
+
+		
 //
 //	Public slots:
 //

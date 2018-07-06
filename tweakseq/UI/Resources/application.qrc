@@ -9,6 +9,8 @@
 	<file>images/bookmark.png</file>
 	<file>images/go-next.png</file>
 	<file>images/go-previous.png</file>
+	<file>images/go-down-search.png</file>
+	<file>images/go-up-search.png</file>
 </qresource>
 </RCC>
 

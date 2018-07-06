@@ -30,9 +30,11 @@
 #include <QMainWindow>
 #include <QProcess>
 
+class QComboBox;
 class QDomDocument;
 class QDomElement;
 class QPrinter;
+class QPushButton;
 class QScrollBar;
 class QSplitter;
 class QTemporaryFile;
@@ -41,6 +43,7 @@ class QToolBar;
 class GoToTool;
 class MessageWin;
 class Project;
+class SearchResult;
 class SequenceEditor;
 class SequenceGroup;
 
@@ -65,6 +68,7 @@ public slots:
 	
 	void sequenceSelectionChanged();
 	void residueSelectionChanged();
+	void clearSearch();
 	
 protected:
 	
@@ -111,6 +115,10 @@ private slots:
 	
 	void helpHelp();
 	void helpAbout();
+	
+	void search(const QString &);
+	void nextSearchResult(bool);
+	void previousSearchResult(bool);
 	
 	void alignmentPreviewClosed(int);
 
@@ -162,6 +170,12 @@ private:
 	
 	QToolBar *seqEditTB;
 	GoToTool *goToTool_;
+	
+	QComboBox   *searchBox_;
+	QPushButton *nextSearchResult_,*prevSearchResult_;
+	QAction     *nextSearchResultAction_,*prevSearchResultAction_;
+	int currSearchResult_;
+	QList<SearchResult *> searchResults_;
 	
 	QScrollBar *vscroller_,*hscroller_;
 	QSplitter *split;

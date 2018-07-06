@@ -44,6 +44,7 @@ class QPaintEvent;
 class QWheelEvent;
 
 class Project;
+class SearchResult;
 class Sequence;
 class SequenceGroup;
 
@@ -76,6 +77,10 @@ class SequenceEditor: public QWidget
 		QColor getNextGroupColour();
 		
 		bool isBookmarked(Sequence *);
+		
+		void setSearchResults(QList<SearchResult *> &);
+		void goToSearchResult(int);
+		void clearSearchResults();
 		
 		void updateViewport();
 		void visibleRows(int *,int *);
@@ -194,6 +199,10 @@ class SequenceEditor: public QWidget
 		int  colourMap_;
 		int  defaultProteinColourMap_;
 		int  defaultDNAColourMap_;
+		
+		// Search
+		QList<SearchResult *> searchResults_;
+		SearchResult * currSearchResult_;
 		
 		// geometry
 		int numRows_,numCols_;

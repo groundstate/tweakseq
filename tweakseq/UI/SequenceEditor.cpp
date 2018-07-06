@@ -297,6 +297,24 @@ bool SequenceEditor::isBookmarked(Sequence *seq)
 	return bookmarks_.contains(seq);
 }
 
+void SequenceEditor::setSearchResults(QList<SearchResult *> &results)
+{
+	searchResults_=results;
+}
+
+void SequenceEditor::goToSearchResult(int pos)
+{
+	currSearchResult_=searchResults_.at(pos);
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << currSearchResult_->sequence->label;
+	repaint();
+}
+
+void SequenceEditor::clearSearchResults()
+{
+	searchResults_.clear();
+	currSearchResult_=NULL;
+}
+
 void SequenceEditor::visibleRows(int *start,int *stop)
 {
 	*start = firstVisibleRow_;
@@ -1554,6 +1572,8 @@ void SequenceEditor::init()
 	
 	currFocus_ = SequenceView;
 	
+	currSearchResult_=NULL;
+	
 	repaintDirtyRows_=false;
 	
 }
@@ -1767,6 +1787,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 		p->fillRect(0,0,w,h,fillColour);
 	}
 	
+
 	//  Draw cell content 
 	// Physico-chemical properties 
 	
@@ -1794,6 +1815,12 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	if (currSeq->visible){
 		switch (residueView_){
 			case StandardView:
+				if (NULL != currSearchResult_){
+					if (currSeq == currSearchResult_->sequence){
+						if (col >= currSearchResult_->start && col <= currSearchResult_->stop)
+							p->fillRect(0,2,w,h-2,QColor(255,255,0));
+					}
+				}
 				if ((cwflags.unicode() & EXCLUDE_CELL) ){
 					xPen.setColor(QColor(240,240,16));
 					p->setPen(xPen);

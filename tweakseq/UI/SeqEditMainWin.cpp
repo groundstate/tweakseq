@@ -40,6 +40,7 @@
 #include <QClipboard>
 #include <QColor>
 #include <QCloseEvent>
+#include <QComboBox>
 #include <QDateTime>
 #include <QFile>
 #include <QFileDialog>
@@ -52,6 +53,7 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QProcess>
+#include <QPushButton>
 #include <QScrollBar>
 #include <QSet>
 #include <QStatusBar>
@@ -894,6 +896,43 @@ void SeqEditMainWin::helpAbout(){
 	app->showAboutDialog(this);
 }
 
+void SeqEditMainWin::search(const QString &txt)
+{
+	qDebug()<< trace.header(__PRETTY_FUNCTION__);
+	int nmatches = project_->search(txt);
+	statusBar()->showMessage("Found " + QString::number(nmatches)+ " matches");
+	if (nmatches == 0){
+		return;
+	}
+	bool showAll=true;
+	if (nmatches > 100){
+			// FIXME
+	}
+	searchResults_=project_->searchResults();
+	if (showAll)
+		se->setSearchResults(searchResults_);
+	currSearchResult_=0;
+	nextSearchResult_->setEnabled(true);
+	prevSearchResult_->setEnabled(true);
+	se->goToSearchResult(currSearchResult_);
+}
+
+void SeqEditMainWin::nextSearchResult(bool)
+{
+	currSearchResult_++;
+	if (currSearchResult_ >= searchResults_.size())
+		currSearchResult_=0;
+	se->goToSearchResult(currSearchResult_);
+}
+
+void SeqEditMainWin::previousSearchResult(bool)
+{
+	currSearchResult_--;
+	if (currSearchResult_ < 0)
+		currSearchResult_= searchResults_.size()-1;
+	se->goToSearchResult(currSearchResult_);
+}
+	
 void SeqEditMainWin::alignmentPreviewClosed(int result)
 {
 	if (result == QDialog::Accepted){
@@ -984,7 +1023,11 @@ void SeqEditMainWin::residueSelectionChanged()
 	// So check that the selection is insertions only
 	cutAction->setEnabled(project_->residueSelection->isInsertionsOnly());
 }
+
+void SeqEditMainWin::clearSearch(){
 	
+}
+
 //
 // SeqEditMainWin - private members
 // 
@@ -1281,6 +1324,8 @@ void SeqEditMainWin::createActions()
 	ag->addAction(colourMapAction);
 	settingsDNAColourMapActions.append(colourMapAction);
 	
+	//nextSearchResult_ = new QAction("Next",this);
+	//prevSearchResult_ = new QAction("Previous",this);
 }
 
 void SeqEditMainWin::createMenus()
@@ -1412,6 +1457,28 @@ void SeqEditMainWin::createToolBars()
 	
 	seqEditTB->addAction(alignAllAction);
 	seqEditTB->addAction(alignStopAction);
+	
+	seqEditTB->addSeparator();
+	QLabel *l = new QLabel("Search",this);
+	seqEditTB->addWidget(l);
+	
+	searchBox_ = new QComboBox(this);
+	searchBox_->setEditable(true);
+	searchBox_->setMinimumWidth(200);
+	seqEditTB->addWidget(searchBox_);
+	connect(searchBox_,SIGNAL(activated(const QString &)),this,SLOT(search(const QString&)));
+	
+	nextSearchResult_ = new QPushButton("Next",this);
+	nextSearchResult_->setIcon(QIcon(":/images/go-down-search.png"));
+	nextSearchResult_->setEnabled(false);
+	connect(nextSearchResult_,SIGNAL(clicked(bool)),this,SLOT(nextSearchResult(bool)));
+	seqEditTB->addWidget(nextSearchResult_);
+	
+	prevSearchResult_ = new QPushButton("Previous",this);
+	prevSearchResult_->setIcon(QIcon(":/images/go-up-search.png"));
+	prevSearchResult_->setEnabled(false);
+	connect(prevSearchResult_,SIGNAL(clicked(bool)),this,SLOT(previousSearchResult(bool)));
+	seqEditTB->addWidget(prevSearchResult_);
 	
 	QWidget *separator = new QWidget(this);
 	separator->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);

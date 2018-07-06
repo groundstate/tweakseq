@@ -60,6 +60,13 @@ class SequenceGroup;
 class SequenceSelection;
 class SeqEditMainWin;
 
+class SearchResult
+{
+	public:
+		SearchResult(Sequence *sequence,int start,int stop):sequence(sequence),start(start),stop(stop){}
+		Sequence *sequence;
+		int start,stop;
+};
 
 class Project:public QObject
 {
@@ -131,6 +138,9 @@ class Project:public QObject
 		
 		void readNewAlignment(QString,bool);
 	
+		int search(const QString &);
+		QList<SearchResult *> & searchResults(){return searchResults_;}
+		
 		Consensus consensusSequence;
 		
 	signals:
@@ -176,6 +186,8 @@ class Project:public QObject
 		AlignmentTool *alignmentTool_,*clustalOTool_,*muscleTool_;
 		QUndoStack undoStack_;
 	
+		QList<SearchResult *> searchResults_;
+		
 		QDomDocumentFragment *clustaloSettings_,*muscleSettings_;
 		
 };
