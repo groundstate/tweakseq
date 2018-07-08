@@ -654,8 +654,8 @@ void SequenceEditor::goToSearchResult(int pos)
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << currSearchResult_->sequence->label;
 	project_->sequenceSelection->set(currSearchResult_->sequence);
 	project_->residueSelection->clear();
-	selectingResidues_=false;
-	makeVisible(currSearchResult_->sequence);
+	selectingResidues_=false; // may not have changed selection state so this clears any temporary selection
+	makeVisible(currSearchResult_->sequence,currSearchResult_->start,currSearchResult_->stop);
 }
 
 void SequenceEditor::clearSearchResults()
@@ -2118,33 +2118,57 @@ int SequenceEditor::rowLastVisibleSequence(QList<Sequence *> &seqs)
 	return ret;
 }
 
-void SequenceEditor::makeVisible(Sequence *seq,int,int)
+void SequenceEditor::makeVisible(Sequence *seq,int startCol, int stopCol)
 {
 
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << startCol << " " << stopCol;
 	if (!seq->visible){
 		seq->visible=true;
 		updateViewExtents();
 	}
+	
+	bool changed=false;
+	
+	if (startCol >= 0){ // startCol <0 means ignore
+		if (startCol < firstVisibleCol_){
+			if (startCol != 0) // looks neater
+				firstVisibleCol_=startCol+1;
+			else
+				firstVisibleCol_=startCol;
+			if (firstVisibleCol_>=numCols_)
+				firstVisibleCol_=numCols_-1;
+			changed=true;
+		}
+		else if (startCol > lastVisibleCol_){
+			firstVisibleCol_+= stopCol-lastVisibleCol_+1;
+			if (firstVisibleCol_ >=numCols_)
+				firstVisibleCol_= numCols_-1;
+			changed=true;
+		}
+	}
+	
 	int r = project_->sequences.visibleIndex(seq);
 	if (r < firstVisibleRow_){
-		r--;
+		r--; // add a bit more space
 		if (r<0) r=0;
 		firstVisibleRow_=r;
-		updateViewExtents();
-		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
-		repaint();
+		changed=true;
 	}
 	else if (r>lastVisibleRow_){
-		r++;
+		r++; // add a bit more space
 		if (r>=numRows_) r=numRows_-1;
 		firstVisibleRow_=r-(lastVisibleRow_-firstVisibleRow_);
+		changed=true;
+	}
+	
+	if (changed){
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << firstVisibleCol_;
 		updateViewExtents();
 		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
-		repaint();
 	}
-	else{
-		repaint(); // visible, but repaint() to show selection
-	}
+	
+	repaint(); //  repaint() to show selection
+
 }
 
 void SequenceEditor::connectToProject()
