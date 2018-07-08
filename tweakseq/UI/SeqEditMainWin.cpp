@@ -77,6 +77,7 @@
 #include "Muscle.h"
 #include "Project.h"
 #include "ResidueSelection.h"
+#include "SearchTool.h"
 #include "SequenceEditor.h"
 #include "SeqPreviewDlg.h"
 #include "SeqEditMainWin.h"
@@ -154,7 +155,9 @@ SeqEditMainWin::SeqEditMainWin(Project *project)
 	connect(se,SIGNAL(edited()),this,SLOT(setupEditActions()));
 	
 	connect(goToTool_,SIGNAL(find(const QString &)),se,SLOT(selectSequence(const QString &)));
-
+	
+	connectToProject();
+	
 	statusBar()->showMessage("Ready");
 }
 
@@ -268,13 +271,15 @@ void SeqEditMainWin::fileOpenProject()
 	if (fname.isNull()) return;
 	
 	// Replace the existing project
+	disconnectFromProject();
 	Project *oldProject = project_;
 	
 	init(); // start in a clean state
 	project_=app->createProject();
 	project_->setMainWindow(this);
 	se->setProject(project_);
-	delete oldProject;
+	connectToProject();
+	delete oldProject; // and the undo stack disappears with it
 	project_->load(fname);
 	
 	updateSettingsActions();
@@ -612,6 +617,8 @@ void SeqEditMainWin::setupEditActions()
 	if (se->isReadOnly()){
 		cutAction->setEnabled(false);
 		pasteAction->setEnabled(false);
+		// find is allowed
+		findAction->setEnabled(project_->residueSelection->size()==1);
 		undoAction->setEnabled(false);
 		redoAction->setEnabled(false);
 		groupSequencesAction->setEnabled(false);
@@ -630,6 +637,8 @@ void SeqEditMainWin::setupEditActions()
 	cutAction->setEnabled(project_->residueSelection->isInsertionsOnly() || (!project_->sequenceSelection->empty()));
 	copyAction->setEnabled(!project_->residueSelection->empty() || (!project_->sequenceSelection->empty()));
 	pasteAction->setEnabled(project_->sequenceSelection->size()==1 && (!app->clipboard().isEmpty()));
+	
+	findAction->setEnabled(project_->residueSelection->size()==1);
 	
 	if (project_->undoStack().canUndo()){
 		undoAction->setEnabled(true);
@@ -711,8 +720,17 @@ void SeqEditMainWin::editCopy()
 }
 
 
+
 void SeqEditMainWin::editReadOnly(){
 	se->setReadOnly(readOnlyAction->isChecked());
+}
+
+void SeqEditMainWin::editFind()
+{
+	if (project_->residueSelection->size() != 1) return;
+	QString res = project_->residueSelection->selectedResidues(0) ;
+	searchTool_->setSearchText(res);
+	
 }
 
 void SeqEditMainWin::setupAlignmentActions()
@@ -908,30 +926,13 @@ void SeqEditMainWin::search(const QString &txt)
 	if (nmatches > 100){
 			// FIXME
 	}
-	searchResults_=project_->searchResults();
+	QList<SearchResult*> results =project_->searchResults();
+	searchTool_->setSearchResults(results);
 	if (showAll)
-		se->setSearchResults(searchResults_);
-	currSearchResult_=0;
-	nextSearchResult_->setEnabled(true);
-	prevSearchResult_->setEnabled(true);
-	se->goToSearchResult(currSearchResult_);
+		se->setSearchResults(results);
+	se->goToSearchResult(0);
 }
 
-void SeqEditMainWin::nextSearchResult(bool)
-{
-	currSearchResult_++;
-	if (currSearchResult_ >= searchResults_.size())
-		currSearchResult_=0;
-	se->goToSearchResult(currSearchResult_);
-}
-
-void SeqEditMainWin::previousSearchResult(bool)
-{
-	currSearchResult_--;
-	if (currSearchResult_ < 0)
-		currSearchResult_= searchResults_.size()-1;
-	se->goToSearchResult(currSearchResult_);
-}
 	
 void SeqEditMainWin::alignmentPreviewClosed(int result)
 {
@@ -954,6 +955,9 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 	
 	cm->addAction(cutAction);
 	cm->addAction(pasteAction);
+	cm->addSeparator();
+	
+	cm->addAction(findAction);
 	cm->addSeparator();
 	
 	cm->addAction(groupSequencesAction);
@@ -1068,7 +1072,6 @@ void SeqEditMainWin::createActions()
 	addAction(saveProjectAsAction);
 	connect(saveProjectAsAction, SIGNAL(triggered()), this, SLOT(fileSaveProjectAs()));
 	
-	
 	importAction = new QAction( tr("&Import sequences ..."), this);
 	importAction->setStatusTip(tr("Import a sequence file"));
 	addAction(importAction);
@@ -1135,6 +1138,13 @@ void SeqEditMainWin::createActions()
 	addAction(pasteAction);
 	connect(pasteAction, SIGNAL(triggered()), se, SLOT(pasteClipboard()));
 	pasteAction->setEnabled(false);
+	
+	findAction = new QAction( tr("Find"), this);
+	findAction->setStatusTip(tr("Find selected residues"));
+	findAction->setShortcut(QKeySequence::Find);
+	addAction(findAction);
+	connect(findAction, SIGNAL(triggered()), this, SLOT(editFind()));
+	findAction->setEnabled(false);
 	
 	groupSequencesAction = new QAction( tr("Group sequences"), this);
 	groupSequencesAction->setStatusTip(tr("Group the selected sequences"));
@@ -1358,6 +1368,9 @@ void SeqEditMainWin::createMenus()
 	editMenu->addAction(pasteAction);
 	editMenu->addSeparator();
 	
+	editMenu->addAction(findAction);
+	editMenu->addSeparator();
+	
 	editMenu->addAction(groupSequencesAction);
 	editMenu->addAction(ungroupSequencesAction);
 	editMenu->addAction(ungroupAllAction);
@@ -1459,26 +1472,11 @@ void SeqEditMainWin::createToolBars()
 	seqEditTB->addAction(alignStopAction);
 	
 	seqEditTB->addSeparator();
-	QLabel *l = new QLabel("Search",this);
-	seqEditTB->addWidget(l);
 	
-	searchBox_ = new QComboBox(this);
-	searchBox_->setEditable(true);
-	searchBox_->setMinimumWidth(200);
-	seqEditTB->addWidget(searchBox_);
-	connect(searchBox_,SIGNAL(activated(const QString &)),this,SLOT(search(const QString&)));
-	
-	nextSearchResult_ = new QPushButton("Next",this);
-	nextSearchResult_->setIcon(QIcon(":/images/go-down-search.png"));
-	nextSearchResult_->setEnabled(false);
-	connect(nextSearchResult_,SIGNAL(clicked(bool)),this,SLOT(nextSearchResult(bool)));
-	seqEditTB->addWidget(nextSearchResult_);
-	
-	prevSearchResult_ = new QPushButton("Previous",this);
-	prevSearchResult_->setIcon(QIcon(":/images/go-up-search.png"));
-	prevSearchResult_->setEnabled(false);
-	connect(prevSearchResult_,SIGNAL(clicked(bool)),this,SLOT(previousSearchResult(bool)));
-	seqEditTB->addWidget(prevSearchResult_);
+	searchTool_ = new SearchTool(this);
+	seqEditTB->addWidget(searchTool_);
+	connect(searchTool_,SIGNAL(search(const QString &)),this,SLOT(search(const QString &)));
+	connect(searchTool_,SIGNAL(goToSearchResult(int)),se,SLOT(goToSearchResult(int)));
 	
 	QWidget *separator = new QWidget(this);
 	separator->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
@@ -1711,3 +1709,12 @@ bool SeqEditMainWin::maybeSave()
 	return true;
 }
 
+void SeqEditMainWin::connectToProject()
+{
+	connect(project_,SIGNAL(searchResultsCleared()),searchTool_,SLOT(clearSearch()));
+}
+
+void SeqEditMainWin::disconnectFromProject()
+{
+	disconnect(project_,SIGNAL(searchResultsCleared()),searchTool_,SLOT(clearSearch()));
+}

@@ -41,32 +41,19 @@
 #include "Consensus.h"
 #include "Sequences.h"
 
-#define KEEP_FLAGS 0XFFFF // TO DO change all this to allow higher order bits
-#define REMOVE_FLAGS	0X007F	
-
-#define EXCLUDE_CELL 0x0080
-
-
 class QDomDocumentFragment;
 
 enum alignmentFormats {FASTA,CLUSTALW};
 
-
 class AlignmentTool;
 class Operation;
 class ResidueSelection;
+class SearchResult;
 class Sequence;
 class SequenceGroup;
 class SequenceSelection;
 class SeqEditMainWin;
 
-class SearchResult
-{
-	public:
-		SearchResult(Sequence *sequence,int start,int stop):sequence(sequence),start(start),stop(stop){}
-		Sequence *sequence;
-		int start,stop;
-};
 
 class Project:public QObject
 {
@@ -139,6 +126,8 @@ class Project:public QObject
 		void readNewAlignment(QString,bool);
 	
 		int search(const QString &);
+		void setSearchResultFlags(bool);
+		
 		QList<SearchResult *> & searchResults(){return searchResults_;}
 		
 		Consensus consensusSequence;
@@ -146,6 +135,7 @@ class Project:public QObject
 	signals:
 		
 		void uiUpdatesEnabled(bool);
+		void searchResultsCleared();
 		
 	public slots:
 		
@@ -157,6 +147,8 @@ class Project:public QObject
 	
 		void mainWindowClosed();
 		
+		void clearSearchResults();
+		
 	private slots:
 		
 		void sequencesChanged();
@@ -165,7 +157,7 @@ class Project:public QObject
 		
 		void init();
 		void readAlignmentToolSettings(QDomDocument &);
-		
+	
 		int  getSeqIndex(QString);
 		int  getGroupIndex(SequenceGroup *sg);
 		

@@ -48,6 +48,7 @@
 #include "PasteCmd.h"
 #include "Project.h"
 #include "ResidueSelection.h"
+#include "SearchResult.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
@@ -70,6 +71,10 @@ Project::Project()
 
 Project::~Project()
 {
+	while (!searchResults_.isEmpty())
+		delete searchResults_.takeFirst();	
+	emit searchResultsCleared();
+	
 	delete sequenceSelection;
 	delete residueSelection;
 	// FIXME and the rest ..
@@ -137,6 +142,7 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 		}
 		
 		if (ok){
+			clearSearchResults();
 			// Check for duplicates
 			qDebug() << trace.header() << "checking for duplicates";
 			QStringList currSeqNames;
@@ -236,6 +242,7 @@ void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<Seq
 	// Used bu AlignmentCmd undo() and redo()
 	
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	clearSearchResults();
 	// Clear the selections because they will be meaningless post alignment
 	emit uiUpdatesEnabled(false);
 	residueSelection->clear();
@@ -273,6 +280,7 @@ void Project::excludeSelectedResidues(bool add)
 
 bool Project::cutSelectedResidues()
 {
+	clearSearchResults();
 	undoStack_.push(new CutResiduesCmd(this,residueSelection->residueGroups(),"cut insertions"));
 	dirty_=true;
 	return true;
@@ -280,6 +288,7 @@ bool Project::cutSelectedResidues()
 
 bool Project::cutSelectedSequences()
 {
+	clearSearchResults();
 	undoStack_.push(new CutSequencesCmd(this,"cut sequences"));
 	dirty_ = true;
 	return true;
@@ -287,6 +296,7 @@ bool Project::cutSelectedSequences()
 
 void Project::pasteClipboard(Sequence *insertAfter)
 {
+	clearSearchResults();
 	undoStack_.push(new PasteCmd(this,insertAfter,"paste sequences"));
 	dirty_=true;
 }
@@ -505,6 +515,7 @@ void Project::unhideAllGroupMembers()
 
 void Project::addInsertions(QList<Sequence*> &seqs,int startCol,int stopCol,bool postInsert)
 {
+	clearSearchResults();
 	undoStack_.push(new AddInsertionsCmd(this,seqs,startCol,stopCol,postInsert,"insertions"));
 	dirty_=true;
 }
@@ -929,25 +940,45 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 
 int  Project::search(const QString &needle)
 {
-	while (!searchResults_.isEmpty()){
-		delete searchResults_.takeLast();
-	}
+	clearSearchResults();
 	int len = needle.length();
 	QRegExp rx(needle);
 	for (int s=0;s<sequences.size();s++){
 		int pos = 0;
 		Sequence *seq = sequences.sequences().at(s);
-		while ((pos = rx.indexIn(seq->residues, pos)) != -1) {
+		QString residues = seq->filter(false);
+		while ((pos = rx.indexIn(residues, pos)) != -1) {
 			searchResults_.append(new SearchResult(seq,pos,pos+len-1));
 			pos += rx.matchedLength();
 		}
 	}
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << " found " << searchResults_.size();
+	setSearchResultFlags(true);
 	return searchResults_.size();
 	
 }
 
-		
+void Project::setSearchResultFlags(bool apply)
+{
+	// The search results are in Sequence order so 
+	// searching is easy
+	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
+	int sr=0,s=0;
+	QList<Sequence *> &seqs = sequences.sequences();
+	if (seqs.size() == 0) return;
+	while (sr<searchResults_.size()){
+		SearchResult *result = searchResults_.at(sr);
+		if (result->sequence == seqs.at(s)){
+			seqs.at(s)->highlight(result->start,result->stop,apply);
+			sr++;
+		}
+		else{
+			s++;
+			if (s == seqs.size()) break; // makes sure that we break out of the while loop
+		}
+	}
+}
+
 //
 //	Public slots:
 //
@@ -988,6 +1019,15 @@ void Project::sequencesChanged()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__) ;
 	dirty_=true;
+}
+
+void Project::clearSearchResults()
+{
+	setSearchResultFlags(false);
+	while (!searchResults_.isEmpty()){
+		delete searchResults_.takeLast();
+	}
+	emit searchResultsCleared();
 }
 
 // 
@@ -1037,6 +1077,8 @@ void Project::readAlignmentToolSettings(QDomDocument &doc)
 			alignmentTool_=clustalOTool_;
 	}
 }
+
+
 
 QStringList Project::findDuplicates(QStringList &sl)
 {

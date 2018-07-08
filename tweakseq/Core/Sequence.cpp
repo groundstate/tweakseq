@@ -29,7 +29,8 @@
 #include "Sequence.h"
 #include "SequenceGroup.h"
 
-#define EXCLUDE_CELL 0x0080 // FIXME
+#define EXCLUDE_CELL    0x0080 
+#define HIGHLIGHT_CELL  0x0100
 
 Sequence::Sequence()
 {
@@ -57,7 +58,7 @@ QString Sequence::filter(bool applyExclusions)
 		QChar qch=residues[i];
 		if ((qch.unicode() & EXCLUDE_CELL) && applyExclusions)
 			continue;
-		r[rescnt] = qch.unicode() & 0x7F; // FIXME
+		r[rescnt] = qch.unicode() & REMOVE_FLAGS;
 		rescnt++;
 	}
 	return r;
@@ -74,6 +75,18 @@ void Sequence::exclude(int start,int stop,bool add)
 			residues[i] = residues[i].unicode() & (~EXCLUDE_CELL);
 	}
 	
+}
+
+void Sequence::highlight(int start,int stop,bool add)
+{
+	if (start <0 || stop >= residues.size()) return;
+			
+	for (int i=start;i<=stop;i++){
+		if (add)
+			residues[i] = residues[i].unicode() | HIGHLIGHT_CELL;
+		else
+			residues[i] = residues[i].unicode() & (~HIGHLIGHT_CELL);
+	}	
 }
 
 // Returned as a flat list of [start,end] pairs

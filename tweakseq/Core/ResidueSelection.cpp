@@ -45,6 +45,13 @@ void ResidueSelection::set(QList<ResidueGroup *> &newSelection)
 	emit changed();
 }
 
+QString ResidueSelection::selectedResidues(int i)
+{
+	QString res = sel_.at(i)->sequence->filter();
+	res = res.mid(sel_.at(i)->start,sel_.at(i)->stop - sel_.at(i)->start + 1);
+	return res;
+}
+
 void ResidueSelection::clear()
 {
 	sel_.clear();

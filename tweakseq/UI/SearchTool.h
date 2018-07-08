@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+// Copyright (c) 2000-2018  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,63 +25,48 @@
 //
 
 
-#ifndef __RESIDUE_SELECTION_H_
-#define __RESIDUE_SELECTION_H_
+#ifndef __SEARCH_TOOL_H_
+#define __SEARCH_TOOL_H_
 
-#include <QObject>
+#include <QWidget>
 
-class Sequence;
-class SequenceGroup;
+class QComboBox;
+class QPushButton;
 
-class ResidueGroup
-{
-	public:
-		ResidueGroup(Sequence *s,int startResidueIndex,int stopResidueIndex)
-		{
-			sequence=s;
-			start=startResidueIndex;
-			stop=stopResidueIndex;
-		}
-		ResidueGroup(ResidueGroup *r)
-		{
-			sequence=r->sequence;
-			start=r->start;
-			stop=r->stop;
-		}
-		
-		Sequence *sequence;
-		int start,stop;
-};
+class SearchResult;
 
-class ResidueSelection:public QObject
+class SearchTool: public QWidget
 {
 	Q_OBJECT
 	
 	public:
 		
-		ResidueSelection();
-		~ResidueSelection();
-	
-		// There's only one contiguous residue selection at any time so don't need toggle
-		void set(QList<ResidueGroup *> &);
-		void clear();
-		QString selectedResidues(int);
-		
-		bool isInsertionsOnly();
-		
-		bool empty(){return sel_.size() == 0;}
-		int  size(){return sel_.size();}
-		ResidueGroup * itemAt(int);
-		QList<ResidueGroup*> & residueGroups(){return sel_;}
-		QList<SequenceGroup *> uniqueSequenceGroups();
+		SearchTool(QWidget *parent=0);
+		void setSearchResults(QList<SearchResult *> &);
+		void setSearchText(QString &);
 		
 	signals:
+	
+		void goToSearchResult(int);
+		void search(const QString &);
+	
+	public slots:
 		
-		void changed();
+		void clearSearch();
+		
+	private slots:
+		
+		void nextSearchResult(bool);
+		void previousSearchResult(bool);
+		void cleanSearchString(const QString &);
 		
 	private:
-		
-		QList<ResidueGroup *> sel_;
+
+		QComboBox   *searchBox_;
+		QPushButton *nextSearchResult_,*prevSearchResult_;
+		int currSearchResult_;
+		QList<SearchResult *> searchResults_;
 };
 
 #endif
+

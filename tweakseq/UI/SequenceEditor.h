@@ -79,8 +79,7 @@ class SequenceEditor: public QWidget
 		bool isBookmarked(Sequence *);
 		
 		void setSearchResults(QList<SearchResult *> &);
-		void goToSearchResult(int);
-		void clearSearchResults();
+		
 		
 		void updateViewport();
 		void visibleRows(int *,int *);
@@ -133,6 +132,9 @@ class SequenceEditor: public QWidget
 		void moveToNextBookmark();
 		void moveToPreviousBookmark();
 		
+		void goToSearchResult(int);
+		void clearSearchResults();
+		
 		void selectSequence(const QString &); // connected eg to the Find tool
 		
 	protected:
@@ -181,6 +183,8 @@ class SequenceEditor: public QWidget
 		int rowVisibleSequence(Sequence *seq);
 		int rowFirstVisibleSequence(QList<Sequence *> &);
 		int rowLastVisibleSequence(QList<Sequence *> &);
+		
+		void makeVisible(Sequence *,int startCol=-1,int stopCol=-1);
 		
 		void connectToProject();
 		void disconnectFromProject();

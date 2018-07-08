@@ -29,9 +29,12 @@
 #define __SEQUENCE_H_
 
 #include <QList>
-#include <QSharedPointer>
-#include <QWeakPointer>
 #include <QString>
+
+#define EXCLUDE_CELL    0x0080 
+#define HIGHLIGHT_CELL  0x0100
+#define KEEP_FLAGS      0XFFFF 
+#define REMOVE_FLAGS	  0X007F	
 
 class Sequence;
 class SequenceGroup;
@@ -50,6 +53,8 @@ class Sequence
 		QString filter(bool applyExclusions=false);
 		void exclude(int,int,bool);
 		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
+		
+		void highlight(int ,int,bool );
 		
 		void remove(int,int);
 		void insert(QString,int);

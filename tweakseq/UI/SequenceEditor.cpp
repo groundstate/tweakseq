@@ -44,6 +44,7 @@
 #include "DNA.h"
 #include "Project.h"
 #include "ResidueSelection.h"
+#include "SearchResult.h"
 #include "Sequence.h"
 #include "Sequences.h"
 #include "SequenceGroup.h"
@@ -300,20 +301,11 @@ bool SequenceEditor::isBookmarked(Sequence *seq)
 void SequenceEditor::setSearchResults(QList<SearchResult *> &results)
 {
 	searchResults_=results;
+	// Make all results viisble
+	for (int sr=0;sr < searchResults_.size();sr++)
+		searchResults_.at(sr)->sequence->visible=true;
 }
 
-void SequenceEditor::goToSearchResult(int pos)
-{
-	currSearchResult_=searchResults_.at(pos);
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << currSearchResult_->sequence->label;
-	repaint();
-}
-
-void SequenceEditor::clearSearchResults()
-{
-	searchResults_.clear();
-	currSearchResult_=NULL;
-}
 
 void SequenceEditor::visibleRows(int *start,int *stop)
 {
@@ -328,20 +320,7 @@ void SequenceEditor::selectSequence(const QString &label)
 	if (seq){
 		qDebug() << trace.header(__PRETTY_FUNCTION__) << "found " <<seq->label;
 		project_->sequenceSelection->set(seq);
-		// now make sure it is visible
-		if (!seq->visible){
-			seq->visible = true;
-			updateViewExtents();
-		}
-		int index = project_->sequences.visibleIndex(seq);
-		if (index < firstVisibleRow_){
-			setFirstVisibleRow(index);
-		}
-		else if (index > lastVisibleRow_){
-		  setFirstVisibleRow(index-(lastVisibleRow_-firstVisibleRow_));
-		}
-		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
-		repaint();
+		makeVisible(seq);
 	}
 }
 
@@ -669,7 +648,22 @@ void SequenceEditor::moveToPreviousBookmark()
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 }
 
-		
+void SequenceEditor::goToSearchResult(int pos)
+{
+	currSearchResult_=searchResults_.at(pos);
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << currSearchResult_->sequence->label;
+	project_->sequenceSelection->set(currSearchResult_->sequence);
+	project_->residueSelection->clear();
+	selectingResidues_=false;
+	makeVisible(currSearchResult_->sequence);
+}
+
+void SequenceEditor::clearSearchResults()
+{
+	searchResults_.clear();
+	currSearchResult_=NULL;
+}
+
 //
 // Protected members
 //
@@ -1613,13 +1607,8 @@ QChar SequenceEditor::cellContent(int row, int col, int maskFlags, Sequence *cur
 	
 	QList<Sequence *> &seq = project_->sequences.sequences();
 	
-	if (NULL == currSeq){
-		
+	if (NULL == currSeq)	
 		currSeq = project_->sequences.visibleAt(row);
-	}
-	
-	// Note Since paintCell() calls this function before any sequences
-	// are added have to return valid values when the editor is empty
 	
 	if (!seq.isEmpty()){
 		s=currSeq->residues;
@@ -1787,7 +1776,6 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 		p->fillRect(0,0,w,h,fillColour);
 	}
 	
-
 	//  Draw cell content 
 	// Physico-chemical properties 
 	
@@ -1812,14 +1800,30 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 	QPen xPen;
 	xPen.setWidth(2);
 	
+	QColor currSearchResultColour(255,255,0);
+	QColor searchResultColour(255,165,0);
+	
+	bool fillCell=false;
 	if (currSeq->visible){
 		switch (residueView_){
 			case StandardView:
+				
 				if (NULL != currSearchResult_){
 					if (currSeq == currSearchResult_->sequence){
-						if (col >= currSearchResult_->start && col <= currSearchResult_->stop)
-							p->fillRect(0,2,w,h-2,QColor(255,255,0));
+						if (col >= currSearchResult_->start && col <= currSearchResult_->stop){
+							fillCell=true;
+							fillColour=currSearchResultColour;
+							txtColor.setRgb(0,0,0);
+						}
 					}
+					else if ((cwflags.unicode() & HIGHLIGHT_CELL) ){
+						fillColour = searchResultColour;
+						fillCell=true;
+						txtColor.setRgb(0,0,0);
+					}
+				}
+				if (fillCell){
+					p->fillRect(0,2,w,h-2,fillColour);
 				}
 				if ((cwflags.unicode() & EXCLUDE_CELL) ){
 					xPen.setColor(QColor(240,240,16));
@@ -1831,8 +1835,26 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				break;
 			case InvertedView:
-				if (!cellSelected  && ch != '-'){
-					p->fillRect(0,2,w,h-2,txtColor);
+				if (NULL != currSearchResult_){
+					if (currSeq == currSearchResult_->sequence){
+						if (col >= currSearchResult_->start && col <= currSearchResult_->stop){
+							fillCell=true;
+							fillColour.setRgb(255,0,0);
+							txtColor.setRgb(0,0,0);
+						}
+					}
+					else if ((cwflags.unicode() & HIGHLIGHT_CELL) ){
+						fillColour.setRgb(192,0,0);
+						fillCell=true;
+						txtColor.setRgb(0,0,0);
+					}
+				}
+				if (!fillCell && !cellSelected  && ch != '-'){
+					fillCell=true;
+					fillColour=txtColor;
+				}
+				if (fillCell){
+					p->fillRect(0,2,w,h-2,fillColour);
 				}
 				if ((cwflags.unicode() & EXCLUDE_CELL)){
 					xPen.setColor(QColor(32,32,32));
@@ -1846,8 +1868,24 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				break;
 			case SolidView:
-				if (!cellSelected && ch != '-'){
-					p->fillRect(0,2,w,h-2,txtColor);
+				if (NULL != currSearchResult_){
+					if (currSeq == currSearchResult_->sequence){
+						if (col >= currSearchResult_->start && col <= currSearchResult_->stop){
+							fillCell=true;
+							fillColour=currSearchResultColour;
+						}
+					}
+					else if ((cwflags.unicode() & HIGHLIGHT_CELL) ){
+						fillColour = searchResultColour;
+						fillCell=true;
+					}
+				}
+				if (!fillCell && !cellSelected  && ch != '-'){
+					fillCell=true;
+					fillColour=txtColor;
+				}
+				if (fillCell){
+					p->fillRect(0,2,w,h-2,fillColour);
 				}
 				if ((cwflags.unicode() & EXCLUDE_CELL) ){
 					xPen.setColor(QColor(32,32,32));
@@ -2079,17 +2117,48 @@ int SequenceEditor::rowLastVisibleSequence(QList<Sequence *> &seqs)
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << seqs.size() << " row = " << ret;
 	return ret;
 }
-		
+
+void SequenceEditor::makeVisible(Sequence *seq,int,int)
+{
+
+	if (!seq->visible){
+		seq->visible=true;
+		updateViewExtents();
+	}
+	int r = project_->sequences.visibleIndex(seq);
+	if (r < firstVisibleRow_){
+		r--;
+		if (r<0) r=0;
+		firstVisibleRow_=r;
+		updateViewExtents();
+		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
+		repaint();
+	}
+	else if (r>lastVisibleRow_){
+		r++;
+		if (r>=numRows_) r=numRows_-1;
+		firstVisibleRow_=r-(lastVisibleRow_-firstVisibleRow_);
+		updateViewExtents();
+		emit viewExtentsChanged(firstVisibleRow_,lastVisibleRow_,numRows_,firstVisibleCol_,lastVisibleCol_,numCols_);
+		repaint();
+	}
+	else{
+		repaint(); // visible, but repaint() to show selection
+	}
+}
+
 void SequenceEditor::connectToProject()
 {
 	connect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
 	connect(project_,SIGNAL(uiUpdatesEnabled(bool)),this,SLOT(enableUpdates(bool)));
+	connect(project_,SIGNAL(searchResultsCleared()),this,SLOT(clearSearchResults()));
 }
 
 void SequenceEditor::disconnectFromProject()
 {
 	disconnect(&(project_->sequences),SIGNAL(cleared()),this,SLOT(sequencesCleared()));
 	disconnect(project_,SIGNAL(uiUpdatesEnabled(bool)),this,SLOT(enableUpdates(bool)));
+	disconnect(project_,SIGNAL(searchResultsCleared()),this,SLOT(clearSearchResults()));
 }
 
 void SequenceEditor::cleanupTimer()

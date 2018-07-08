@@ -23,6 +23,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/Muscle.h \
 								 include/Project.h \
 								 include/ResidueSelection.h \
+								 include/SearchTool.h \
 								 include/SequenceEditor.h \
 								 include/SeqEditMainWin.h \
 								 include/SeqPreview.h \
@@ -85,6 +86,7 @@ SOURCES       +=  UI/AboutDialog.cpp \
 									UI/GoToTool.cpp \
 									UI/ImportDialog.cpp \
 									UI/MessageWin.cpp \
+									UI/SearchTool.cpp \
 									UI/SequenceEditor.cpp \
 									UI/SeqEditMainWin.cpp \
 									UI/SeqPreview.cpp \

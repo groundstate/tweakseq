@@ -43,7 +43,7 @@ class QToolBar;
 class GoToTool;
 class MessageWin;
 class Project;
-class SearchResult;
+class SearchTool;
 class SequenceEditor;
 class SequenceGroup;
 
@@ -90,6 +90,7 @@ private slots:
 	
 	void editCopy();
 	void editReadOnly();
+	void editFind();
 	
 	void setupAlignmentActions();
 	void alignmentAll();
@@ -117,8 +118,7 @@ private slots:
 	void helpAbout();
 	
 	void search(const QString &);
-	void nextSearchResult(bool);
-	void previousSearchResult(bool);
+
 	
 	void alignmentPreviewClosed(int);
 
@@ -146,6 +146,9 @@ private:
 	
 	bool maybeSave();
 	
+	void connectToProject();
+	void disconnectFromProject();
+		
 	QMenu    *fileMenu,*alignmentMenu,*editMenu,*annotationMenu,*settingsMenu,*helpMenu;
 	QMenu    *colourMapMenu;
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
@@ -156,6 +159,7 @@ private:
 	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction,*unhideAllAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction,*ungroupAllAction;
 	QAction  *readOnlyAction;
+	QAction  *findAction;
 	QAction  *annotationConsensusAction;
 	QAction  *helpAction,*aboutAction;
 	QAction  *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
@@ -170,13 +174,10 @@ private:
 	
 	QToolBar *seqEditTB;
 	GoToTool *goToTool_;
+	SearchTool *searchTool_;
 	
-	QComboBox   *searchBox_;
-	QPushButton *nextSearchResult_,*prevSearchResult_;
 	QAction     *nextSearchResultAction_,*prevSearchResultAction_;
-	int currSearchResult_;
-	QList<SearchResult *> searchResults_;
-	
+
 	QScrollBar *vscroller_,*hscroller_;
 	QSplitter *split;
 	MessageWin *mw;
