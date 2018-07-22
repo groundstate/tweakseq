@@ -26,8 +26,6 @@ HEADERS       =  include/AboutDialog.h \
 								 include/SearchTool.h \
 								 include/SequenceEditor.h \
 								 include/SeqEditMainWin.h \
-								 include/SeqPreview.h \
-								 include/SeqPreviewDlg.h \
 								 include/Sequence.h \
 								 include/Sequences.h \
 								 include/SequenceFile.h \
@@ -89,8 +87,6 @@ SOURCES       +=  UI/AboutDialog.cpp \
 									UI/SearchTool.cpp \
 									UI/SequenceEditor.cpp \
 									UI/SeqEditMainWin.cpp \
-									UI/SeqPreview.cpp \
-									UI/SeqPreviewDlg.cpp \
 									UI/SetupWizard.cpp
 
 RESOURCES = UI/Resources/application.qrc

@@ -79,7 +79,6 @@
 #include "ResidueSelection.h"
 #include "SearchTool.h"
 #include "SequenceEditor.h"
-#include "SeqPreviewDlg.h"
 #include "SeqEditMainWin.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
@@ -751,7 +750,6 @@ void SeqEditMainWin::alignmentAll()
 void SeqEditMainWin::alignmentSelection()
 {
 	alignAll=false;
-	se->setReadOnly(true); // FIXME Maybe an indicator in the editor is needed
 	startAlignment();
 }
 
@@ -800,7 +798,7 @@ void SeqEditMainWin::alignmentFinished(int exitCode,QProcess::ExitStatus exitSta
 			if (alignAll)
 				readNewAlignment(true);
 			else{
-				previewNewAlignment();
+				readNewAlignment(false);
 			}
 		}
 	}
@@ -933,15 +931,6 @@ void SeqEditMainWin::search(const QString &txt)
 	se->goToSearchResult(0);
 }
 
-	
-void SeqEditMainWin::alignmentPreviewClosed(int result)
-{
-	if (result == QDialog::Accepted){
-		readNewAlignment(false);
-	}
-	se->setReadOnly(false);
-	alignmentMenu->setEnabled(true); // good to go 
-}
 
 void SeqEditMainWin::createContextMenu(const QPoint &)
 {
@@ -1551,26 +1540,6 @@ void SeqEditMainWin::readNewAlignment(bool isFullAlignment)
 {
 	project_->readNewAlignment(alignmentFileOut_->fileName(),isFullAlignment);
 	se->updateViewport();
-}
-
-void SeqEditMainWin::previewNewAlignment()
-{
-	
-	FASTAFile fin(alignmentFileOut_->fileName());
-	QStringList newlabels,newresidues,newcomments;
-	fin.read(newlabels,newresidues,newcomments);
-	
-	SeqPreviewDlg *pd = new SeqPreviewDlg(this); // parenting it keeps it on top
-	connect(pd,SIGNAL(finished(int)),this,SLOT(alignmentPreviewClosed(int)));
-	pd->setModal(false);
-	pd->setPreviewFont(se->editorFont());
-	pd->setSequences(newlabels,newresidues);
-	pd->show();
-	pd->raise();
-	pd->activateWindow();
-	pd->setWidth(width());
-
-	alignmentMenu->setEnabled(false); // the alignment preview is modeless so disable further alignments until the preview is done with
 }
 
 void SeqEditMainWin::printRes( QPainter* p,QChar r,int x,int y)

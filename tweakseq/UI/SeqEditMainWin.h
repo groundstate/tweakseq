@@ -119,9 +119,6 @@ private slots:
 	
 	void search(const QString &);
 
-	
-	void alignmentPreviewClosed(int);
-
 	void createContextMenu(const QPoint &);
 	
 	void updateScrollBars(int,int,int,int,int,int);
@@ -137,7 +134,6 @@ private:
 	
 	void startAlignment();
 	void readNewAlignment(bool);
-	void previewNewAlignment();
 	
 	void printRes( QPainter*,QChar,int,int );
 	
