@@ -38,7 +38,7 @@ class AlignmentCmd: public Command
 {
 	public:
 		
-		AlignmentCmd(Project *,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QString &);
+		AlignmentCmd(Project *,const QList<Sequence *> &,const QList<SequenceGroup *> &,const QList<Sequence *> &,const QList<SequenceGroup *> &,bool, const QString &);
 		virtual ~AlignmentCmd();
 
 		virtual void redo();
@@ -51,6 +51,8 @@ class AlignmentCmd: public Command
 		QList<Sequence *> 		 seqPostAlign_;
 		QList<SequenceGroup *> groupsPreAlign_;
 		QList<SequenceGroup *> groupsPostAlign_;
+		
+		bool isFullAlignment_;
 		
 };
 

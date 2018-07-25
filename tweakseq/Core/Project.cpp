@@ -873,6 +873,8 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 	}
 	else{
 		
+		aligned_=false;
+		
 		SequenceSelection *sel = sequenceSelection;
 		
 		// Make a copy of the old sequences
@@ -934,7 +936,7 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 	}
 
 	// Pushing onto the stack triggers redo(), so this will finish things off (call setAlignment(), in particular
-	undoStack_.push(new AlignmentCmd(this,oldSeqs,oldGroups,newSequences.sequences(),newGroups,"alignment"));
+	undoStack_.push(new AlignmentCmd(this,oldSeqs,oldGroups,newSequences.sequences(),newGroups,aligned_,"alignment"));
 	
 }
 

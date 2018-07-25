@@ -36,7 +36,7 @@ ImportDialog::ImportDialog(int defaultDataType,QWidget *parent,Qt::WindowFlags f
 {
 	QVBoxLayout *vb = new QVBoxLayout(this);
 
-	QLabel *l = new QLabel("Select the type of sequence data you want to import:",this);
+	QLabel *l = new QLabel("Select the type of data you want to import:",this);
 	vb->addWidget(l,0);
 	
 	// no need for button group - exclusive by default

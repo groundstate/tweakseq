@@ -39,7 +39,7 @@ class SequenceFile
 		SequenceFile(QString n= QString());
 		~SequenceFile();
 		
-		enum DataType {Proteins, DNA,Unknown};
+		enum DataType {Proteins, DNA, PDB,Unknown};
 		
 		QString name(){return n_;};
 		void setName(QString n){n_=n;}

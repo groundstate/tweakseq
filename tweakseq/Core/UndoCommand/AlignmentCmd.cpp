@@ -39,12 +39,14 @@
 		
 AlignmentCmd::AlignmentCmd(Project *p,const QList<Sequence *> &seqPreAlign,const QList<SequenceGroup *> &groupsPreAlign,
 																					 const QList<Sequence *> &seqPostAlign,const QList<SequenceGroup *> &groupsPostAlign,
+																					 bool isFullAlignment,
 																					 const QString &txt):Command(p,txt)
 {
 	seqPreAlign_=seqPreAlign;
 	groupsPreAlign_=groupsPreAlign;
 	groupsPostAlign_= groupsPostAlign;
 	seqPostAlign_= seqPostAlign;
+	isFullAlignment_=isFullAlignment;
 }
 
 AlignmentCmd::~AlignmentCmd()
@@ -56,7 +58,7 @@ void AlignmentCmd::redo()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__)  << seqPreAlign_.size() << " " << groupsPreAlign_.size();
 	project_->setAlignment(seqPostAlign_,groupsPostAlign_);
-	project_->setAligned(true);
+	project_->setAligned(isFullAlignment_);
 	
 }
 

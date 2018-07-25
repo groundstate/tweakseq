@@ -874,7 +874,13 @@ void SeqEditMainWin::settingsColourMap(QAction *a)
 	else if (a->text()=="Taylor")
 		se->setColourMap(SequenceEditor::TaylorMap);
 	else if (a->text()=="Simple DNA")
-		se->setColourMap(SequenceEditor::StandardDNAColourMap);
+		se->setColourMap(SequenceEditor::StandardDNAMap);
+	else if (a->text()=="None"){
+		if (project_->sequenceDataType() == SequenceFile::DNA)
+			se->setColourMap(SequenceEditor::MonoDNAMap);
+		else if (project_->sequenceDataType() == SequenceFile::Proteins)
+			se->setColourMap(SequenceEditor::MonoMap);
+	}
 }
 
 void SeqEditMainWin::settingsAlignmentToolClustalO()
@@ -1315,11 +1321,21 @@ void SeqEditMainWin::createActions()
 	ag->addAction(colourMapAction);
 	settingsProteinColourMapActions.append(colourMapAction);
 	
+	colourMapAction =new QAction("None",this);
+	colourMapAction->setCheckable(true);
+	ag->addAction(colourMapAction);
+	settingsProteinColourMapActions.append(colourMapAction);
+	
 	ag = new QActionGroup(this);
 	ag->setExclusive(true);
 	colourMapAction = new QAction("Simple DNA",this);
 	colourMapAction->setCheckable(true);
 	colourMapAction->setChecked(true);
+	ag->addAction(colourMapAction);
+	settingsDNAColourMapActions.append(colourMapAction);
+	
+	colourMapAction = new QAction("None",this);
+	colourMapAction->setCheckable(true);
 	ag->addAction(colourMapAction);
 	settingsDNAColourMapActions.append(colourMapAction);
 	
@@ -1628,7 +1644,11 @@ void SeqEditMainWin::updateSettingsActions()
 			settingsDNAColourMapActions.at(a)->setChecked(false);
 		for (int a=0;a<settingsDNAColourMapActions.size();a++){
 			QAction *va = settingsDNAColourMapActions.at(a);
-			if (va->text()=="Simple DNA" && colourMap == SequenceEditor::StandardDNAColourMap){
+			if (va->text()=="Simple DNA" && colourMap == SequenceEditor::StandardDNAMap){
+				va->setChecked(true);
+				break;
+			}
+			if (va->text()=="None" && colourMap == SequenceEditor::MonoDNAMap){
 				va->setChecked(true);
 				break;
 			}
@@ -1648,6 +1668,10 @@ void SeqEditMainWin::updateSettingsActions()
 				break;
 			}
 			else if (va->text() == "Taylor" && colourMap == SequenceEditor::TaylorMap){
+				va->setChecked(true);
+				break;
+			}
+			else if (va->text() == "None" && colourMap == SequenceEditor::MonoMap){
 				va->setChecked(true);
 				break;
 			}

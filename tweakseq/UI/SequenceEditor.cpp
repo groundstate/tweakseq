@@ -143,19 +143,22 @@ void SequenceEditor::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 			case PhysicoChemicalMap:colMap="physico-chemical";break;
 			case RasMolMap:colMap="rasmol";break;
 			case TaylorMap:colMap="taylor";break;
+			case MonoMap:colMap="mono";break;
 		}
 		XMLHelper::addElement(doc,celem,"proteins",colMap);
 		
 		switch (defaultDNAColourMap_)// this is for "defaults.xml"
 		{
-			case StandardDNAColourMap:colMap="standard";break;
+			case StandardDNAMap:colMap="standard";break;
+			case MonoDNAMap:colMap="standard";break;
 		}
 		XMLHelper::addElement(doc,celem,"dna",colMap); 
 	}
 	else if (sequenceDataType_==SequenceFile::DNA){
 		switch (colourMap_)
 		{
-			case StandardDNAColourMap:colMap="standard";break;
+			case StandardDNAMap:colMap="standard";break;
+			case MonoDNAMap:colMap="mono";break;
 		}
 		XMLHelper::addElement(doc,celem,"dna",colMap);
 		switch (defaultProteinColourMap_) // this is for "defaults.xml"
@@ -163,6 +166,7 @@ void SequenceEditor::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 			case PhysicoChemicalMap:colMap="physico-chemical";break;
 			case RasMolMap:colMap="rasmol";break;
 			case TaylorMap:colMap="taylor";break;
+			case MonoMap:colMap="mono";break;
 		}
 		XMLHelper::addElement(doc,celem,"proteins",colMap);
 	}
@@ -198,10 +202,15 @@ void SequenceEditor::readSettings(QDomDocument &doc)
 							defaultProteinColourMap_ = RasMolMap;
 						else if (celem.text()=="taylor")
 							defaultProteinColourMap_=TaylorMap;
+						else if (celem.text()=="mono")
+							defaultProteinColourMap_=MonoMap;
 					}
 					else if (celem.tagName() == "dna"){
 						if (celem.text()=="standard"){
-							defaultDNAColourMap_=StandardDNAColourMap;
+							defaultDNAColourMap_=StandardDNAMap;
+						}
+						else if (celem.text()=="mono"){
+							defaultDNAColourMap_=MonoDNAMap;
 						}
 					}
 					celem = celem.nextSiblingElement();
@@ -1504,7 +1513,7 @@ void SequenceEditor::init()
 	readOnly_=false;
 	
 	defaultProteinColourMap_= SequenceEditor::PhysicoChemicalMap;
-	defaultDNAColourMap_ = SequenceEditor::StandardDNAColourMap;
+	defaultDNAColourMap_ = SequenceEditor::StandardDNAMap;
 	
 	sequenceDataType_= SequenceFile::Proteins;
 	residueView_ = SequenceEditor::StandardView;
@@ -1635,7 +1644,7 @@ void SequenceEditor::getResidueColour(int ch,QColor &colour,bool cellSelected)
 	if (sequenceDataType_ == SequenceFile::DNA){
 		switch (colourMap_)
 		{
-			case StandardDNAColourMap:
+			case StandardDNAMap:
 				switch (ch)
 				{
 					case '-':
@@ -1653,6 +1662,9 @@ void SequenceEditor::getResidueColour(int ch,QColor &colour,bool cellSelected)
 						colour.setRgb(StandardDNAColours[ich][0],StandardDNAColours[ich][1],StandardDNAColours[ich][2]);
 						break;
 				}
+				break;
+			case MonoDNAMap:
+				colour.setRgb(224,224,224);
 				break;
 		} // of switch
 	}
@@ -1711,6 +1723,11 @@ void SequenceEditor::getResidueColour(int ch,QColor &colour,bool cellSelected)
 						break;
 				}
 				break;
+			case MonoMap:
+			{
+				colour.setRgb(224,224,224);
+				break;
+			}
 		}
 	}
 }

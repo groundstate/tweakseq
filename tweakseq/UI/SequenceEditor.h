@@ -85,8 +85,8 @@ class SequenceEditor: public QWidget
 		void visibleRows(int *,int *);
 	
 		enum ResidueView {StandardView, InvertedView,  SolidView};
-		enum AminoColourMap   {PhysicoChemicalMap,RasMolMap,TaylorMap};
-		enum DNAColourMap {StandardDNAColourMap};
+		enum AminoColourMap   {PhysicoChemicalMap,RasMolMap,TaylorMap,MonoMap};
+		enum DNAColourMap {StandardDNAMap,MonoDNAMap};
 		
 	signals:
 	
