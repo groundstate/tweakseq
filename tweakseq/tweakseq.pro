@@ -79,16 +79,17 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 
 SOURCES				+=  Core/Annotations/Consensus.cpp
 
-SOURCES       +=  UI/AboutDialog.cpp \
-									UI/AlignmentToolDlg.cpp \
-									UI/GoToTool.cpp \
-									UI/ImportDialog.cpp \
+SOURCES       +=  UI/GoToTool.cpp \
 									UI/MessageWin.cpp \
 									UI/SearchTool.cpp \
 									UI/SequenceEditor.cpp \
 									UI/SeqEditMainWin.cpp \
 									UI/SetupWizard.cpp
-
+									
+SOURCES				 += UI/Dialogs/AboutDialog.cpp \
+									UI/Dialogs/AlignmentToolDlg.cpp \
+									UI/Dialogs/ImportDialog.cpp
+									
 RESOURCES = UI/Resources/application.qrc
 									
 QT           += core gui xml widgets printsupport
