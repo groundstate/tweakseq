@@ -887,6 +887,7 @@ void SeqEditMainWin::settingsAlignmentToolClustalO()
 {
 	if (project_->alignmentTool()->name() != "clustalo"){
 		project_->setAlignmentTool("clustalo");
+		settingsAlignmentToolPropertiesAction->setText("clustalo");
 	}
 }
 
@@ -894,6 +895,15 @@ void SeqEditMainWin::settingsAlignmentToolMUSCLE()
 {
 	if (project_->alignmentTool()->name() != "MUSCLE"){
 		project_->setAlignmentTool("MUSCLE");
+		settingsAlignmentToolPropertiesAction->setText("MUSCLE");
+	}
+}
+
+void SeqEditMainWin::settingsAlignmentToolMAFFT()
+{
+	if (project_->alignmentTool()->name() != "MAFFT"){
+		project_->setAlignmentTool("MAFFT");
+		settingsAlignmentToolPropertiesAction->setText("MAFFT");
 	}
 }
 
@@ -1246,10 +1256,19 @@ void SeqEditMainWin::createActions()
 	settingsAlignmentToolMUSCLEAction->setChecked(project_->alignmentTool()->name()=="MUSCLE");
 	settingsAlignmentToolMUSCLEAction->setEnabled(app->alignmentToolAvailable("MUSCLE"));
 	
+	settingsAlignmentToolMAFFTAction = new QAction( tr("MAFFT"), this);
+	settingsAlignmentToolMAFFTAction->setStatusTip(tr("Select MAFFT"));
+	addAction(settingsAlignmentToolMAFFTAction);
+	connect(settingsAlignmentToolMAFFTAction, SIGNAL(triggered()), this, SLOT(settingsAlignmentToolMAFFT()));
+	settingsAlignmentToolMAFFTAction->setCheckable(true);
+	settingsAlignmentToolMAFFTAction->setChecked(project_->alignmentTool()->name()=="MAFFT");
+	settingsAlignmentToolMAFFTAction->setEnabled(app->alignmentToolAvailable("MAFFT"));
+	
 	QActionGroup *ag = new QActionGroup(this);
 	ag->setExclusive(true);
 	ag->addAction(settingsAlignmentToolClustalOAction);
 	ag->addAction(settingsAlignmentToolMUSCLEAction);
+	ag->addAction(settingsAlignmentToolMAFFTAction);
 	
 	settingsAlignmentToolPropertiesAction = new QAction( project_->alignmentTool()->name(), this);
 	settingsAlignmentToolPropertiesAction->setStatusTip(tr("Alignment tool properties"));
@@ -1443,6 +1462,7 @@ void SeqEditMainWin::createMenus()
 	QMenu* alignmentToolMenu = settingsMenu->addMenu(tr("Alignment tool"));
 	alignmentToolMenu->addAction(settingsAlignmentToolClustalOAction);
 	alignmentToolMenu->addAction(settingsAlignmentToolMUSCLEAction);
+	alignmentToolMenu->addAction(settingsAlignmentToolMAFFTAction);
 	
 	settingsMenu->addAction(settingsAlignmentToolPropertiesAction);
 	

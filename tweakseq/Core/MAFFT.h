@@ -24,78 +24,27 @@
 // THE SOFTWARE.
 //
 
+#ifndef __MAFFT_H_
+#define __MAFFT_H_
 
-#ifndef __APPLICATION_H_
-#define __APPLICATION_H_
+#include "AlignmentTool.h"
 
-#include <QApplication>
-#include <QDomDocument>
-#include <QStringList>
-
-
-#include "Version.h"
-
-#include "Clipboard.h"
-
-class AboutDialog;
-class Project;
-
-class Application : public QApplication
+class MAFFT: public AlignmentTool
 {
-	Q_OBJECT
-	
 	public:
-	
-		Application(int &argc, char **argv);
 		
-		Project * createProject();
+		MAFFT();
+		~MAFFT();
 		
-		QDomDocument & defaultSettings(){return *defaultSettings_;}
-		
-		bool configure();
-		Clipboard& clipboard(){return clipboard_;}
-		
-		void showAboutDialog(QWidget *);
-		void showHelp(QString);
-	
-		QString applicationTmpPath();
-		
-		QStringList previousProjects;
-		
-		QString version(){return APP_VERSION;}
-		
-		bool alignmentToolAvailable(const QString &);
-		
-	public slots:
-	
-		void saveDefaultSettings(Project *);
-		
-	private slots:
-	
-		void helpClosed();
-		void cleanup();
-		
-		void projectClosed(Project *);
+		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
+		virtual void writeSettings(QDomDocument &,QDomElement &);
+		virtual void readSettings(QDomDocument &);
 		
 	private:
-		
+	
 		void init();
-		void readSettings();
-		void writeSettings();
+		void getVersion();
 		
-		Clipboard clipboard_;
-		
-		QString appDirPath_;
-		QString applicationSettingsFile_;
-		QList<Project *> openProjects_;
-		
-		AboutDialog *aboutDlg;
-		
-		QDomDocument *defaultSettings_;
-		
-		bool clustaloConfigured_,muscleConfigured_,mafftConfigured_;
 };
-
-extern Application *app;
 
 #endif

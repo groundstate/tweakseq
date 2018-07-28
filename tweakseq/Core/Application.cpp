@@ -36,6 +36,7 @@
 #include "AboutDialog.h"
 #include "Application.h"
 #include "ClustalO.h"
+#include "MAFFT.h"
 #include "Muscle.h"
 #include "Project.h"
 #include "SetupWizard.h"
@@ -79,12 +80,13 @@ bool Application::configure()
 	int ret = sw.exec();
 	// 
 	QString preferredTool;
-	QString clustalO,muscle;
+	QString clustalO,muscle,mafft;
 	
 	if (ret == QDialog::Accepted){
 		preferredTool = sw.preferredTool();
 		sw.clustalOConfig(clustaloConfigured_,clustalO);
 		sw.muscleConfig(muscleConfigured_,muscle);
+		sw.mafftConfig(mafftConfigured_,mafft);
 	}
 	else{
 		QMessageBox::warning(NULL, tr("tweakseq"),
@@ -121,6 +123,12 @@ bool Application::configure()
 		atool.writeSettings(saveDoc,root);
 	}
 	
+	if (mafftConfigured_){
+		MAFFT atool;
+		atool.setPreferred(preferredTool == "MAFFT");
+		atool.setExecutable(mafft);
+		atool.writeSettings(saveDoc,root);
+	}
 	saveDoc.save(ts,2);
 	f.close();
 	
@@ -190,6 +198,8 @@ bool Application::alignmentToolAvailable(const QString &toolName){
 		return clustaloConfigured_;
 	else if (toolName == "MUSCLE")
 		return muscleConfigured_;
+	else if (toolName == "MAFFT")
+		return mafftConfigured_;
 	return false;
 }
 
@@ -229,7 +239,7 @@ void Application::init()
 {
 	aboutDlg = NULL;
 	defaultSettings_ = new QDomDocument();
-	clustaloConfigured_=muscleConfigured_=false;
+	clustaloConfigured_=muscleConfigured_=mafftConfigured_=false;
 }
 
 void Application::readSettings()
@@ -257,6 +267,8 @@ void Application::readSettings()
 						clustaloConfigured_=true;
 					else if (elem.text()=="MUSCLE")
 						muscleConfigured_=true;
+					else if (elem.text()=="MAFFT")
+						mafftConfigured_=true;
 				}
 				elem=elem.nextSiblingElement();
 			}

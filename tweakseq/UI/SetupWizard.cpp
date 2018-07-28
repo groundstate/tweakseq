@@ -70,6 +70,13 @@ void SetupWizard::muscleConfig(bool &checked,QString &executable)
 	executable = muscleLE_->text();
 }
 
+void SetupWizard::mafftConfig(bool &checked,QString &executable)
+{
+	checked = mafftCB_->isChecked();
+	executable = mafftLE_->text();
+}
+
+
 QString SetupWizard::preferredTool()
 {
 	return preferredTool_->currentText();
@@ -93,6 +100,12 @@ bool SetupWizard::validateCurrentPage()
 				return false;
 			}
 		}
+		else if ("MAFFT" == tool){
+			if (!mafftCB_->isChecked()){
+				app->beep();
+				return false;
+			}
+		}
 		
 	  // If a tool is checked then we need the executable path
 		if (muscleCB_->isChecked()){
@@ -103,6 +116,12 @@ bool SetupWizard::validateCurrentPage()
 		}
 		if (clustaloCB_->isChecked()){
 			if (clustaloLE_->text().isEmpty()){
+				app->beep();
+				return false;
+			}
+		}
+		if (mafftCB_->isChecked()){
+			if (mafftLE_->text().isEmpty()){
 				app->beep();
 				return false;
 			}
@@ -131,6 +150,13 @@ void  SetupWizard::browseMUSCLE()
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Select executable"));
 	if (!fileName.isNull())
 		muscleLE_->setText(fileName);
+}
+
+void  SetupWizard::browseMAFFT()
+{
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Select executable"));
+	if (!fileName.isNull())
+		mafftLE_->setText(fileName);
 }
 
 //
@@ -180,6 +206,7 @@ QWizardPage * SetupWizard::createAlignmentToolPage()
 	layout->addWidget(preferredTool_);
 	preferredTool_->addItem("clustalo");
 	preferredTool_->addItem("MUSCLE");
+	preferredTool_->addItem("MAFFT");
 	hb->addWidget(preferredTool_);
 	
 	label = new QLabel("Check the alignment tool(s) you want to configure and set the path to the executable");
@@ -210,6 +237,18 @@ QWizardPage * SetupWizard::createAlignmentToolPage()
 	pb = new QPushButton("Browse ...",page);
 	gl->addWidget(pb,2,3);
 	connect(pb,SIGNAL(clicked()),this,SLOT(browseMUSCLE()));
+	
+		//
+	
+	mafftCB_= new QCheckBox("MAFFT",page);
+	gl->addWidget(mafftCB_,3,1);
+	
+	mafftLE_ = new QLineEdit(page);
+	gl->addWidget(mafftLE_ ,3,2);
+	
+	pb = new QPushButton("Browse ...",page);
+	gl->addWidget(pb,3,3);
+	connect(pb,SIGNAL(clicked()),this,SLOT(browseMAFFT()));
 	
 	page->setLayout(layout);
 	

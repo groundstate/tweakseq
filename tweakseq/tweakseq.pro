@@ -19,6 +19,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/FASTAFile.h \
 								 include/GoToTool.h \
 								 include/ImportDialog.h \
+								 include/MAFFT.h \
 								 include/MessageWin.h \
 								 include/Muscle.h \
 								 include/Project.h \
@@ -54,6 +55,7 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/ClustalO.cpp \
 									Core/FASTAFile.cpp \
 									Core/Main.cpp \
+									Core/MAFFT.cpp \
 									Core/Muscle.cpp \
 									Core/Project.cpp \
 									Core/ResidueSelection.cpp \

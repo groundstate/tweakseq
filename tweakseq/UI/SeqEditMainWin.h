@@ -111,6 +111,7 @@ private slots:
 	void settingsColourMap(QAction *);
 	void settingsAlignmentToolClustalO();
 	void settingsAlignmentToolMUSCLE();
+	void settingsAlignmentToolMAFFT();
 	void settingsAlignmentToolProperties();
 	void settingsSaveAppDefaults();
 	
@@ -158,7 +159,8 @@ private:
 	QAction  *findAction;
 	QAction  *annotationConsensusAction;
 	QAction  *helpAction,*aboutAction;
-	QAction  *settingsEditorFontAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
+	QAction  *settingsEditorFontAction;
+	QAction  *settingsAlignmentToolMAFFTAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
 	QList<QAction *> settingsViewActions;
 	QList<QAction *> settingsProteinColourMapActions;
 	QList<QAction *> settingsDNAColourMapActions;

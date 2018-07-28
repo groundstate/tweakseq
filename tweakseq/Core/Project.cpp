@@ -44,6 +44,7 @@
 #include "FASTAFile.h"
 #include "GroupCmd.h"
 #include "ImportCmd.h"
+#include "MAFFT.h"
 #include "Muscle.h"
 #include "PasteCmd.h"
 #include "Project.h"
@@ -80,6 +81,7 @@ Project::~Project()
 	// FIXME and the rest ..
 	if (muscleTool_) delete muscleTool_;
 	if (clustalOTool_) delete clustalOTool_;
+	if (mafftTool_) delete mafftTool_;
 }
 
 void Project::setMainWindow(SeqEditMainWin *mainwin)
@@ -527,6 +529,8 @@ void Project::setAlignmentTool(const QString & atool)
 		alignmentTool_=clustalOTool_;
 	else if (atool == "MUSCLE" && muscleTool_)
 		alignmentTool_=muscleTool_;
+	else if (atool == "MAFFT" && mafftTool_)
+		alignmentTool_=mafftTool_;
 }
 
 //
@@ -770,7 +774,9 @@ void Project::writeSettings(QDomDocument &doc,QDomElement &root)
 	if (clustalOTool_)
 		clustalOTool_->writeSettings(doc,root);
 	if (muscleTool_)
-		muscleTool_->writeSettings(doc,root);;
+		muscleTool_->writeSettings(doc,root);
+	if (mafftTool_)
+		mafftTool_->writeSettings(doc,root);;
 }
 
 void Project::readSettings(QDomDocument &doc)
@@ -1048,6 +1054,10 @@ void Project::init()
 	sequenceDataType_=SequenceFile::Unknown;
 	aligned_=false;
 	
+	mafftTool_= NULL;
+	if (app->alignmentToolAvailable("MAFFT"))
+		mafftTool_ = new MAFFT();
+	
 	muscleTool_= NULL;
 	if (app->alignmentToolAvailable("MUSCLE"))
 		muscleTool_ = new Muscle();
@@ -1077,6 +1087,12 @@ void Project::readAlignmentToolSettings(QDomDocument &doc)
 		clustalOTool_->readSettings(doc);
 		if (clustalOTool_->preferred())
 			alignmentTool_=clustalOTool_;
+	}
+	
+	if (mafftTool_){
+		mafftTool_->readSettings(doc);
+		if (mafftTool_->preferred())
+			alignmentTool_=mafftTool_;
 	}
 }
 

@@ -175,12 +175,12 @@ class Project:public QObject
 		
 		int sequenceDataType_;
 		int nAlignments;
-		AlignmentTool *alignmentTool_,*clustalOTool_,*muscleTool_;
+		AlignmentTool *alignmentTool_,*mafftTool_,*clustalOTool_,*muscleTool_;
 		QUndoStack undoStack_;
 	
 		QList<SearchResult *> searchResults_;
 		
-		QDomDocumentFragment *clustaloSettings_,*muscleSettings_;
+		QDomDocumentFragment *clustaloSettings_,*muscleSettings_,*mafftSettings_;
 		
 };
 

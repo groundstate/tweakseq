@@ -46,6 +46,7 @@ class SetupWizard: public QWizard
 		void addMessage(QString &);
 		void clustalOConfig(bool &,QString &);
 		void muscleConfig(bool &,QString &);
+		void mafftConfig(bool &,QString &);
 		QString preferredTool();
 		
 		virtual bool validateCurrentPage();
@@ -54,14 +55,14 @@ class SetupWizard: public QWizard
 		
 		  void browseClustalO();
 			void browseMUSCLE();
-			
+			void browseMAFFT();
 	private:
 		
 		QWizardPage * createIntroPage();
 		QWizardPage * createAlignmentToolPage();
 		
-		QCheckBox *clustaloCB_,*muscleCB_;
-		QLineEdit *clustaloLE_,*muscleLE_;
+		QCheckBox *clustaloCB_,*muscleCB_,*mafftCB_;
+		QLineEdit *clustaloLE_,*muscleLE_,*mafftLE_;
 		
 		QComboBox *preferredTool_;
 		
