@@ -83,6 +83,7 @@
 #include "SeqEditMainWin.h"
 #include "Sequence.h"
 #include "SequenceGroup.h"
+#include "SequencePropertiesDialog.h"
 #include "SequenceSelection.h"
 #include "AlignmentCmd.h"
 #include "XMLHelper.h"
@@ -691,7 +692,7 @@ void SeqEditMainWin::setupEditActions()
 	removeExcludeAction->setEnabled(!(project_->residueSelection->empty())); 
 	
 	renameSequenceAction->setEnabled(project_->sequenceSelection->size()==1);
-	
+	sequencePropertiesAction->setEnabled(project_->sequenceSelection->size()==1);
 }
 
 void SeqEditMainWin::editCopy()
@@ -743,6 +744,19 @@ void SeqEditMainWin::renameSequence(){
 			}
 		}
 }
+
+void SeqEditMainWin::sequenceProperties()
+{
+	Sequence *selSeq=project_->sequenceSelection->itemAt(0);
+	SequencePropertiesDialog spd(project_,selSeq,this);
+	if (spd.exec()==QDialog::Accepted) {
+		if (!spd.structureFile().isEmpty())
+			selSeq->structureFile=spd.structureFile();
+		
+		updateGoToTool(); // in case the name was changed
+	}
+}
+
 
 void SeqEditMainWin::editFind()
 {
@@ -984,6 +998,7 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 	
 	if (project_->sequenceSelection->size() > 0){
 		cm->addAction(renameSequenceAction);
+		cm->addAction(sequencePropertiesAction);
 		cm->addSeparator();
 	}
 	
@@ -1251,6 +1266,12 @@ void SeqEditMainWin::createActions()
 	connect(renameSequenceAction, SIGNAL(triggered()), this, SLOT(renameSequence()));
 	renameSequenceAction->setEnabled(false);
 
+	sequencePropertiesAction = new QAction( tr("Properties"), this);
+	sequencePropertiesAction->setStatusTip(tr("Sequence properties dialog"));
+	addAction(sequencePropertiesAction);
+	connect(sequencePropertiesAction, SIGNAL(triggered()), this, SLOT(sequenceProperties()));
+	sequencePropertiesAction->setEnabled(false);
+	
 	// Alignment actions
 	alignAllAction = new QAction( tr("&Align all"), this);
 	alignAllAction->setStatusTip(tr("Run alignment on all sequences"));

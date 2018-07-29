@@ -603,6 +603,8 @@ bool Project::save(QString &fpathname)
 			XMLHelper::addElement(saveDoc,se,"bookmarked",XMLHelper::boolToString(seq->bookmarked));
 		if (seq->originalName != seq->label)
 			XMLHelper::addElement(saveDoc,se,"originalname",seq->originalName);
+		if (!seq->structureFile.isEmpty())
+			XMLHelper::addElement(saveDoc,se,"structurefile",seq->structureFile);
 		QList<int> x = seq->exclusions();
 		QString xs="";
 		for (int xi=0;xi<x.size()-1;xi+=2){
@@ -693,7 +695,7 @@ void Project::load(QString &fname)
 	for (int i=0;i<nl.count();i++){
 		QDomNode sNode = nl.item(i);
 		
-		QString sName,sComment,sResidues,sSrc;
+		QString sName,sComment,sResidues,sSrc,sOriginalName,sStructureFile;
 		bool sVisible = true;
 		bool sBookmarked = false;
 		
@@ -702,12 +704,16 @@ void Project::load(QString &fname)
 		while (!elem.isNull()){
 			if (elem.tagName() == "name")
 				sName = elem.text().trimmed();
+			else if (elem.tagName() == "originalname")
+				sOriginalName=elem.text().trimmed();
 			else if (elem.tagName() == "comment")
 				sComment=elem.text().trimmed();
 			else if (elem.tagName() == "residues")
 				sResidues = elem.text().trimmed();
 			else if (elem.tagName() == "source")
 				sSrc = elem.text().trimmed();
+			else if (elem.tagName() == "structurefile")
+				sStructureFile = elem.text().trimmed();
 			else if (elem.tagName() == "visible")
 				sVisible = XMLHelper::stringToBool(elem.text().trimmed());
 			else if (elem.tagName() == "bookmarked")
@@ -728,6 +734,10 @@ void Project::load(QString &fname)
 		}
 		Sequence *seq = sequences.append(sName,sResidues,sComment,sSrc,sVisible);
 		seq->bookmarked=sBookmarked;
+		seq->structureFile=sStructureFile;
+		// optional fields
+		if (!sOriginalName.isEmpty())
+			seq->originalName=sOriginalName;
 		for (int x=0;x<exclusions.size()-1;x+=2)
 			seq->exclude(exclusions.at(x),exclusions.at(x+1),true);
 				 
@@ -859,7 +869,7 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 		for (int snew=0;snew<newseqs.size();snew++){
 			Sequence *oldSeq = sequences.getSequence(newlabels.at(snew));
 			if (NULL != oldSeq){
-				Sequence *newSeq = new Sequence(newlabels.at(snew),newseqs.at(snew),oldSeq->comment,oldSeq->source,oldSeq->visible);
+				Sequence *newSeq = new Sequence(newlabels.at(snew),newseqs.at(snew),oldSeq->comment,oldSeq->source,oldSeq->visible,oldSeq->structureFile);
 				// carry forward any extra information
 				newSeq->originalName=oldSeq->originalName;
 				newSeq->bookmarked=oldSeq->bookmarked;

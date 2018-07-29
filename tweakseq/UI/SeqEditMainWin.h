@@ -93,6 +93,7 @@ private slots:
 	void editFind();
 	
 	void renameSequence();
+	void sequenceProperties();
 	
 	void setupAlignmentActions();
 	void alignmentAll();
@@ -157,7 +158,7 @@ private:
 	QAction  *excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
 	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction,*unhideAllAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction,*ungroupAllAction;
-	QAction  *renameSequenceAction;
+	QAction  *renameSequenceAction,*sequencePropertiesAction;
 	QAction  *readOnlyAction;
 	QAction  *findAction;
 	QAction  *annotationConsensusAction;

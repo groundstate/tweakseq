@@ -32,6 +32,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/SequenceFile.h \
 								 include/SequenceGroup.h \
 								 include/SequenceSelection.h \
+								 include/SequencePropertiesDialog.h \
 								 include/SetupWizard.h \
 								 include/Command.h \
 								 include/AddInsertionsCmd.h \
@@ -92,7 +93,8 @@ SOURCES       +=  UI/GoToTool.cpp \
 									
 SOURCES				 += UI/Dialogs/AboutDialog.cpp \
 									UI/Dialogs/AlignmentToolDlg.cpp \
-									UI/Dialogs/ImportDialog.cpp
+									UI/Dialogs/ImportDialog.cpp \
+									UI/Dialogs/SequencePropertiesDialog.cpp
 									
 RESOURCES = UI/Resources/application.qrc
 									

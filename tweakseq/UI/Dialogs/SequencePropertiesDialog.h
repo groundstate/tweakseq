@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+/// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,48 +24,44 @@
 // THE SOFTWARE.
 //
 
+#ifndef __SEQUENCE_PROPERTIES_DLG_H_
+#define __SEQUENCE_PROPERTIES_DLG_H_
 
-#ifndef __SEQUENCE_H_
-#define __SEQUENCE_H_
+#include <QDialog>
 
-#include <QList>
-#include <QString>
+class QDialogButtonBox;
+class QLineEdit;
 
-#define EXCLUDE_CELL    0x0080 
-#define HIGHLIGHT_CELL  0x0100
-#define KEEP_FLAGS      0XFFFF 
-#define REMOVE_FLAGS	  0X007F	
-
+class Project;
 class Sequence;
-class SequenceGroup;
 
-class Sequence
+class SequencePropertiesDialog:public QDialog
 {
+	Q_OBJECT
+	
 	public:
-		Sequence();
-		Sequence(QString,QString,QString c=QString(),QString f=QString(),bool vis=true,QString sf=QString(),QString ssf=QString());
-		~Sequence();
-		// comment is for a longer comment
-		QString label,residues,comment;
 		
-		QString filter(bool applyExclusions=false);
-		void exclude(int,int,bool);
-		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
+		SequencePropertiesDialog(Project *, Sequence *,QWidget* parent = 0, Qt::WindowFlags f = 0 );
+		~SequencePropertiesDialog();
+	
+		QString structureFile();
 		
-		void highlight(int ,int,bool );
+	public slots:
 		
-		void remove(int,int);
-		void insert(QString,int);
+		virtual void accept();
 		
-		bool visible;
-		bool bookmarked;
+	private slots:
+	
+		void browseStructures();
 		
-		SequenceGroup *group;
+	private:
 		
-		QString source; // file sequence was originally sourced from
-		QString originalName;
-		QString structureFile;
-		QString dsspFile;
+		QLineEdit *nameEditor_,*structureEditor_;
+		QDialogButtonBox *buttonBox_;
+		
+		Sequence *seq_;
+		Project  *project_;
+		QString name_;
 };
 
 #endif

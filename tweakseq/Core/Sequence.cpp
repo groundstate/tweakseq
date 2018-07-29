@@ -36,7 +36,7 @@ Sequence::Sequence()
 {
 }
 
-Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis){
+Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis,QString sf,QString ssf){
 	label = l;
 	originalName = l;
 	residues = r;
@@ -44,6 +44,8 @@ Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis){
 	group=NULL;
 	source=f;
 	visible=vis;
+	structureFile=sf;
+	dsspFile = ssf;
 	bookmarked=false;
 }
 
