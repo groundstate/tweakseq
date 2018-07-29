@@ -48,6 +48,7 @@
 #include "Muscle.h"
 #include "PasteCmd.h"
 #include "Project.h"
+#include "RenameCmd.h"
 #include "ResidueSelection.h"
 #include "SearchResult.h"
 #include "Sequence.h"
@@ -514,6 +515,15 @@ void Project::unhideAllGroupMembers()
 	dirty_=true;
 }
 
+bool Project::renameSequence(Sequence *seq,QString &newName)
+{
+	if (sequences.isUniqueName(newName)){
+		undoStack_.push(new RenameCmd(this,seq,newName,"rename sequence"));
+		dirty_=true;
+		return true;
+	}
+	return false;
+}
 
 void Project::addInsertions(QList<Sequence*> &seqs,int startCol,int stopCol,bool postInsert)
 {
@@ -591,6 +601,8 @@ bool Project::save(QString &fpathname)
 			XMLHelper::addElement(saveDoc,se,"visible",XMLHelper::boolToString(seq->visible));
 		if (seq->bookmarked)
 			XMLHelper::addElement(saveDoc,se,"bookmarked",XMLHelper::boolToString(seq->bookmarked));
+		if (seq->originalName != seq->label)
+			XMLHelper::addElement(saveDoc,se,"originalname",seq->originalName);
 		QList<int> x = seq->exclusions();
 		QString xs="";
 		for (int xi=0;xi<x.size()-1;xi+=2){
@@ -848,6 +860,8 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 			Sequence *oldSeq = sequences.getSequence(newlabels.at(snew));
 			if (NULL != oldSeq){
 				Sequence *newSeq = new Sequence(newlabels.at(snew),newseqs.at(snew),oldSeq->comment,oldSeq->source,oldSeq->visible);
+				// carry forward any extra information
+				newSeq->originalName=oldSeq->originalName;
 				newSeq->bookmarked=oldSeq->bookmarked;
 				newSequences.append(newSeq);
 			}

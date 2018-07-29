@@ -29,6 +29,7 @@
 
 #include <QDomDocument>
 #include <QProcess>
+#include <QThread>
 
 #include "MAFFT.h"
 #include "XMLHelper.h"
@@ -48,7 +49,7 @@ MAFFT::~MAFFT()
 void MAFFT::makeCommand(QString &fin, QString &fout, QString &exec, QStringList &arglist)
 {
 	exec = executable_;
-	//arglist << "--force" << "-v" << "--outfmt=fa" << "--output-order=tree-order" << "-i" << fin << "-o" << fout;
+	arglist << "--auto" << "--thread" << "-1" << fin; // ouput is to stdout
 }
 
 void MAFFT::writeSettings(QDomDocument &doc,QDomElement &parentElem)
@@ -94,6 +95,9 @@ void MAFFT::init()
 	name_="MAFFT";
 	version_="";
 	executable_="/usr/local/bin/mafft";
+	usesStdOut_=true; // annoying
+	idealThreadCount_ = QThread::idealThreadCount();
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "threads " << idealThreadCount_;
 }
 
 void MAFFT::getVersion()

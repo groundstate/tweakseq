@@ -42,6 +42,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/PasteCmd.h \
 								 include/ImportCmd.h \
 								 include/MoveCmd.h \
+								 include/RenameCmd.h \
 								 include/UngroupCmd.h \
 								 include/Utility.h \
 								 include/Version.h \
@@ -77,6 +78,7 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/ImportCmd.cpp \
 									Core/UndoCommand/MoveCmd.cpp \
 									Core/UndoCommand/PasteCmd.cpp \
+									Core/UndoCommand/RenameCmd.cpp \
 									Core/UndoCommand/UngroupCmd.cpp
 
 SOURCES				+=  Core/Annotations/Consensus.cpp

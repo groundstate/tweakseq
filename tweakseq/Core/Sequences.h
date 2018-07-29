@@ -65,6 +65,7 @@ class Sequences:public QObject
 		int maxLength(bool recalculate=false);
 		
 		bool isSubGroup(int,int);
+		bool isUniqueName(QString &);
 		
 		Sequence * append(QString,QString,QString,QString,bool );
 		void  append(Sequence *);

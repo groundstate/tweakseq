@@ -156,6 +156,15 @@ bool Sequences::isSubGroup(int start,int stop)
 	return true;
 }
 
+bool Sequences::isUniqueName(QString &name)
+{
+	for (int i=0;i<sequences_.size();i++){
+		if (name == sequences_.at(i)->label)
+			return false;
+	}
+	return true;
+}
+
 Sequence * Sequences::append(QString l,QString r,QString c,QString f,bool h)
 {
 	Sequence * newSeq = new Sequence(l,r,c,f,h);

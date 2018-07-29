@@ -80,7 +80,7 @@ private slots:
 	void fileNewProject();
 	void fileOpenProject();
 	void fileSaveProject();
-	void fileSaveProjectAs();
+	void fileSaveProjectAs(); 
 	void fileImport();
 	void fileExportFASTA();
 	void fileExportClustalW();
@@ -91,6 +91,8 @@ private slots:
 	void editCopy();
 	void editReadOnly();
 	void editFind();
+	
+	void renameSequence();
 	
 	void setupAlignmentActions();
 	void alignmentAll();
@@ -155,6 +157,7 @@ private:
 	QAction  *excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
 	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction,*unhideAllAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction,*ungroupAllAction;
+	QAction  *renameSequenceAction;
 	QAction  *readOnlyAction;
 	QAction  *findAction;
 	QAction  *annotationConsensusAction;

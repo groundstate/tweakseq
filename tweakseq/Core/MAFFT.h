@@ -45,6 +45,8 @@ class MAFFT: public AlignmentTool
 		void init();
 		void getVersion();
 		
+		int idealThreadCount_;
+		
 };
 
 #endif

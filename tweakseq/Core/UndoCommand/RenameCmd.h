@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+// Copyright (c) 2000-2018  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,50 +24,27 @@
 // THE SOFTWARE.
 //
 
+#ifndef __RENAME_CMD_H_
+#define __RENAME_CMD_H_
 
-#ifndef __ALIGNMENT_TOOL_H_
-#define __ALIGNMENT_TOOL_H_
+#include "Command.h"
 
-#include <QString>
+class Sequence;
 
-class QDomDocument;
-class QDomElement;
-
-class AlignmentTool
+class RenameCmd: public Command
 {
 	public:
 		
-		AlignmentTool();
-		virtual ~AlignmentTool();
-		
-		QString name(){return name_;}
-		QString version(){return version_;}
-		QString executable(){return executable_;}
-		
-		void setExecutable(QString e){executable_=e;}
-		
-		void setPreferred(bool pref){preferred_=pref;}
-		bool preferred(){return preferred_;}
-		
-		bool usesStdOut(){return usesStdOut_;} // the alignment is written to stdout
-		
-		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
-		
-		virtual void writeSettings(QDomDocument &,QDomElement &);
-		virtual void readSettings(QDomDocument &);
-	
-	protected:
-	
-		QString name_;
-		QString version_;
-		QString executable_;
-		bool preferred_;
-		bool usesStdOut_;
+		RenameCmd(Project * ,Sequence *,QString &,const QString &);
+		virtual ~RenameCmd();
+
+		virtual void redo();
+		virtual void undo();
 		
 	private:
-	
-		void init();
 		
+		QString oldName_,newName_;
+		Sequence *seq_;
 };
 
 #endif

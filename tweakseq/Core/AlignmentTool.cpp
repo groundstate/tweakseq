@@ -59,4 +59,5 @@ void AlignmentTool::readSettings(QDomDocument &)
 void AlignmentTool::init()
 {
 	preferred_=false;
+	usesStdOut_=false;
 }

@@ -112,6 +112,8 @@ class Project:public QObject
 		void hideNonSelectedGroupMembers();
 		void unhideAllGroupMembers();
 		
+		bool renameSequence(Sequence *,QString &);
+		
 		void addInsertions(QList<Sequence*> &,int,int,bool);
 		
 		QUndoStack &undoStack(){return undoStack_;} // main window needs access to this to validate actions

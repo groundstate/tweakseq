@@ -39,8 +39,6 @@
 class Sequence;
 class SequenceGroup;
 
-typedef QSharedPointer< Sequence > SequencePtr;
-
 class Sequence
 {
 	public:
@@ -65,7 +63,7 @@ class Sequence
 		SequenceGroup *group;
 		
 		QString source; // file sequence was originally sourced from
-		
+		QString originalName;
 };
 
 #endif

@@ -48,6 +48,6 @@ Undo/redo works for most things but is a work in progress.
 Alignment
 ---------
 
-ClustalO and MUSCLE are supported.
+ClustalO, MAFFT and MUSCLE are supported.
 
-Alignment output appears in the bottom area of the window.
+Alignment tool output appears in the bottom area of the window.

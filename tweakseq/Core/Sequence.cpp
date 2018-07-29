@@ -38,6 +38,7 @@ Sequence::Sequence()
 
 Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis){
 	label = l;
+	originalName = l;
 	residues = r;
 	comment=c;
 	group=NULL;

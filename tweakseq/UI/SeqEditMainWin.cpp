@@ -45,6 +45,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFontDialog>
+#include <QInputDialog>
 #include <QLabel>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -630,6 +631,7 @@ void SeqEditMainWin::setupEditActions()
 		unlockAction->setEnabled(false);
 		excludeAction->setEnabled(false);
 		removeExcludeAction->setEnabled(false);
+		renameSequenceAction->setEnabled(false);
 		return;
 	}
 	
@@ -687,6 +689,9 @@ void SeqEditMainWin::setupEditActions()
 	}
 	excludeAction->setEnabled(!(project_->residueSelection->empty())); // sloppy - don't worry about already excluded etc.
 	removeExcludeAction->setEnabled(!(project_->residueSelection->empty())); 
+	
+	renameSequenceAction->setEnabled(project_->sequenceSelection->size()==1);
+	
 }
 
 void SeqEditMainWin::editCopy()
@@ -722,6 +727,21 @@ void SeqEditMainWin::editCopy()
 
 void SeqEditMainWin::editReadOnly(){
 	se->setReadOnly(readOnlyAction->isChecked());
+}
+
+void SeqEditMainWin::renameSequence(){
+	bool ok;
+	Sequence *selSeq=project_->sequenceSelection->itemAt(0);
+	QString newName = QInputDialog::getText(this, tr("Rename sequence"),
+		tr("Name:"), QLineEdit::Normal,selSeq->label, &ok);
+		if (ok && !newName.isEmpty() && newName != selSeq->label){
+			if (project_->renameSequence(selSeq,newName)){
+				updateGoToTool();
+			}
+			else{
+				QMessageBox::critical(this, tr("Rename failed"),"The name \"" + newName + "\" is already used in this project");
+			}
+		}
 }
 
 void SeqEditMainWin::editFind()
@@ -962,33 +982,46 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 	cm->addAction(pasteAction);
 	cm->addSeparator();
 	
-	cm->addAction(findAction);
-	cm->addSeparator();
-	
-	cm->addAction(groupSequencesAction);
-	cm->addAction(ungroupSequencesAction);
-	cm->addAction(lockAction);
-	cm->addAction(unlockAction);
-	cm->addAction(hideNonSelectedGroupMembersAction);
-	cm->addAction(unhideAllGroupMembersAction);
-	cm->addSeparator();
-
-	cm->addAction(excludeAction);
-	cm->addAction(removeExcludeAction);
-	cm->addSeparator();
-	
-	createBookmarkAction->setEnabled(false);
-	removeBookmarkAction->setEnabled(false);
-	if (project_->sequenceSelection->size()==1){
-		Sequence *seq = project_->sequenceSelection->itemAt(0);
-		if (se->isBookmarked(seq))
-			removeBookmarkAction->setEnabled(true);
-		else
-			createBookmarkAction->setEnabled(true);
+	if (project_->sequenceSelection->size() > 0){
+		cm->addAction(renameSequenceAction);
+		cm->addSeparator();
 	}
-	cm->addAction(createBookmarkAction);
-	cm->addAction(removeBookmarkAction);
 	
+	if (project_->residueSelection->size() > 0){
+		cm->addAction(findAction);
+		cm->addSeparator();
+	}
+	
+	if (project_->sequenceSelection->size() > 0){
+		cm->addAction(groupSequencesAction);
+		cm->addAction(ungroupSequencesAction);
+		cm->addAction(lockAction);
+		cm->addAction(unlockAction);
+		cm->addAction(hideNonSelectedGroupMembersAction);
+		cm->addAction(unhideAllGroupMembersAction);
+		cm->addSeparator();
+	}
+	
+	if (project_->residueSelection->size() > 0){
+		cm->addAction(excludeAction);
+		cm->addAction(removeExcludeAction);
+		cm->addSeparator();
+	}
+	
+	if (project_->sequenceSelection->size() > 0){
+		createBookmarkAction->setEnabled(false);
+		removeBookmarkAction->setEnabled(false);
+		if (project_->sequenceSelection->size()==1){
+			Sequence *seq = project_->sequenceSelection->itemAt(0);
+			if (se->isBookmarked(seq))
+				removeBookmarkAction->setEnabled(true);
+			else
+				createBookmarkAction->setEnabled(true);
+		}
+		cm->addAction(createBookmarkAction);
+		cm->addAction(removeBookmarkAction);
+	}
+		
 	cm->exec(QCursor::pos());
 	delete cm;
 }
@@ -1212,6 +1245,12 @@ void SeqEditMainWin::createActions()
 	readOnlyAction->setChecked(false);
 	connect(readOnlyAction, SIGNAL(triggered()), this, SLOT(editReadOnly()));
 	
+	renameSequenceAction = new QAction( tr("Rename sequence"), this);
+	renameSequenceAction->setStatusTip(tr("Rename the selected sequence"));
+	addAction(renameSequenceAction);
+	connect(renameSequenceAction, SIGNAL(triggered()), this, SLOT(renameSequence()));
+	renameSequenceAction->setEnabled(false);
+
 	// Alignment actions
 	alignAllAction = new QAction( tr("&Align all"), this);
 	alignAllAction->setStatusTip(tr("Run alignment on all sequences"));
@@ -1566,7 +1605,11 @@ void SeqEditMainWin::startAlignment()
 	}
 	
 	project_->alignmentTool()->makeCommand(fin,fout,exec,args);
-	qDebug() <<  trace.header() << exec << args;
+	if (project_->alignmentTool()->usesStdOut()){
+		alignmentProc_->setStandardOutputFile(fout);
+		qDebug() <<  trace.header(__PRETTY_FUNCTION__) << "stdout redirected";
+	}
+	qDebug() <<  trace.header(__PRETTY_FUNCTION__) << exec << args;
 	alignmentProc_->start(exec,args);
 	alignAllAction->setEnabled(false);
 	alignStopAction->setEnabled(true);
