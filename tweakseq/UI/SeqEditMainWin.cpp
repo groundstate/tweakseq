@@ -76,6 +76,7 @@
 #include "ImportDialog.h"
 #include "MessageWin.h"
 #include "Muscle.h"
+#include "PDBFile.h"
 #include "Project.h"
 #include "ResidueSelection.h"
 #include "SearchTool.h"
@@ -89,6 +90,8 @@
 #include "XMLHelper.h"
 
 #include "Consensus.h"
+
+#include "PDB.h"
 
 using namespace std;
 
@@ -327,14 +330,24 @@ void SeqEditMainWin::fileImport(){
 	
 	FASTAFile ff;
 	ClustalFile cf;
+	PDBFile    pf;
 	
 	QString allext="";
+	
 	QStringList ext = ff.extensions(project_->sequenceDataType());
 	for (int s=0;s<ext.size();s++)
 		allext = allext + ext.at(s) + " ";
+	
 	ext = cf.extensions(project_->sequenceDataType());
 	for (int s=0;s<ext.size();s++)
 		allext = allext + ext.at(s) + " ";
+	
+	if (project_->sequenceDataType() == SequenceFile::Proteins){
+		ext = pf.extensions( SequenceFile::Proteins);
+		for (int s=0;s<ext.size();s++)
+			allext = allext + ext.at(s) + " ";
+	}
+	
 	allext.append(")");
 	allext.prepend("Sequence Files (");
 	
@@ -962,6 +975,10 @@ void SeqEditMainWin::helpAbout(){
 	app->showAboutDialog(this);
 }
 
+void SeqEditMainWin::test1()
+{
+}
+
 void SeqEditMainWin::search(const QString &txt)
 {
 	qDebug()<< trace.header(__PRETTY_FUNCTION__);
@@ -1420,6 +1437,11 @@ void SeqEditMainWin::createActions()
 	
 	//nextSearchResult_ = new QAction("Next",this);
 	//prevSearchResult_ = new QAction("Previous",this);
+	
+	testAction = new QAction( tr("Test1"), this);
+	testAction->setStatusTip(tr("Test1"));
+	addAction(testAction);
+	connect(testAction, SIGNAL(triggered()), this, SLOT(test1()));
 }
 
 void SeqEditMainWin::createMenus()
@@ -1537,6 +1559,10 @@ void SeqEditMainWin::createMenus()
 	
 	for (int a=0;a<settingsDNAColourMapActions.size();a++)
 		colourMapMenu->addAction(settingsDNAColourMapActions.at(a));
+	
+	QMenu *testMenu=menuBar()->addMenu("Test");
+	testMenu->addAction(testAction);
+	
 	
 }
 

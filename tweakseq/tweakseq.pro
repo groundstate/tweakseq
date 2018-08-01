@@ -22,6 +22,8 @@ HEADERS       =  include/AboutDialog.h \
 								 include/MAFFT.h \
 								 include/MessageWin.h \
 								 include/Muscle.h \
+								 include/PDB.h \
+								 include/PDBFile.h \
 								 include/Project.h \
 								 include/ResidueSelection.h \
 								 include/SearchTool.h \
@@ -59,6 +61,8 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/Main.cpp \
 									Core/MAFFT.cpp \
 									Core/Muscle.cpp \
+									Core/PDB.cpp \
+									Core/PDBFile.cpp \
 									Core/Project.cpp \
 									Core/ResidueSelection.cpp \
 									Core/Sequence.cpp \
@@ -102,4 +106,4 @@ QT           += core gui xml widgets printsupport
 
 #DEFINES      += QT_NO_DEBUG_OUTPUT 
 
-LIBS += 
+LIBS += -lz

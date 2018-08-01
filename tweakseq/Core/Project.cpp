@@ -47,6 +47,7 @@
 #include "MAFFT.h"
 #include "Muscle.h"
 #include "PasteCmd.h"
+#include "PDBFile.h"
 #include "Project.h"
 #include "RenameCmd.h"
 #include "ResidueSelection.h"
@@ -124,6 +125,7 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 {
 	FASTAFile ff;
 	ClustalFile cf;
+	PDBFile pf;
 	
 	for (int f=0;f<files.size();f++){
 		QString fname = files.at(f);
@@ -137,6 +139,10 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 		else if (cf.isClustalFile(fname)){
 			cf.setName(fname);
 			ok = cf.read(seqnames,seqs,comments);
+		}
+		else if (pf.isPDBFile(fname)){
+			pf.setName(fname);
+			ok = pf.read(seqnames,seqs,comments);
 		}
 		else{
 			errmsg = "Unable to identify " + fname;

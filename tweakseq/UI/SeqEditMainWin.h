@@ -127,6 +127,9 @@ private slots:
 	
 	void updateScrollBars(int,int,int,int,int,int);
 	
+	//
+	void test1();
+	
 private:
 
 	void init();
@@ -194,6 +197,8 @@ private:
 	
 	Project *project_;
 	
+	// Temporary stuff
+	QAction *testAction;
 };
 
 #endif
