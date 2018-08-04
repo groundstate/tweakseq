@@ -29,8 +29,10 @@
 
 #include <QDialog>
 
+class QComboBox;
 class QDialogButtonBox;
 class QLineEdit;
+class QTextEdit;
 
 class Project;
 class Sequence;
@@ -45,6 +47,8 @@ class SequencePropertiesDialog:public QDialog
 		~SequencePropertiesDialog();
 	
 		QString structureFile();
+		QString comment();
+		int selectedChain();
 		
 	public slots:
 		
@@ -57,7 +61,9 @@ class SequencePropertiesDialog:public QDialog
 	private:
 		
 		QLineEdit *nameEditor_,*structureEditor_;
+		QTextEdit *commentEditor_;
 		QDialogButtonBox *buttonBox_;
+		QComboBox *selChain_;
 		
 		Sequence *seq_;
 		Project  *project_;

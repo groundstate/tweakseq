@@ -42,16 +42,16 @@ PDBFile::~PDBFile()
 {
 }
 
-bool PDBFile::isPDBFile(QString fname)
+bool PDBFile::isValidFormat(QString &fname)
 {
 	QFileInfo fi(fname);
 	QString ext = "*."+fi.suffix();
 	return (extensions(SequenceFile::Proteins).contains(ext,Qt::CaseInsensitive));
 }
 
-bool PDBFile::read(QStringList &seqnames,QStringList &seqs,QStringList &comments)
+bool PDBFile::read(QStringList &seqnames,QStringList &seqs,QStringList &comments,Structure *s)
 {
-	// 
+	// Structure s should be allocated externally
 	
 	PDBStructure pdbs;
 	QStringList mask;
@@ -60,14 +60,16 @@ bool PDBFile::read(QStringList &seqnames,QStringList &seqs,QStringList &comments
 	int nChains = pdbs.primStructure.nChains;
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << name() << "num chains = " << nChains;
 	QFileInfo finfo(name());
+	PDBChain *chain = pdbs.primStructure.chains.at(0);
+	seqnames.append(finfo.baseName());
+	seqs.append(chain->residues);
+	comments.append(pdbs.header.classification + "\n"+pdbs.header.title);
+	s->comment.append(pdbs.header.classification + "\n"+pdbs.header.title);
+	s->source=name();
 	for (int i=0;i<nChains;i++){
 		PDBChain *chain = pdbs.primStructure.chains.at(i);
-		if (nChains==1)
-			seqnames.append(finfo.baseName());
-		else
-			seqnames.append(finfo.baseName()+"_chain_"+chain->ID);
-		seqs.append(chain->residues);
-		comments.append("Test");
+		s->chains.append(chain->residues);
+		s->chainIDs.append(chain->ID);
 	}
 	return true;
 }

@@ -38,6 +38,7 @@
 
 class Sequence;
 class SequenceGroup;
+class Structure;
 
 class Sequence
 {
@@ -62,10 +63,13 @@ class Sequence
 		
 		SequenceGroup *group;
 		
-		QString source; // file sequence was originally sourced from
-		QString originalName;
-		QString structureFile;
-		QString dsspFile;
+		QString source; // file the sequence was originally sourced from
+		QString originalName; // name as read from the file, maybe renamed subsequently
+		QString structureFile; // separate from "structure" - can have an associated structure without reading its sequences
+		QString dsspFile;      // 
+		
+		Structure *structure;
+		
 };
 
 #endif

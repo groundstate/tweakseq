@@ -56,7 +56,7 @@ FASTAFile::~FASTAFile()
 {
 }
 
-bool FASTAFile::isFASTAFile(QString fname)
+bool FASTAFile::isValidFormat(QString & fname)
 {
 	QFileInfo fi(fname);
 	QString ext = "*."+fi.suffix();
@@ -68,7 +68,7 @@ bool FASTAFile::isFASTAFile(QString fname)
 #define READING_COMMENT 1
 #define READING_SEQUENCE 2
 
-bool FASTAFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comments)
+bool FASTAFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comments,Structure *)
 {
 	QString s;
 	

@@ -65,7 +65,7 @@ void SequenceFile::setExtensions(QStringList &e,int dataFilter)
 		DNAextensions_ =e;
 }
 
-bool SequenceFile::read(QStringList &,QStringList &,QStringList &)
+bool SequenceFile::read(QStringList &,QStringList &,QStringList &,Structure *)
 {
 	err_="";
 	return true;

@@ -36,6 +36,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/SequenceSelection.h \
 								 include/SequencePropertiesDialog.h \
 								 include/SetupWizard.h \
+								 include/Structure.h \
 								 include/Command.h \
 								 include/AddInsertionsCmd.h \
 								 include/AlignmentCmd.h \
@@ -70,6 +71,7 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/SequenceFile.cpp\
 									Core/SequenceGroup.cpp\
 									Core/SequenceSelection.cpp \
+									Core/Structure.cpp \
 									Core/Utility.cpp \
 									Core/XMLHelper.cpp
 									

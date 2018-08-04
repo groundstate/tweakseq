@@ -36,10 +36,11 @@
 
 class QTextStream;
 
-class PDBHeader{
+class PDBTitle{
 
 	public:
 		QString classification,depDate,IDcode; // HEADER field
+		QString title;
 		void read(QTextStream *, QString *);
 };
 
@@ -148,7 +149,7 @@ class PDBStructure{
 	
 	public:
 	
-		PDBHeader header;
+		PDBTitle header;
 		PDBRemarks remarks;
 		PDBPrimStruct primStructure;
 		PDBHeterogen heterogen;

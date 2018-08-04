@@ -35,9 +35,9 @@ class ClustalFile:public SequenceFile{
 		ClustalFile(QString n= QString());
 		~ClustalFile();
 		
-		bool isClustalFile(QString);
+		virtual bool isValidFormat(QString &);
 		
-		virtual bool read(QStringList &,QStringList &,QStringList &);
+		virtual bool read(QStringList &,QStringList &,QStringList &,Structure *s=NULL);
 		virtual bool write(QStringList &,QStringList &,QStringList &);
 	
 	private:

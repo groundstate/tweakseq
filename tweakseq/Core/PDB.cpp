@@ -97,7 +97,7 @@ char oneLetterCode(QString r){
  return c;
 }
 
-void PDBHeader::read(QTextStream *ts, QString *l){
+void PDBTitle::read(QTextStream *ts, QString *l){
 
 	// *l is a line of text from the input stream
 	// It can be null.
@@ -126,7 +126,8 @@ void PDBHeader::read(QTextStream *ts, QString *l){
 
 	// TITLE
 	while (l->indexOf("TITLE")==0){
-		*l=ts->readLine(); 
+		title.append((l->mid(10,70)).trimmed());
+		*l=ts->readLine();
 	}
 	
 	// CAVEAT
@@ -234,13 +235,13 @@ void PDBPrimStruct::read(QTextStream *ts, QString *l){
 		// chainID in column 12
 		// number of residues in columns 14-17
 		QChar chainID = (l->mid(11,1)).at(0);
-		if (chainID==' ') chainID='1';
+		if (chainID==' ') chainID='A';
 		chain = new PDBChain(chainID, (l->mid(13,4).toLong(&result)));
 		chains.append(chain);
 		while (l->indexOf("SEQRES")==0){
 			// Check the chainID in column 12
 			chainID = (l->mid(11,1)).at(0);
-			if (chainID==' ') chainID='1';
+			if (chainID==' ') chainID='A';
 			if (chain->ID != chainID){		
 				chain = new PDBChain(chainID, (l->mid(13,4).toLong(&result)));
 				chains.append(chain);

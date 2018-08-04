@@ -126,23 +126,25 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 	FASTAFile ff;
 	ClustalFile cf;
 	PDBFile pf;
+	Structure *structure=NULL;
 	
 	for (int f=0;f<files.size();f++){
 		QString fname = files.at(f);
 		bool ok = false;
 		QStringList seqnames,seqs,comments;
 		
-		if (ff.isFASTAFile(fname)){
+		if (ff.isValidFormat(fname)){
 			ff.setName(fname);
 			ok = ff.read(seqnames,seqs,comments);
 		}
-		else if (cf.isClustalFile(fname)){
+		else if (cf.isValidFormat(fname)){
 			cf.setName(fname);
 			ok = cf.read(seqnames,seqs,comments);
 		}
-		else if (pf.isPDBFile(fname)){
+		else if (pf.isValidFormat(fname)){
 			pf.setName(fname);
-			ok = pf.read(seqnames,seqs,comments);
+			structure = new Structure();
+			ok = pf.read(seqnames,seqs,comments,structure);
 		}
 		else{
 			errmsg = "Unable to identify " + fname;
@@ -152,6 +154,7 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 		
 		if (ok){
 			clearSearchResults();
+			
 			// Check for duplicates
 			qDebug() << trace.header() << "checking for duplicates";
 			QStringList currSeqNames;
@@ -169,10 +172,23 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 				return false;
 			}
 			
+			if (seqs.size() == 0){
+				errmsg="No sequences were imported";
+				emit uiUpdatesEnabled(true);
+				return false;
+			}
+			
 			emit uiUpdatesEnabled(false);
 			QList<Sequence *> newSeqs;
-			for (int i=0;i<seqnames.size();i++)
-				newSeqs.append(new Sequence(seqnames.at(i),seqs.at(i),comments.at(i),fname,true));
+			
+			for (int i=0;i<seqnames.size();i++){
+				Sequence * seq = new Sequence(seqnames.at(i),seqs.at(i),comments.at(i),fname,true);
+				newSeqs.append(seq);
+				if (structure){
+					seq->structureFile=fname;
+					seq->structure=structure;
+				}
+			}
 		
 			undoStack_.push(new ImportCmd(this,newSeqs,"sequence import"));
 			
@@ -180,6 +196,8 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 			
 		}
 		else{
+			if (structure)
+				delete structure;
 			errmsg ="Error while trying to read " + fname;
 			emit uiUpdatesEnabled(true);
 			return false;
@@ -618,6 +636,19 @@ bool Project::save(QString &fpathname)
 			if (xi < x.size()-2) xs += ",";
 		}
 		XMLHelper::addElement(saveDoc,se,"exclusions",xs);
+		if (seq->structure){
+			QDomElement stre = saveDoc.createElement("structure");
+			se.appendChild(stre);
+			XMLHelper::addElement(saveDoc,stre,"source",seq->structure->source);
+			XMLHelper::addElement(saveDoc,stre,"comment",seq->structure->comment);
+			XMLHelper::addElement(saveDoc,stre,"selectedchain",QString::number(seq->structure->selectedChain));
+			for (int c=0;c<seq->structure->chains.size();c++){
+				QDomElement che = saveDoc.createElement("chain");
+				stre.appendChild(che);
+				XMLHelper::addElement(saveDoc,che,"id",seq->structure->chainIDs.at(c));
+				XMLHelper::addElement(saveDoc,che,"residues",seq->structure->chains.at(c));
+			}
+		}
 	}
 	
 	for (int g=0;g<sequenceGroups.size();g++){
@@ -704,7 +735,7 @@ void Project::load(QString &fname)
 		QString sName,sComment,sResidues,sSrc,sOriginalName,sStructureFile;
 		bool sVisible = true;
 		bool sBookmarked = false;
-		
+		Structure *structure=NULL;
 		QDomElement elem = sNode.firstChildElement();
 		QList<int> exclusions;
 		while (!elem.isNull()){
@@ -736,11 +767,38 @@ void Project::load(QString &fname)
 					}
 				}
 			}
+			else if (elem.tagName() == "structure"){
+				structure = new Structure();
+				QDomElement selem = elem.firstChildElement();
+				while (!selem.isNull()){
+					if (selem.tagName() == "source")
+						structure->source = selem.text().trimmed();
+					else if (selem.tagName() == "comment")
+						structure->comment=selem.text().trimmed();
+					else if (selem.tagName() == "selectedchain")
+						structure->selectedChain=selem.text().toInt();
+					else if (selem.tagName() == "chain"){
+						QDomElement chelem = selem.firstChildElement();
+						while (!chelem.isNull()){
+							if (chelem.tagName() == "id"){
+								structure->chainIDs.append(chelem.text());
+							}
+							else if (chelem.tagName() == "residues"){
+								structure->chains.append(chelem.text());
+							}
+							chelem=chelem.nextSiblingElement();
+						}
+					}
+					selem=selem.nextSiblingElement();
+				}
+			}
 			elem=elem.nextSiblingElement();
 		}
 		Sequence *seq = sequences.append(sName,sResidues,sComment,sSrc,sVisible);
 		seq->bookmarked=sBookmarked;
 		seq->structureFile=sStructureFile;
+		seq->structure=structure;
+		
 		// optional fields
 		if (!sOriginalName.isEmpty())
 			seq->originalName=sOriginalName;
@@ -879,6 +937,7 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 				// carry forward any extra information
 				newSeq->originalName=oldSeq->originalName;
 				newSeq->bookmarked=oldSeq->bookmarked;
+				newSeq->structure=oldSeq->structure;
 				newSequences.append(newSeq);
 			}
 			else{

@@ -28,6 +28,7 @@
 
 #include "Sequence.h"
 #include "SequenceGroup.h"
+#include "Structure.h"
 
 #define EXCLUDE_CELL    0x0080 
 #define HIGHLIGHT_CELL  0x0100
@@ -47,6 +48,7 @@ Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis,QString sf,Q
 	structureFile=sf;
 	dsspFile = ssf;
 	bookmarked=false;
+	structure=NULL;
 }
 
 Sequence::~Sequence()

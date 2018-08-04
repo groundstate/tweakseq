@@ -31,6 +31,8 @@
 #include <QString>
 #include <QStringList>
 
+#include "Structure.h"
+
 // Base class for supported sequence alignment formats
 class SequenceFile
 {
@@ -40,6 +42,8 @@ class SequenceFile
 		~SequenceFile();
 		
 		enum DataType {Proteins, DNA, PDB,Unknown};
+		
+		virtual bool isValidFormat(QString &){return true;}
 		
 		QString name(){return n_;};
 		void setName(QString n){n_=n;}
@@ -52,7 +56,7 @@ class SequenceFile
 		
 		QStringList & extensions(int dataFilter);
 		
-		virtual bool read(QStringList &,QStringList &,QStringList &);
+		virtual bool read(QStringList &,QStringList &,QStringList &,Structure *s= NULL);
 		virtual bool write(QStringList &,QStringList &,QStringList &);
 	
 	protected:

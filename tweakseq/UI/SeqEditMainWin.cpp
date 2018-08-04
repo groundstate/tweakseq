@@ -765,7 +765,7 @@ void SeqEditMainWin::sequenceProperties()
 	if (spd.exec()==QDialog::Accepted) {
 		if (!spd.structureFile().isEmpty())
 			selSeq->structureFile=spd.structureFile();
-		
+		selSeq->comment=spd.comment();
 		updateGoToTool(); // in case the name was changed
 	}
 }

@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2018  Merridee A. Wouters, Michael J. Wouters
+// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,28 +24,15 @@
 // THE SOFTWARE.
 //
 
-#ifndef __PDB_FILE_
-#define __PDB_FILE_
+#include "Structure.h"
 
-#include "SequenceFile.h"
+Structure::Structure()
+{
+	selectedChain=0;
+}
 
-class PDBFile:public SequenceFile{
-	public:
-		
-		PDBFile(QString n= QString());
-		~PDBFile();
-		
-		bool isValidFormat(QString &);
-		
-		virtual bool read(QStringList &,QStringList &,QStringList &,Structure *s=NULL);
-		virtual bool write(QStringList &,QStringList &,QStringList &);
-	
-	private:
-		
-		void parseComment(QString &,QString &);
-		
-		QString n_;
-		
-};
+Structure::~Structure()
+{
+}
 
-#endif
+
