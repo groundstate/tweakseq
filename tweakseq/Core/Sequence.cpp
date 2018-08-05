@@ -48,7 +48,6 @@ Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis,QString sf,Q
 	structureFile=sf;
 	dsspFile = ssf;
 	bookmarked=false;
-	structure=NULL;
 }
 
 Sequence::~Sequence()

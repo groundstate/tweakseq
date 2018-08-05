@@ -103,18 +103,18 @@ SequencePropertiesDialog::SequencePropertiesDialog(Project *project,Sequence *se
 	gl->addWidget(button,4,3);
 	connect(button,SIGNAL(clicked()),this,SLOT(browseStructures()));
 	
-	if (seq->structure){
+	if (!seq->structure.isEmpty()){
 		structureEditor_->setReadOnly(true);
 		button->setEnabled(false);
-		l = new QLabel("Number of chains:"+QString::number(seq->structure->chains.size()));
+		l = new QLabel("Number of chains:"+QString::number(seq->structure.chains.size()));
 		gl->addWidget(l,5,0);
 		l = new QLabel("Selected chain");
 		gl->addWidget(l,6,0);
 		selChain_ = new QComboBox(this);
 		gl->addWidget(selChain_,6,1);
-		for (int i=0;i<seq->structure->chains.size();i++)
-			selChain_->addItem(seq->structure->chainIDs.at(i));
-		selChain_->setCurrentIndex(seq->structure->selectedChain);
+		for (int i=0;i<seq->structure.chains.size();i++)
+			selChain_->addItem(seq->structure.chainIDs.at(i));
+		selChain_->setCurrentIndex(seq->structure.selectedChain);
 	}
 	buttonBox_ = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 	vb->addWidget(buttonBox_);

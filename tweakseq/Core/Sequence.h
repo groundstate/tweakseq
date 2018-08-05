@@ -31,6 +31,8 @@
 #include <QList>
 #include <QString>
 
+#include "Structure.h"
+
 #define EXCLUDE_CELL    0x0080 
 #define HIGHLIGHT_CELL  0x0100
 #define KEEP_FLAGS      0XFFFF 
@@ -38,7 +40,6 @@
 
 class Sequence;
 class SequenceGroup;
-class Structure;
 
 class Sequence
 {
@@ -68,7 +69,7 @@ class Sequence
 		QString structureFile; // separate from "structure" - can have an associated structure without reading its sequences
 		QString dsspFile;      // 
 		
-		Structure *structure;
+		Structure structure; // only 40B
 		
 };
 

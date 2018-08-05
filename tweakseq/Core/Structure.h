@@ -36,6 +36,8 @@ class Structure
 		Structure();
 		~Structure();
 		
+		bool isEmpty(){return source.isEmpty();}
+		
 		QString source;
 		
 		QStringList chains;

@@ -126,7 +126,7 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 	FASTAFile ff;
 	ClustalFile cf;
 	PDBFile pf;
-	Structure *structure=NULL;
+	Structure structure;
 	
 	for (int f=0;f<files.size();f++){
 		QString fname = files.at(f);
@@ -143,8 +143,7 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 		}
 		else if (pf.isValidFormat(fname)){
 			pf.setName(fname);
-			structure = new Structure();
-			ok = pf.read(seqnames,seqs,comments,structure);
+			ok = pf.read(seqnames,seqs,comments,&structure);
 		}
 		else{
 			errmsg = "Unable to identify " + fname;
@@ -184,7 +183,7 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 			for (int i=0;i<seqnames.size();i++){
 				Sequence * seq = new Sequence(seqnames.at(i),seqs.at(i),comments.at(i),fname,true);
 				newSeqs.append(seq);
-				if (structure){
+				if (!structure.isEmpty()){
 					seq->structureFile=fname;
 					seq->structure=structure;
 				}
@@ -196,8 +195,6 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 			
 		}
 		else{
-			if (structure)
-				delete structure;
 			errmsg ="Error while trying to read " + fname;
 			emit uiUpdatesEnabled(true);
 			return false;
@@ -636,17 +633,17 @@ bool Project::save(QString &fpathname)
 			if (xi < x.size()-2) xs += ",";
 		}
 		XMLHelper::addElement(saveDoc,se,"exclusions",xs);
-		if (seq->structure){
+		if (!seq->structure.isEmpty()){
 			QDomElement stre = saveDoc.createElement("structure");
 			se.appendChild(stre);
-			XMLHelper::addElement(saveDoc,stre,"source",seq->structure->source);
-			XMLHelper::addElement(saveDoc,stre,"comment",seq->structure->comment);
-			XMLHelper::addElement(saveDoc,stre,"selectedchain",QString::number(seq->structure->selectedChain));
-			for (int c=0;c<seq->structure->chains.size();c++){
+			XMLHelper::addElement(saveDoc,stre,"source",seq->structure.source);
+			XMLHelper::addElement(saveDoc,stre,"comment",seq->structure.comment);
+			XMLHelper::addElement(saveDoc,stre,"selectedchain",QString::number(seq->structure.selectedChain));
+			for (int c=0;c<seq->structure.chains.size();c++){
 				QDomElement che = saveDoc.createElement("chain");
 				stre.appendChild(che);
-				XMLHelper::addElement(saveDoc,che,"id",seq->structure->chainIDs.at(c));
-				XMLHelper::addElement(saveDoc,che,"residues",seq->structure->chains.at(c));
+				XMLHelper::addElement(saveDoc,che,"id",seq->structure.chainIDs.at(c));
+				XMLHelper::addElement(saveDoc,che,"residues",seq->structure.chains.at(c));
 			}
 		}
 	}
@@ -735,7 +732,7 @@ void Project::load(QString &fname)
 		QString sName,sComment,sResidues,sSrc,sOriginalName,sStructureFile;
 		bool sVisible = true;
 		bool sBookmarked = false;
-		Structure *structure=NULL;
+		Structure structure;
 		QDomElement elem = sNode.firstChildElement();
 		QList<int> exclusions;
 		while (!elem.isNull()){
@@ -768,23 +765,22 @@ void Project::load(QString &fname)
 				}
 			}
 			else if (elem.tagName() == "structure"){
-				structure = new Structure();
 				QDomElement selem = elem.firstChildElement();
 				while (!selem.isNull()){
 					if (selem.tagName() == "source")
-						structure->source = selem.text().trimmed();
+						structure.source = selem.text().trimmed();
 					else if (selem.tagName() == "comment")
-						structure->comment=selem.text().trimmed();
+						structure.comment=selem.text().trimmed();
 					else if (selem.tagName() == "selectedchain")
-						structure->selectedChain=selem.text().toInt();
+						structure.selectedChain=selem.text().toInt();
 					else if (selem.tagName() == "chain"){
 						QDomElement chelem = selem.firstChildElement();
 						while (!chelem.isNull()){
 							if (chelem.tagName() == "id"){
-								structure->chainIDs.append(chelem.text());
+								structure.chainIDs.append(chelem.text());
 							}
 							else if (chelem.tagName() == "residues"){
-								structure->chains.append(chelem.text());
+								structure.chains.append(chelem.text());
 							}
 							chelem=chelem.nextSiblingElement();
 						}
