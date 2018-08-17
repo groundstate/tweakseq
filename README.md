@@ -1,5 +1,5 @@
 # tweakseq
-A sequence editor
+A sequence alignment tool
 
 Building
 --------
