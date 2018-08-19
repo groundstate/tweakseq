@@ -65,7 +65,7 @@ void SequenceSelection::add(Sequence *s)
 	// Only add if it's not already there
 	if (!sel_.contains(s))
 		sel_.append(s);
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << s->label << " - size now " << sel_.size();;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << s->name << " - size now " << sel_.size();;
 	emit changed();
 }
 

@@ -48,7 +48,7 @@ SequencePropertiesDialog::SequencePropertiesDialog(Project *project,Sequence *se
 	
 	seq_=seq;
 	project_=project;
-	name_=seq->label;
+	name_=seq->name;
 	
 	QVBoxLayout *vb = new QVBoxLayout();
 	// vb->setContentsMargins(0,0,0,11);
@@ -62,7 +62,7 @@ SequencePropertiesDialog::SequencePropertiesDialog(Project *project,Sequence *se
 	gl->addWidget(l,0,0);
 	
 	nameEditor_ = new QLineEdit(this);
-	nameEditor_->setText(seq->label);
+	nameEditor_->setText(seq->name);
 	gl->addWidget(nameEditor_,0,1);
 	
 	//
@@ -126,7 +126,12 @@ SequencePropertiesDialog::SequencePropertiesDialog(Project *project,Sequence *se
 SequencePropertiesDialog::~SequencePropertiesDialog()
 {
 }
-		
+	
+QString SequencePropertiesDialog::name()
+{
+	return nameEditor_->text().trimmed();
+}
+
 QString SequencePropertiesDialog::structureFile()
 {
 	return structureEditor_->text().trimmed();
@@ -142,7 +147,6 @@ int  SequencePropertiesDialog::selectedChain()
 	return selChain_->currentIndex();
 }
 
-		
 void SequencePropertiesDialog::accept()
 {
 	QString newName = nameEditor_->text().trimmed();

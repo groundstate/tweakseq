@@ -126,7 +126,7 @@ void CutSequencesCmd::redo()
 		Sequence *seq = seqs.at(s);
 		if (cutSeqs.contains(seq)){
 			orderedCutSeqs.append(seq);
-			qDebug() << trace.header(__PRETTY_FUNCTION__) << seq->label << " at " << s;
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << seq->name << " at " << s;
 		}
 	}
 

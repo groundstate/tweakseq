@@ -58,7 +58,7 @@ Sequence* Sequences::getSequence(const QString &label)
 {
 	QString t=label.trimmed();// TO DO why is this here ?
 	int i=0;
-	while ((i<sequences_.count()) && (getLabelAt(i) != t)) i++;
+	while ((i<sequences_.count()) && (getNameAt(i) != t)) i++;
 	
 	if (i==sequences_.count())
 		return NULL;
@@ -159,7 +159,7 @@ bool Sequences::isSubGroup(int start,int stop)
 bool Sequences::isUniqueName(QString &name)
 {
 	for (int i=0;i<sequences_.size();i++){
-		if (name == sequences_.at(i)->label)
+		if (name == sequences_.at(i)->name)
 			return false;
 	}
 	return true;
@@ -317,20 +317,20 @@ int Sequences::getIndex(QString label)
 	// Returns -1 if no match
 	int i=0;
 	QString t=label.trimmed();// TO DO why is this here ?
-	while ((i<sequences_.count()) && (getLabelAt(i) != t)) i++;
+	while ((i<sequences_.count()) && (getNameAt(i) != t)) i++;
 	if (i==sequences_.count())
 		return -1;
 	else
 		return i;
 }
 
-QString Sequences::getLabelAt(int i)
+QString Sequences::getNameAt(int i)
 {
 	if (i<0 || i > sequences_.size()-1)
 		return QString(); // Return NULL if the index is out of range
 	else
 		// strip white space from the end of the string
-		return (sequences_.at(i)->label).trimmed(); 
+		return (sequences_.at(i)->name).trimmed(); 
 }
 
 void Sequences::updateCachedVariables()

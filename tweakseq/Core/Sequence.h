@@ -48,7 +48,7 @@ class Sequence
 		Sequence(QString,QString,QString c=QString(),QString f=QString(),bool vis=true,QString sf=QString(),QString ssf=QString());
 		~Sequence();
 		// comment is for a longer comment
-		QString label,residues,comment;
+		QString name,residues,comment;
 		
 		QString filter(bool applyExclusions=false);
 		void exclude(int,int,bool);

@@ -53,7 +53,7 @@ class Sequences:public QObject
 		int visibleIndex(Sequence *);
 		
 		int getIndex(QString label);
-		QString getLabelAt(int);
+		QString getNameAt(int);
 		
 		bool isEmpty();
 		int size(){return sequences_.size();}

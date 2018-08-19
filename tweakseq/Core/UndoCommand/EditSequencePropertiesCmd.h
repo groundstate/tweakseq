@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-/// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+// Copyright (c) 2000-2018  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,51 +24,25 @@
 // THE SOFTWARE.
 //
 
-#ifndef __SEQUENCE_PROPERTIES_DLG_H_
-#define __SEQUENCE_PROPERTIES_DLG_H_
+#ifndef __EDIT_SEQUENCE_PROPERTIES_CMD_H_
+#define __EDIT_SEQUENCE_PROPERTIES_CMD_H_
 
-#include <QDialog>
+#include "Command.h"
+#include "Sequence.h"
 
-class QComboBox;
-class QDialogButtonBox;
-class QLineEdit;
-class QTextEdit;
-
-class Project;
-class Sequence;
-
-class SequencePropertiesDialog:public QDialog
+class EditSequencePropertiesCmd: public Command
 {
-	Q_OBJECT
-	
 	public:
 		
-		SequencePropertiesDialog(Project *, Sequence *,QWidget* parent = 0, Qt::WindowFlags f = 0 );
-		~SequencePropertiesDialog();
-	
-		QString name();
-		QString structureFile();
-		QString comment();
-		int selectedChain();
-		
-	public slots:
-		
-		virtual void accept();
-		
-	private slots:
-	
-		void browseStructures();
+		EditSequencePropertiesCmd(Project * ,Sequence *,Sequence *,const QString &);
+		virtual ~EditSequencePropertiesCmd();
+
+		virtual void redo();
+		virtual void undo();
 		
 	private:
 		
-		QLineEdit *nameEditor_,*structureEditor_;
-		QTextEdit *commentEditor_;
-		QDialogButtonBox *buttonBox_;
-		QComboBox *selChain_;
-		
-		Sequence *seq_;
-		Project  *project_;
-		QString name_;
+		Sequence oldSeq_,newSeq_;
 };
 
 #endif

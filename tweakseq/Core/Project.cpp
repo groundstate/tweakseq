@@ -159,7 +159,7 @@ bool Project::importSequences(QStringList &files,QString &errmsg)
 			QStringList currSeqNames;
 			QList<Sequence *> currseq = sequences.sequences();
 			for (int i=0;i<currseq.size();++i)
-				currSeqNames.append(currseq.at(i)->label); // FIXME? removed trimmed()
+				currSeqNames.append(currseq.at(i)->name); // FIXME? removed trimmed()
 			currSeqNames = currSeqNames + seqnames;
 			QStringList dups = findDuplicates(currSeqNames);
 			if (dups.size() > 0){
@@ -258,7 +258,7 @@ QString Project::getLabelAt(int i)
 		return NULL;
 	else
 		// strip white space from the end of the string
-		return (sequences.sequences().at(i)->label).trimmed(); 
+		return (sequences.sequences().at(i)->name).trimmed(); 
 }
 
 void Project::setAlignment(const QList<Sequence *> &newSequences,const QList<SequenceGroup *> &newGroups)
@@ -546,6 +546,19 @@ bool Project::renameSequence(Sequence *seq,QString &newName)
 	return false;
 }
 
+bool Project::modifySequenceProperties(Sequence *seq,Sequence *newSeq)
+{
+	bool modified=false;
+	modified = modified || (seq->name != newSeq->name);
+	modified = modified || (seq->comment != newSeq->comment);
+	modified = modified || (seq->structureFile != newSeq->structureFile);
+	modified = modified || (seq->structure.selectedChain != newSeq->structure.selectedChain);
+	if (modified){
+		return true;
+	}
+	return false;
+}
+
 void Project::addInsertions(QList<Sequence*> &seqs,int startCol,int stopCol,bool postInsert)
 {
 	clearSearchResults();
@@ -614,7 +627,7 @@ bool Project::save(QString &fpathname)
 		QDomElement se = saveDoc.createElement("sequence");
 		root.appendChild(se);
 		
-		XMLHelper::addElement(saveDoc,se,"name",seq->label);
+		XMLHelper::addElement(saveDoc,se,"name",seq->name);
 		XMLHelper::addElement(saveDoc,se,"comment",seq->comment);		
 		XMLHelper::addElement(saveDoc,se,"residues",seq->filter());
 		XMLHelper::addElement(saveDoc,se,"source",seq->source);
@@ -622,7 +635,7 @@ bool Project::save(QString &fpathname)
 			XMLHelper::addElement(saveDoc,se,"visible",XMLHelper::boolToString(seq->visible));
 		if (seq->bookmarked)
 			XMLHelper::addElement(saveDoc,se,"bookmarked",XMLHelper::boolToString(seq->bookmarked));
-		if (seq->originalName != seq->label)
+		if (seq->originalName != seq->name)
 			XMLHelper::addElement(saveDoc,se,"originalname",seq->originalName);
 		if (!seq->structureFile.isEmpty())
 			XMLHelper::addElement(saveDoc,se,"structurefile",seq->structureFile);
@@ -660,7 +673,7 @@ bool Project::save(QString &fpathname)
 		QString seqs = "";
 		for (int s=0;s<sg->size();s++){
 			Sequence *seq = sg->itemAt(s);
-			seqs += seq->label;
+			seqs += seq->name;
 			if (s < sg->size()-1) seqs += ",";
 		}
 		XMLHelper::addElement(saveDoc,gel,"sequences",seqs);
@@ -831,7 +844,7 @@ void Project::load(QString &fname)
 		sg->lock(gLocked);
 		for (int s=0;s<seqs.size();s++){
 			for (int ss=0;ss<sequences.size();ss++){
-				if (seqs.at(s) == sequences.sequences().at(ss)->label){
+				if (seqs.at(s) == sequences.sequences().at(ss)->name){
 					sg->addSequence(sequences.sequences().at(ss));
 					break;
 				}
@@ -873,7 +886,7 @@ void Project::exportFASTA(QString fname,bool removeExclusions)
 	FASTAFile ff(fname);
 	QStringList l,seqs,c;
 	for (int s=0;s<sequences.size();s++){
-		l.append(sequences.sequences().at(s)->label);
+		l.append(sequences.sequences().at(s)->name);
 		seqs.append(sequences.sequences().at(s)->filter(removeExclusions));
 		c.append(sequences.sequences().at(s)->comment);
 	}
@@ -886,7 +899,7 @@ void Project::exportSelectionFASTA(QString fname,bool removeExclusions)
 	QStringList l,seqs,c;
 	
 	for (int s=0;s<sequenceSelection->size();s++){
-		l.append(sequenceSelection->itemAt(s)->label);
+		l.append(sequenceSelection->itemAt(s)->name);
 		seqs.append(sequenceSelection->itemAt(s)->filter(removeExclusions));
 		c.append(sequenceSelection->itemAt(s)->comment);
 	}
@@ -898,7 +911,7 @@ void Project::exportClustalW(QString fname,bool removeExclusions)
 	ClustalFile cf(fname);
 	QStringList l,seqs,c;
 	for (int s=0;s<sequences.size();s++){
-		l.append(sequences.sequences().at(s)->label);
+		l.append(sequences.sequences().at(s)->name);
 		seqs.append(sequences.sequences().at(s)->filter(removeExclusions));
 		c.append(sequences.sequences().at(s)->comment);
 	}
@@ -949,12 +962,12 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 			newGroups.append(newGroup);
 			for (int s=0;s<oldGroups.at(g)->size();s++){
 				Sequence *oldGroupedSeq=oldGroups.at(g)->itemAt(s);
-				Sequence *newGroupedSeq = newSequences.getSequence(oldGroupedSeq->label);
+				Sequence *newGroupedSeq = newSequences.getSequence(oldGroupedSeq->name);
 				if (NULL!=newGroupedSeq){
 					newGroup->addSequence(newGroupedSeq);
 				}
 				else{
-					qDebug() << trace.header(__PRETTY_FUNCTION__) << "missed grouping " << oldGroupedSeq->label;
+					qDebug() << trace.header(__PRETTY_FUNCTION__) << "missed grouping " << oldGroupedSeq->name;
 				}
 			}
 			qDebug() << trace.header(__PRETTY_FUNCTION__) << "new group created with " << newGroup->size() << " members";
@@ -971,7 +984,7 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 		// Make a copy of the old sequences
 		for (int s=0;s<oldSeqs.size();s++){
 			Sequence *oldSeq = oldSeqs.at(s);
-			Sequence *newSeq = new Sequence(oldSeq->label,oldSeq->residues,oldSeq->comment,oldSeq->source,oldSeq->visible);
+			Sequence *newSeq = new Sequence(oldSeq->name,oldSeq->residues,oldSeq->comment,oldSeq->source,oldSeq->visible);
 			newSeq->bookmarked=oldSeq->bookmarked;
 			newSequences.append(newSeq);
 		}
@@ -984,12 +997,12 @@ void Project::readNewAlignment(QString fname,bool isFullAlignment){
 			newGroups.append(newGroup);
 			for (int s=0;s<oldGroups.at(g)->size();s++){
 				Sequence *oldGroupedSeq=oldGroups.at(g)->itemAt(s);
-				Sequence *newGroupedSeq = newSequences.getSequence(oldGroupedSeq->label);
+				Sequence *newGroupedSeq = newSequences.getSequence(oldGroupedSeq->name);
 				if (NULL!=newGroupedSeq){
 					newGroup->addSequence(newGroupedSeq);
 				}
 				else{
-					qDebug() << trace.header(__PRETTY_FUNCTION__) << "missed grouping " << oldGroupedSeq->label;
+					qDebug() << trace.header(__PRETTY_FUNCTION__) << "missed grouping " << oldGroupedSeq->name;
 				}
 			}
 		qDebug() << trace.header(__PRETTY_FUNCTION__) << "new group created with " << newGroup->size() << " members";

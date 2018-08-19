@@ -37,9 +37,9 @@ Sequence::Sequence()
 {
 }
 
-Sequence::Sequence(QString l,QString r,QString c,QString f,bool vis,QString sf,QString ssf){
-	label = l;
-	originalName = l;
+Sequence::Sequence(QString n,QString r,QString c,QString f,bool vis,QString sf,QString ssf){
+	name = n;
+	originalName = n;
 	residues = r;
 	comment=c;
 	group=NULL;

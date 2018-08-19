@@ -34,7 +34,7 @@
 RenameCmd::RenameCmd(Project *project,Sequence *seq, QString & newName,const QString &txt):Command(project,txt)
 {
 	newName_=newName;
-	oldName_=seq->label;
+	oldName_=seq->name;
 	seq_=seq;
 }
 
@@ -44,11 +44,11 @@ RenameCmd::~RenameCmd()
 
 void RenameCmd::redo()
 {
-	seq_->label = newName_;
+	seq_->name = newName_;
 }
 
 void RenameCmd::undo()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	seq_->label = oldName_;
+	seq_->name = oldName_;
 }

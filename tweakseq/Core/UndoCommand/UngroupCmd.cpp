@@ -65,7 +65,7 @@ void UngroupCmd::redo()
 	for ( int s=0;s<oldSelection_.size();s++){
 		Sequence *seq = oldSelection_.at(s);
 		if (seq->group){
-			qDebug() << trace.header(__PRETTY_FUNCTION__) << "ungrouping " << seq->label;
+			qDebug() << trace.header(__PRETTY_FUNCTION__) << "ungrouping " << seq->name;
 			SequenceGroup *sg = seq->group; // save this, cos removing it from the groups sets ptr to NULL
 			seq->group->removeSequence(seq);  
 			// if we have now removed all of the visible sequences in the group, make the hidden sequences

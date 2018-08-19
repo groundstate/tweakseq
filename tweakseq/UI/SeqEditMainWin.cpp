@@ -389,7 +389,7 @@ void SeqEditMainWin::fileExportFASTA(){
 
 void SeqEditMainWin::fileExportClustalW()
 {
-	QString fname = QFileDialog::getSaveFileName(this,tr("Export as FASTA"));
+	QString fname = QFileDialog::getSaveFileName(this,tr("Export as ClustalW"));
 	if (fname.isNull()) return;
 	project_->exportClustalW(fname,true); // FIXME hardcoded
 }
@@ -711,13 +711,13 @@ void SeqEditMainWin::setupEditActions()
 void SeqEditMainWin::editCopy()
 {
 	// This only copies to the system clipboard
-	// If Sequences are selected, then label+sequence is copied as straight text
-	// If Residues are selected, then label+selected residues are copied
+	// If Sequences are selected, then name+sequence is copied as straight text
+	// If Residues are selected, then name+selected residues are copied
 	if (project_->sequenceSelection->size() > 0){
 		QString txt("");
 		for (int s=0;s<project_->sequenceSelection->size();s++){
 			Sequence *seq = project_->sequenceSelection->itemAt(s);
-			txt.append(seq->label);
+			txt.append(seq->name);
 			txt.append(" ");
 			txt.append(seq->filter());
 			txt.append('\n'); // FIXME does this get translated ?
@@ -728,7 +728,7 @@ void SeqEditMainWin::editCopy()
 		QString txt("");
 		for (int r=0;r<project_->residueSelection->size();r++){
 			ResidueGroup *rg = project_->residueSelection->itemAt(r);
-			txt.append(rg->sequence->label);
+			txt.append(rg->sequence->name);
 			txt.append(" ");
 			txt.append(rg->sequence->filter().mid(rg->start,rg->stop-rg->start+1));
 			txt.append('\n');
@@ -747,8 +747,8 @@ void SeqEditMainWin::renameSequence(){
 	bool ok;
 	Sequence *selSeq=project_->sequenceSelection->itemAt(0);
 	QString newName = QInputDialog::getText(this, tr("Rename sequence"),
-		tr("Name:"), QLineEdit::Normal,selSeq->label, &ok);
-		if (ok && !newName.isEmpty() && newName != selSeq->label){
+		tr("Name:"), QLineEdit::Normal,selSeq->name, &ok);
+		if (ok && !newName.isEmpty() && newName != selSeq->name){
 			if (project_->renameSequence(selSeq,newName)){
 				updateGoToTool();
 			}
@@ -761,12 +761,17 @@ void SeqEditMainWin::renameSequence(){
 void SeqEditMainWin::sequenceProperties()
 {
 	Sequence *selSeq=project_->sequenceSelection->itemAt(0);
+	Sequence newSeq=*selSeq;
+		
 	SequencePropertiesDialog spd(project_,selSeq,this);
 	if (spd.exec()==QDialog::Accepted) {
-		if (!spd.structureFile().isEmpty())
-			selSeq->structureFile=spd.structureFile();
-		selSeq->comment=spd.comment();
-		updateGoToTool(); // in case the name was changed
+		newSeq.structureFile = spd.structureFile();
+		newSeq.structure.selectedChain = spd.selectedChain();
+		newSeq.comment=spd.comment();
+		newSeq.structure.selectedChain = spd.selectedChain();
+		if (project_->modifySequenceProperties(selSeq,&newSeq)){
+			updateGoToTool(); // in case the name was changed
+		}
 	}
 }
 
@@ -1720,7 +1725,7 @@ void SeqEditMainWin::updateGoToTool()
 	QList<Sequence *> &sequences = project_->sequences.sequences();
 	QStringList labels;
 	for (int s=0;s<sequences.count();s++)
-		labels.append(sequences.at(s)->label);
+		labels.append(sequences.at(s)->name);
 	goToTool_->setCompleterModel(labels);
 }
 

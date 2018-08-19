@@ -327,7 +327,7 @@ void SequenceEditor::selectSequence(const QString &label)
 	
 	Sequence *seq = project_->sequences.getSequence(label);
 	if (seq){
-		qDebug() << trace.header(__PRETTY_FUNCTION__) << "found " <<seq->label;
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << "found " <<seq->name;
 		project_->sequenceSelection->set(seq);
 		makeVisible(seq);
 	}
@@ -643,7 +643,7 @@ void SequenceEditor::moveToNextBookmark()
 	currBookmark_++;
 	if (currBookmark_>= bookmarks_.size()) // wrap back to beginning
 		currBookmark_=0;
-	selectSequence(bookmarks_.at(currBookmark_)->label);
+	selectSequence(bookmarks_.at(currBookmark_)->name);
 }
 
 void SequenceEditor::moveToPreviousBookmark()
@@ -653,14 +653,14 @@ void SequenceEditor::moveToPreviousBookmark()
 	currBookmark_--;
 	if (currBookmark_< 0) // wrap back to beginning
 		currBookmark_= bookmarks_.size() - 1;
-	selectSequence(bookmarks_.at(currBookmark_)->label);
+	selectSequence(bookmarks_.at(currBookmark_)->name);
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 }
 
 void SequenceEditor::goToSearchResult(int pos)
 {
 	currSearchResult_=searchResults_.at(pos);
-	qDebug() << trace.header(__PRETTY_FUNCTION__) << currSearchResult_->sequence->label;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << currSearchResult_->sequence->name;
 	project_->sequenceSelection->set(currSearchResult_->sequence);
 	project_->residueSelection->clear();
 	selectingResidues_=false; // may not have changed selection state so this clears any temporary selection
@@ -753,7 +753,7 @@ void SequenceEditor::mousePressEvent( QMouseEvent *ev )
 	
 	if (clickedPos.x() < flagsWidth_+labelWidth_){
 		Sequence *selSeq =  project_->sequences.visibleAt(clickedRow);
-		qDebug() << trace.header(__PRETTY_FUNCTION__) << "selected " << selSeq->label;
+		qDebug() << trace.header(__PRETTY_FUNCTION__) << "selected " << selSeq->name;
 
 		// Remove any residue selection
 		selAnchorRow_=selAnchorCol_=selDragRow_=selDragCol_=-1;
@@ -948,7 +948,7 @@ void SequenceEditor::mouseReleaseEvent( QMouseEvent *ev )
 						Sequence *seq = sg->itemAt(s);
 						if (seq->visible){
 							int index = project_->sequences.visibleIndex(seq);
-							qDebug() << trace.header(__PRETTY_FUNCTION__) << "checking group:" << seq->label << " visible at " << index;
+							qDebug() << trace.header(__PRETTY_FUNCTION__) << "checking group:" << seq->name << " visible at " << index;
 							if (index < visStart || index > visStop) break; // not in selection, so bail out
 						}
 					}
@@ -1040,8 +1040,8 @@ void SequenceEditor::mouseMoveEvent(QMouseEvent *ev)
 	
 	// show the label of the sequence we are moving over
 	Sequence *currSeq = project_->sequences.visibleAt(clickedRow);
-	if (currSeq->label != lastInfo_){
-		lastInfo_ = currSeq->label;
+	if (currSeq->name != lastInfo_){
+		lastInfo_ = currSeq->name;
 		emit info(lastInfo_);
 	}
 	
@@ -1979,7 +1979,7 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	p->drawText(indexPos_, yrow,charWidth_*INDEX_WIDTH,rowHeight_, Qt::AlignRight, QString::number(row));
 	
 	p->setPen(labelColor);
-	p->drawText( flagsWidth_, yrow, labelWidth_,rowHeight_,Qt::AlignLeft, currSeq->label);
+	p->drawText( flagsWidth_, yrow, labelWidth_,rowHeight_,Qt::AlignLeft, currSeq->name);
 	
 	for (int col=firstVisibleCol_;col<=lastVisibleCol_;col++)
 		paintCell(p,row,col,currSeq); 

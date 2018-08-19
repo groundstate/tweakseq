@@ -113,6 +113,7 @@ class Project:public QObject
 		void unhideAllGroupMembers();
 		
 		bool renameSequence(Sequence *,QString &);
+		bool modifySequenceProperties(Sequence *,Sequence *);
 		
 		void addInsertions(QList<Sequence*> &,int,int,bool);
 		

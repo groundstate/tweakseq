@@ -68,7 +68,7 @@ void PasteCmd::redo()
 			Sequence *seq = clipboardContents_.at(s);
 			if (!sg->contains(seq)){ // orphaned
 				seq->group=NULL;
-				qDebug() << trace.header(__PRETTY_FUNCTION__) << "orphaned sequence" << seq->label;
+				qDebug() << trace.header(__PRETTY_FUNCTION__) << "orphaned sequence" << seq->name;
 			}
 			else{
 				if (!(project_->sequenceGroups.contains(sg))){
