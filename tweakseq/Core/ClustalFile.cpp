@@ -65,7 +65,7 @@ bool ClustalFile::isValidFormat(QString & fname)
 					extensions(SequenceFile::DNA).contains(ext,Qt::CaseInsensitive));
 }
 
-bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &,Structure *)
+bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &comments,Structure *)
 {
 	QString s;
 	
@@ -127,6 +127,7 @@ bool ClustalFile::read(QStringList &seqnames, QStringList &seqs,QStringList &,St
 		QStringList strl = s.split(ws);
 		if (nblk==0){ // first
 			seqnames.append(strl.at(0));
+			comments.append(strl.at(0)); // no comment - just use name
 			seqs.append(strl.at(1));
 		}
 		else{
