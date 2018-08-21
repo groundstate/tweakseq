@@ -42,6 +42,8 @@ class ClustalFile:public SequenceFile{
 	
 	private:
 		
+		QString conservationDegree(QStringList &,int);
+		
 		QString n_;
 		
 };

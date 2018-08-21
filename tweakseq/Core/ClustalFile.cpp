@@ -192,8 +192,9 @@ bool ClustalFile::write(QStringList &l,QStringList &s,QStringList &)
 	ts << endl;
 	ts << endl;
 	
+	QString cd = conservationDegree(s,maxseqlen);
 	for (int b=1;b<=nblks;b++){
-		QString conservationDegree = QString(60,'*');
+		
 		for (int si=0;si<s.size();si++){
 			ts.setFieldAlignment(QTextStream::AlignLeft);
 			ts << qSetFieldWidth(maxlablen) << l.at(si);
@@ -201,11 +202,122 @@ bool ClustalFile::write(QStringList &l,QStringList &s,QStringList &)
 			ts << s.at(si).mid((b-1)*60,60) << endl;
 		}
 		QString p = QString(maxlablen,' ');
-		ts << p << conservationDegree << endl;
+		ts << p << cd.mid((b-1)*60,60) << endl;
 		ts << endl;
 	}
 	
 	f.close();
 	
 	return true;
+}
+
+QString ClustalFile::conservationDegree(QStringList &seqs,int maxLength)
+{
+	QString cd(maxLength,' ');
+	// clustal-omega-1.2.4/src/squid/clustal.c
+	int counts[11];
+	for (int si=0;si<maxLength;si++){
+		
+		// Conserved residues
+		QChar r;
+		bool conserved=true;
+		for (int sq=0;sq<seqs.size();sq++){
+			if (si < seqs.at(sq).length()){
+				if (r.isNull())
+					r=seqs.at(sq).at(si); // initialize
+				if (seqs.at(sq).at(si) != r){
+					conserved=false;
+					break;
+				}
+			}
+		}
+		if (conserved){
+			cd.replace(si,1,'*');
+			continue; // no more to do
+		}
+		
+		// 'Strong conservation'
+		for (int w=0;w<9;w++)
+			counts[w]=0;
+		
+		for (int sq=0;sq<seqs.size();sq++){
+			if (si < seqs.at(sq).length()){
+				char r = seqs.at(sq).at(si).toLatin1(); 
+				switch (r)
+				{
+					case 'S': counts[0]++; break;
+					case 'T': counts[0]++; break;
+					case 'A': counts[0]++; break;
+					case 'N': counts[1]++; counts[2]++; counts[3]++;break;
+					case 'E': counts[1]++; counts[3]++; break;
+					case 'Q': counts[1]++; counts[2]++; counts[3]++; counts[4]++; break;
+					case 'K': counts[1]++; counts[2]++; counts[4]++; break;
+					case 'D': counts[3]++; break;
+					case 'R': counts[4]++; break;
+					case 'H': counts[2]++; counts[4]++; counts[7]++; break;
+					case 'M': counts[5]++; counts[6]++; break;
+					case 'I': counts[5]++; counts[6]++; break;
+					case 'L': counts[5]++; counts[6]++; break;
+					case 'V': counts[5]++; break;
+					case 'F': counts[6]++; counts[8]++; break;
+					case 'Y': counts[7]++; counts[8]++; break;
+					case 'W': counts[8]++; break;
+				}
+			}
+		} // for 
+		conserved=false;
+		for (int w=0;w<9;w++){
+			if (counts[w]==seqs.size()){
+				conserved = true;
+				break;
+			}
+		}
+		if (conserved){
+			cd.replace(si,1,':');
+			continue;
+		}
+		
+		// 'Weak' conservation
+		for (int w=0;w<11;w++)
+			counts[w]=0;
+		
+		for (int sq=0;sq<seqs.size();sq++){
+			if (si < seqs.at(sq).length()){
+				char r = seqs.at(sq).at(si).toLatin1(); 
+				switch (r){
+					case 'C': counts[0]++; break;
+					case 'S': counts[0]++; counts[2]++; counts[3]++; counts[4]++; counts[5]++; counts[6]++; break;
+					case 'A': counts[0]++; counts[1]++; counts[2]++; counts[4]++; break;
+					case 'T': counts[1]++; counts[3]++; counts[4]++; break;
+					case 'V': counts[1]++; counts[9]++; break;
+					case 'G': counts[2]++; counts[5]++; break; 
+					case 'N': counts[3]++; counts[5]++; counts[6]++; counts[7]++; counts[8]++; break;
+					case 'K': counts[3]++; counts[6]++; counts[7]++; counts[8]++; break;
+					case 'D': counts[5]++; counts[6]++; counts[7]++; break;
+					case 'E': counts[6]++; counts[7]++; counts[8]++; break;
+					case 'Q': counts[6]++; counts[7]++; counts[8]++; break;
+					case 'H': counts[7]++; counts[8]++; counts[10]++; break;
+					case 'R': counts[8]++; break;
+					case 'F': counts[9]++; counts[10]++; break;
+					case 'L': counts[9]++; break;
+					case 'I': counts[9]++; break;
+					case 'M': counts[9]++; break;
+					case 'Y': counts[10]++; break;
+				}
+			}
+		} // for 
+		conserved=false;
+		for (int w=0;w<11;w++){
+			if (counts[w]==seqs.size()){
+				conserved = true;
+				break;
+			}
+		}
+		if (conserved){
+			cd.replace(si,1,'.');
+			continue;
+		}
+		
+	}
+	return cd;
 }
