@@ -46,6 +46,7 @@ class ImportCmd: public Command
 		
 	private:
 		QList<Sequence *>  seqs_;
+		bool aligned_;
 };
 
 #endif

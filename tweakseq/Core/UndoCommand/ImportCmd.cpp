@@ -36,6 +36,7 @@ ImportCmd::ImportCmd(Project *project,const QList<Sequence *> &seqs,const QStrin
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	seqs_=seqs;
+	aligned_=project_->aligned();
 }
 
 ImportCmd::~ImportCmd()
@@ -48,6 +49,7 @@ void ImportCmd::redo()
 	project_->enableUIupdates(false);
 	project_->sequences.append(seqs_);
 	project_->enableUIupdates(true);
+	project_->setAligned(false);
 }
 
 void ImportCmd::undo()
@@ -56,5 +58,6 @@ void ImportCmd::undo()
 	project_->enableUIupdates(false);
 	project_->sequences.remove(seqs_);
 	project_->enableUIupdates(true);
+	if (aligned_) project_->setAligned(true);
 }
 		

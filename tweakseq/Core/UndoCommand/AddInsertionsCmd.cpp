@@ -43,7 +43,7 @@ AddInsertionsCmd::AddInsertionsCmd(Project *project,QList<Sequence *> &seqs,int 
 	}
 	if (postInsert) startPos_++;
 	seqs_=seqs;
-
+	aligned_=project_->aligned();
 }
 
 AddInsertionsCmd::~AddInsertionsCmd()
@@ -56,6 +56,7 @@ void AddInsertionsCmd::redo()
 	for (int s=0;s<seqs_.size();s++){
 			project_->sequences.addInsertions(seqs_.at(s),startPos_,nInsertions_);
 	}
+	project_->setAligned(false); 
 }
 
 void AddInsertionsCmd::undo()
@@ -63,6 +64,7 @@ void AddInsertionsCmd::undo()
 	for (int s=0;s<seqs_.size();s++){
 		project_->sequences.removeResidues(seqs_.at(s),startPos_,nInsertions_);
 	}
+	if (aligned_) project_->setAligned(aligned_);
 }
 
 

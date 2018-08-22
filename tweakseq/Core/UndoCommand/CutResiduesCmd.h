@@ -48,7 +48,7 @@ class CutResiduesCmd: public Command
 	
 		QList<ResidueGroup *> residues_;
 		QList<QString>        cutResidues_;
-		
+		bool aligned_;
 };
 
 #endif

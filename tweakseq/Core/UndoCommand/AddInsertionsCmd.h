@@ -52,7 +52,7 @@ class AddInsertionsCmd: public Command
 		QList<Sequence *> seqs_;
 		int startPos_;
 		int nInsertions_;
-		
+		bool aligned_;
 };
 
 #endif

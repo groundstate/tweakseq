@@ -35,6 +35,7 @@
 CutResiduesCmd::CutResiduesCmd(Project *project,QList<ResidueGroup *> &residues,const QString &txt):Command(project,txt)
 {
 	residues_=residues;
+	aligned_=project->aligned();
 }
 
 CutResiduesCmd::~CutResiduesCmd()
@@ -51,6 +52,7 @@ void CutResiduesCmd::redo()
 		resGroup->sequence->remove(resGroup->start,resGroup->stop-resGroup->start+1);
 	}
 	project_->residueSelection->clear();
+	project_->setAligned(false); 
 }
 
 void CutResiduesCmd::undo()
@@ -61,4 +63,5 @@ void CutResiduesCmd::undo()
 		resGroup->sequence->residues.insert(resGroup->start,cutResidues_.at(rg));
 	}
 	project_->residueSelection->set(residues_);
+	if (aligned_) project_->setAligned(aligned_); // save recomputation of consensus
 }
