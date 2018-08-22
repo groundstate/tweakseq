@@ -378,7 +378,7 @@ void SeqEditMainWin::fileImport(){
 		lastImportedFile=files.at(files.size()-1);
 	
 	updateGoToTool();
-	
+	setupAlignmentActions();
 }
 
 void SeqEditMainWin::fileExportFASTA(){
