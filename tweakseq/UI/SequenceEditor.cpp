@@ -495,6 +495,28 @@ void SequenceEditor::removeExclusions()
 	}
 }
 
+void SequenceEditor::lockSelectedResidues()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	if (selectingResidues_){ // flag selected residues as being excluded from the
+		selectingResidues_=false; // alignment
+		project_->lockSelectedResidues(true);
+		emit edited();
+		repaint();	
+	}
+}
+
+void SequenceEditor::unlockSelectedResidues()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	if (selectingResidues_){ // flag selected residues as being excluded from the
+		selectingResidues_=false; // alignment
+		project_->lockSelectedResidues(false);
+		emit edited();
+		repaint();	
+	}
+}
+
 void SequenceEditor::sequencesCleared()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
@@ -1966,6 +1988,13 @@ void SequenceEditor::paintRow(QPainter *p,int row)
 	}
 	else{
 		labelColor.setRgb(255,255,255); //default colour 
+	}
+	
+	if (currSeq->residueLockGroup != NULL)
+	{
+		txtColor.setRgb(255,160,122);
+		p->setPen(txtColor);
+		p->drawLine(expanderPos_+flagsColWidth_-2,yrow,expanderPos_+flagsColWidth_-2,yrow+rowHeight_);
 	}
 	
 	if (currSeq->bookmarked){

@@ -703,6 +703,8 @@ void SeqEditMainWin::setupEditActions()
 	}
 	excludeAction->setEnabled(!(project_->residueSelection->empty())); // sloppy - don't worry about already excluded etc.
 	removeExcludeAction->setEnabled(!(project_->residueSelection->empty())); 
+	lockResiduesAction->setEnabled(project_->residueLockSelected(false));
+	unlockResiduesAction->setEnabled(project_->residueLockSelected(true));
 	
 	renameSequenceAction->setEnabled(project_->sequenceSelection->size()==1);
 	sequencePropertiesAction->setEnabled(project_->sequenceSelection->size()==1);
@@ -1042,6 +1044,8 @@ void SeqEditMainWin::createContextMenu(const QPoint &)
 	if (project_->residueSelection->size() > 0){
 		cm->addAction(excludeAction);
 		cm->addAction(removeExcludeAction);
+		cm->addAction(lockResiduesAction);
+		cm->addAction(unlockResiduesAction);
 		cm->addSeparator();
 	}
 	
@@ -1274,6 +1278,17 @@ void SeqEditMainWin::createActions()
 	removeExcludeAction->setStatusTip(tr("Remove exclusion"));
 	addAction(removeExcludeAction);
 	connect(removeExcludeAction, SIGNAL(triggered()), se, SLOT(removeExclusions()));
+	
+	lockResiduesAction = new QAction( tr("Lock residues"), this);
+	lockResiduesAction->setStatusTip(tr("Lock residues"));
+	addAction(lockResiduesAction);
+	connect(lockResiduesAction, SIGNAL(triggered()), se, SLOT(lockSelectedResidues()));
+	
+	unlockResiduesAction = new QAction( tr("Unlock selected residues"), this);
+	unlockResiduesAction->setStatusTip(tr("Unlock selected residues"));
+	addAction(unlockResiduesAction);
+	connect(unlockResiduesAction, SIGNAL(triggered()), se, SLOT(unlockSelectedResidues()));
+	
 	
 	readOnlyAction = new QAction( tr("Read only"), this);
 	readOnlyAction->setStatusTip(tr("Set the alignment to read only"));

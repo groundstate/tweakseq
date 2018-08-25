@@ -43,6 +43,7 @@ Sequence::Sequence(QString n,QString r,QString c,QString f,bool vis,QString sf,Q
 	residues = r;
 	comment=c;
 	group=NULL;
+	residueLockGroup=NULL;
 	source=f;
 	visible=vis;
 	structureFile=sf;

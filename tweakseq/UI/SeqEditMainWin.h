@@ -158,7 +158,7 @@ private:
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
 	QAction  *alignAllAction,*alignSelectionAction,*alignStopAction,*undoLastAction;
 	QAction  *undoAction,*redoAction,*cutAction,*copyAction,*pasteAction;
-	QAction  *excludeAction,*removeExcludeAction,*lockAction,*unlockAction;
+	QAction  *excludeAction,*removeExcludeAction,*lockResiduesAction,*unlockResiduesAction,*lockAction,*unlockAction;
 	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction,*unhideAllAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction,*ungroupAllAction;
 	QAction  *renameSequenceAction,*sequencePropertiesAction;

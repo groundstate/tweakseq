@@ -47,6 +47,7 @@ enum alignmentFormats {FASTA,CLUSTALW};
 
 class AlignmentTool;
 class Operation;
+class ResidueLockGroup;
 class ResidueSelection;
 class SearchResult;
 class Sequence;
@@ -87,7 +88,8 @@ class Project:public QObject
 		ResidueSelection *residueSelection;
 		SequenceSelection *sequenceSelection;
 		QList<SequenceGroup *> sequenceGroups;
-
+		QList<ResidueLockGroup *>  residueLockGroups;
+		
 		bool importSequences(QStringList &,QString &);
 		
 		QString getResidues(int,int);
@@ -98,6 +100,9 @@ class Project:public QObject
 		void undo();
 		void redo();
 		void excludeSelectedResidues(bool);
+		void lockSelectedResidues(bool);
+		bool residueLockSelected(bool);
+		
 		bool cutSelectedResidues();
 		bool cutSelectedSequences();
 		void pasteClipboard(Sequence *);

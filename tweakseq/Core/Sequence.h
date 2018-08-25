@@ -38,6 +38,8 @@
 #define KEEP_FLAGS      0XFFFF 
 #define REMOVE_FLAGS	  0X007F	
 
+class ResidueLockGroup;
+
 class Sequence;
 class SequenceGroup;
 
@@ -63,6 +65,7 @@ class Sequence
 		bool bookmarked;
 		
 		SequenceGroup *group;
+		ResidueLockGroup *residueLockGroup;
 		
 		QString source; // file the sequence was originally sourced from
 		QString originalName; // name as read from the file, maybe renamed subsequently

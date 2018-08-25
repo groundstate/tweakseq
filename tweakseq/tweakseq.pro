@@ -26,6 +26,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/PDB.h \
 								 include/PDBFile.h \
 								 include/Project.h \
+								 include/ResidueLockGroup.h \
 								 include/ResidueSelection.h \
 								 include/SearchTool.h \
 								 include/SequenceEditor.h \
@@ -66,6 +67,7 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/PDB.cpp \
 									Core/PDBFile.cpp \
 									Core/Project.cpp \
+									Core/ResidueLockGroup.cpp \
 									Core/ResidueSelection.cpp \
 									Core/Sequence.cpp \
 									Core/Sequences.cpp \

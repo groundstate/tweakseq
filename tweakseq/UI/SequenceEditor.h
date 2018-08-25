@@ -115,6 +115,9 @@ class SequenceEditor: public QWidget
 		void excludeSelectedResidues();
 		void removeExclusions();
 		
+		void lockSelectedResidues();
+		void unlockSelectedResidues();
+		
 		void sequencesCleared();
 
 		void postLoadTidy();

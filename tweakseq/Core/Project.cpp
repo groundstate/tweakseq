@@ -50,6 +50,7 @@
 #include "PDBFile.h"
 #include "Project.h"
 #include "RenameCmd.h"
+#include "ResidueLockGroup.h"
 #include "ResidueSelection.h"
 #include "SearchResult.h"
 #include "Sequence.h"
@@ -301,6 +302,28 @@ void Project::excludeSelectedResidues(bool add)
 		(add?"exclude residues":"remove exclusions")));
 	dirty_=true;
 }
+
+void Project::lockSelectedResidues(bool lock)
+{
+	if (lock){
+		qDebug() << trace.header(__PRETTY_FUNCTION__);
+		QList<ResidueGroup*> &rg = residueSelection->residueGroups();
+		ResidueLockGroup *rlg = new ResidueLockGroup();
+		for (int r=0;r<rg.size();r++){
+			rlg->addSequence(rg.at(r)->sequence);
+			rg.at(r)->sequence->residueLockGroup=rlg;
+		}
+		rlg->setPosition(rg.at(0)->start);
+		residueLockGroups.append(rlg);
+	}
+	dirty_=true;
+}
+
+bool Project::residueLockSelected(bool)
+{
+	return true;
+}
+
 
 bool Project::cutSelectedResidues()
 {
