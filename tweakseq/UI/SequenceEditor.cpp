@@ -43,6 +43,7 @@
 #include "MoveCmd.h"
 #include "DNA.h"
 #include "Project.h"
+#include "ResidueLockGroup.h"
 #include "ResidueSelection.h"
 #include "SearchResult.h"
 #include "Sequence.h"
@@ -1847,6 +1848,14 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 		switch (residueView_){
 			case StandardView:
 				
+				if (currSeq->residueLockGroup != NULL){
+					if (currSeq->residueLockGroup->position() == col){
+						fillColour = txtColor;
+						fillCell=true;
+						txtColor.setRgb(0,0,0);
+					}
+				}
+				
 				if (NULL != currSearchResult_){
 					if (currSeq == currSearchResult_->sequence){
 						if (col >= currSearchResult_->start && col <= currSearchResult_->stop){
@@ -1861,9 +1870,11 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 						txtColor.setRgb(0,0,0);
 					}
 				}
+				
 				if (fillCell){
 					p->fillRect(0,2,w,h-2,fillColour);
 				}
+				
 				if ((cwflags.unicode() & EXCLUDE_CELL) ){
 					xPen.setColor(QColor(240,240,16));
 					p->setPen(xPen);
@@ -1874,6 +1885,15 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				break;
 			case InvertedView:
+			{	
+				bool residueLocked=false;
+				if (currSeq->residueLockGroup != NULL){
+					if (currSeq->residueLockGroup->position() == col){
+						residueLocked=true;
+						fillCell=false;
+					}
+				}
+				
 				if (NULL != currSearchResult_){
 					if (currSeq == currSearchResult_->sequence){
 						if (col >= currSearchResult_->start && col <= currSearchResult_->stop){
@@ -1888,30 +1908,36 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 						txtColor.setRgb(0,0,0);
 					}
 				}
-				if (!fillCell && !cellSelected  && ch != '-'){
+				if (!fillCell && !cellSelected  && ch != '-' && !residueLocked){
 					fillCell=true;
 					fillColour=txtColor;
 				}
+				
 				if (fillCell){
 					p->fillRect(0,2,w,h-2,fillColour);
 				}
+				
 				if ((cwflags.unicode() & EXCLUDE_CELL)){
-					xPen.setColor(QColor(32,32,32));
+					if (residueLocked)
+						xPen.setColor(QColor(240,240,16));
+					else
+						xPen.setColor(QColor(32,32,32));
 					p->setPen(xPen);
 					p->drawLine(2,2,w-2,h-2); // X marks the spot ...
 					p->drawLine(w-2,2,2,h-2);
 				}
-				if (ch != '-')
+				if (ch != '-' && !residueLocked)
 					txtColor.setRgb(0,0,0);
 				p->setPen(txtColor);
 				p->drawText( 0, 0, w, h, Qt::AlignCenter, c);
 				break;
+			}
 			case SolidView:
 				if (NULL != currSearchResult_){
 					if (currSeq == currSearchResult_->sequence){
 						if (col >= currSearchResult_->start && col <= currSearchResult_->stop){
 							fillCell=true;
-							fillColour=currSearchResultColour;
+							fillColour=currSearchResultColour;;
 						}
 					}
 					else if ((cwflags.unicode() & HIGHLIGHT_CELL) ){
@@ -1940,6 +1966,7 @@ void SequenceEditor::paintCell( QPainter* p, int row, int col, Sequence *currSeq
 		}
 	}
 
+	
 	p->translate(-xcol,-yrow);
 	
 }
