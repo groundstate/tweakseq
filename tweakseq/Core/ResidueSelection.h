@@ -68,6 +68,7 @@ class ResidueSelection:public QObject
 		QString selectedResidues(int);
 		
 		bool isInsertionsOnly();
+		bool isLocked();
 		
 		bool empty(){return sel_.size() == 0;}
 		int  size(){return sel_.size();}

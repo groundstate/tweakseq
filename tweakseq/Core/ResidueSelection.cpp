@@ -73,6 +73,17 @@ bool ResidueSelection::isInsertionsOnly()
 	return true;
 }
 
+bool ResidueSelection::isLocked()
+{
+	if (0 == sel_.size()) return false;
+	for (int s=0;s<sel_.size();s++){
+		ResidueGroup *rg = sel_.at(s);
+		if (rg->sequence->residueLockGroup)
+			return true;
+	}
+	return false;
+}
+
 ResidueGroup * ResidueSelection::itemAt(int index)
 {
 	return sel_.at(index);

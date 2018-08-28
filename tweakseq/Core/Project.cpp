@@ -319,12 +319,6 @@ void Project::lockSelectedResidues(bool lock)
 	dirty_=true;
 }
 
-bool Project::residueLockSelected(bool)
-{
-	return true;
-}
-
-
 bool Project::cutSelectedResidues()
 {
 	clearSearchResults();
@@ -702,7 +696,21 @@ bool Project::save(QString &fpathname)
 		XMLHelper::addElement(saveDoc,gel,"sequences",seqs);
 	}
 	
-
+	for (int r=0;r<residueLockGroups.size();r++){
+		ResidueLockGroup *rg = residueLockGroups.at(r);
+		QDomElement rgel = saveDoc.createElement("residuelockgroup");
+		root.appendChild(rgel);
+		XMLHelper::addElement(saveDoc,rgel,"position",QString::number(rg->position()));
+		
+		QString seqs = "";
+		QList<Sequence *> &rgseqs = rg->sequences;
+		for (int s=0;s<rgseqs.size();s++){
+			seqs += rgseqs.at(s)->name;
+			if (s < rgseqs.size()-1) seqs += ",";
+		}
+		XMLHelper::addElement(saveDoc,rgel,"sequences",seqs);
+	}
+	
 	// QSettings is not used because we want per-project settings
 	writeSettings(saveDoc,root);
 	
@@ -840,8 +848,7 @@ void Project::load(QString &fname)
 	}	
 	emit uiUpdatesEnabled(true);
 	
-	// Get all the groups
-	
+	// Get all the sequence groups
 	nl = doc.elementsByTagName("group");
 	for (int i=0;i<nl.count();i++){
 		QDomNode gNode = nl.item(i);
@@ -876,6 +883,34 @@ void Project::load(QString &fname)
 		sequenceGroups.append(sg);
 	}
 
+	// Get all the locked residue groups
+	nl = doc.elementsByTagName("residuelockgroup");
+	for (int i=0;i<nl.count();i++){
+		QDomNode gNode = nl.item(i);
+		QDomElement elem = gNode.firstChildElement();
+		QStringList seqs;
+		int position =0;
+		while (!elem.isNull()){
+			if (elem.tagName() == "position")
+				position = elem.text().toInt();
+			else if (elem.tagName() == "sequences"){
+				seqs=elem.text().split(',');
+			}
+			elem=elem.nextSiblingElement();
+		}
+		ResidueLockGroup *rlg = new ResidueLockGroup();
+		rlg->setPosition(position);
+		for (int s=0;s<seqs.size();s++){
+			for (int ss=0;ss<sequences.size();ss++){
+				if (seqs.at(s) == sequences.sequences().at(ss)->name){
+					rlg->addSequence(sequences.sequences().at(ss));
+					sequences.sequences().at(ss)->residueLockGroup=rlg;
+					break;
+				}
+			}
+		}
+		residueLockGroups.append(rlg);
+	}
 	
 	readAlignmentToolSettings(doc);
 	
