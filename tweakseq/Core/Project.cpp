@@ -305,8 +305,8 @@ void Project::excludeSelectedResidues(bool add)
 
 void Project::lockSelectedResidues(bool lock)
 {
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
 	if (lock){
-		qDebug() << trace.header(__PRETTY_FUNCTION__);
 		QList<ResidueGroup*> &rg = residueSelection->residueGroups();
 		ResidueLockGroup *rlg = new ResidueLockGroup();
 		for (int r=0;r<rg.size();r++){
@@ -315,6 +315,22 @@ void Project::lockSelectedResidues(bool lock)
 		}
 		rlg->setPosition(rg.at(0)->start);
 		residueLockGroups.append(rlg);
+	}
+	else{
+		QList<ResidueGroup*> &rg = residueSelection->residueGroups();
+		for (int r=0;r<rg.size();r++){
+			Sequence *seq = rg.at(r)->sequence;
+			if (NULL != seq->residueLockGroup){
+				ResidueLockGroup *rlg = seq->residueLockGroup;
+				if (rg.at(r)->start <= rlg->position() && rlg->position() <= rg.at(r)->stop){
+					rlg->removeSequence(seq);
+					if (rlg->empty()){
+						residueLockGroups.removeOne(rlg);
+						qDebug() << trace.header(__PRETTY_FUNCTION__) << " lock group empty() - removed";
+					}
+				}
+			}
+		}
 	}
 	dirty_=true;
 }
