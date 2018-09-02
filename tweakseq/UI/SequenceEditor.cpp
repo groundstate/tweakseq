@@ -1320,7 +1320,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 						stopCol=startCol;
 					
 					bool postInsert = !(ev->modifiers() & Qt::ShiftModifier);
-					
+				
 					project_->addInsertions(insSeqs,startCol,stopCol,postInsert);
 					updateViewExtents();
 					if (firstVisibleLockedSequence  < startRow) startRow = firstVisibleLockedSequence;

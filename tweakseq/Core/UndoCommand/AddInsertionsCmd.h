@@ -53,6 +53,7 @@ class AddInsertionsCmd: public Command
 		int startPos_;
 		int nInsertions_;
 		bool aligned_;
+		bool lockConstraint_;
 };
 
 #endif
