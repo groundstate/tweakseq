@@ -123,6 +123,13 @@ QList<int> Sequence::exclusions()
 	return x;
 }
 
+bool Sequence::isInsertion(int pos)
+{
+	if (pos <0 || pos >= residues.length()) return false;
+	QChar qch=residues[pos];
+	return ((qch.unicode() & REMOVE_FLAGS)=='-');
+}
+
 void Sequence::remove(int start,int n)
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);

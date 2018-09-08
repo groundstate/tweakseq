@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Merridee A. Wouters, Michael J. Wouters
+// Copyright (c) 2000-2018  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,57 +24,32 @@
 // THE SOFTWARE.
 //
 
-
-#ifndef __SEQUENCE_H_
-#define __SEQUENCE_H_
+#ifndef __UNLOCK_RESIDUES_CMD_H_
+#define __UNLOCK_RESIDUES_CMD_H_
 
 #include <QList>
-#include <QString>
 
-#include "Structure.h"
-
-#define EXCLUDE_CELL    0x0080 
-#define HIGHLIGHT_CELL  0x0100
-#define KEEP_FLAGS      0XFFFF 
-#define REMOVE_FLAGS	  0X007F	
+#include "Command.h"
+#include "ResidueSelection.h"
 
 class ResidueLockGroup;
-
 class Sequence;
-class SequenceGroup;
 
-class Sequence
+class UnlockResiduesCmd: public Command
 {
 	public:
-		Sequence();
-		Sequence(QString,QString,QString c=QString(),QString f=QString(),bool vis=true,QString sf=QString(),QString ssf=QString());
-		~Sequence();
-		// comment is for a longer comment
-		QString name,residues,comment;
 		
-		QString filter(bool applyExclusions=false);
-		void exclude(int,int,bool);
-		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
-		bool isInsertion(int);
+		UnlockResiduesCmd(Project *,QList<ResidueGroup *> &,const QString &);
+		virtual ~UnlockResiduesCmd();
+
+		virtual void redo();
+		virtual void undo();
 		
-		void highlight(int ,int,bool );
-		
-		void remove(int,int);
-		void insert(QString,int);
-		
-		bool visible;
-		bool bookmarked;
-		
-		SequenceGroup *group;
-		ResidueLockGroup *residueLockGroup;
-		
-		QString source; // file the sequence was originally sourced from
-		QString originalName; // name as read from the file, maybe renamed subsequently
-		QString structureFile; // separate from "structure" - can have an associated structure without reading its sequences
-		QString dsspFile;      // 
-		
-		Structure structure; // only 40B
-		
+	private:
+	
+		QList<ResidueGroup*> sel_;
+		QList<Sequence *> seqs_;
+		QList<ResidueLockGroup *> groups_,emptyGroups_;
 };
 
 #endif

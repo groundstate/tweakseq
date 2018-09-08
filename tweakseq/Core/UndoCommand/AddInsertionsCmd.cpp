@@ -85,11 +85,11 @@ void AddInsertionsCmd::redo()
 		bool moved=false;
 		for (int s=0;s<rlg->sequences.size();s++){
 			if (!(seqs_.contains(rlg->sequences.at(s)))){
-				project_->sequences.addInsertions(rlg->sequences.at(s),rlg->position()-1,1);
+				project_->sequences.addInsertions(rlg->sequences.at(s),rlg->position(),nInsertions_);
 				moved=true;
 			}
 		}
-		if (moved) rlg->move(1);
+		if (moved) rlg->move(nInsertions_);
 	}
 		
 	project_->setAligned(false); 

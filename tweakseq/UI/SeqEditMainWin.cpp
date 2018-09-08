@@ -704,10 +704,9 @@ void SeqEditMainWin::setupEditActions()
 	excludeAction->setEnabled(!(project_->residueSelection->empty())); // sloppy - don't worry about already excluded etc.
 	removeExcludeAction->setEnabled(!(project_->residueSelection->empty()));
 	
-	// Can only lock residues if the selection does not contain any locked residues
-	lockResiduesAction->setEnabled(!project_->residueSelection->isLocked());
+	lockResiduesAction->setEnabled(project_->canLockSelectedResidues());
 	// Need at least one locked residue in the selection
-	unlockResiduesAction->setEnabled(project_->residueSelection->isLocked());
+	unlockResiduesAction->setEnabled(project_->canUnlockSelectedResidues());
 	
 	renameSequenceAction->setEnabled(project_->sequenceSelection->size()==1);
 	sequencePropertiesAction->setEnabled(project_->sequenceSelection->size()==1);

@@ -27,6 +27,7 @@
 #include <QtDebug>
 #include "DebuggingInfo.h"
 
+#include "ResidueLockGroup.h"
 #include "Sequence.h"
 #include "Sequences.h"
 #include "SequenceGroup.h"
@@ -259,6 +260,8 @@ void Sequences::move(int oldPos,int newPos)
 void Sequences::replaceResidues(QString newResidues,int pos)
 {
 	sequences_.at(pos)->residues=newResidues;
+	if (sequences_.at(pos)->residueLockGroup)
+		sequences_.at(pos)->residueLockGroup->update();
 	updateCachedVariables();
 	emit changed();
 }
@@ -269,6 +272,8 @@ void  Sequences::addInsertions(int startSequence,int stopSequence,int startPos,i
 	QString ins(nInsertions,'-');
 	for (int s=startSequence; s<=stopSequence; s++){
 		sequences_.at(s)->residues.insert(startPos,ins);
+		if (sequences_.at(s)->residueLockGroup)
+			sequences_.at(s)->residueLockGroup->update();
 		int len = sequences_.at(s)->residues.length();
 		if (len > maxLen_)
 			maxLen_=len;
@@ -280,6 +285,8 @@ void  Sequences::addInsertions(Sequence *seq,int startPos,int nInsertions)
 {
 	QString ins(nInsertions,'-');
 	seq->residues.insert(startPos,ins);
+	if (seq->residueLockGroup)
+		seq->residueLockGroup->update();
 	int len = seq->residues.length();
 	if (len > maxLen_)
 		maxLen_=len;
@@ -291,6 +298,8 @@ void  Sequences::removeResidues(int startSequence,int stopSequence,int startPos,
 {
 	for (int s=startSequence; s<=stopSequence; s++){
 		sequences_.at(s)->residues.remove(startPos,nResidues);
+		if (sequences_.at(s)->residueLockGroup)
+			sequences_.at(s)->residueLockGroup->update();
 	}
 	updateCachedVariables(); // must recalculate
 	emit changed();

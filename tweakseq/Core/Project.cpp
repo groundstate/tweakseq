@@ -44,6 +44,7 @@
 #include "FASTAFile.h"
 #include "GroupCmd.h"
 #include "ImportCmd.h"
+#include "LockResiduesCmd.h"
 #include "MAFFT.h"
 #include "Muscle.h"
 #include "PasteCmd.h"
@@ -58,6 +59,7 @@
 #include "SequenceSelection.h"
 #include "SeqEditMainWin.h"
 #include "UngroupCmd.h"
+#include "UnlockResiduesCmd.h"
 #include "XMLHelper.h"
 
 extern Application *app;
@@ -306,34 +308,37 @@ void Project::excludeSelectedResidues(bool add)
 void Project::lockSelectedResidues(bool lock)
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
-	if (lock){
-		QList<ResidueGroup*> &rg = residueSelection->residueGroups();
-		ResidueLockGroup *rlg = new ResidueLockGroup();
-		for (int r=0;r<rg.size();r++){
-			rlg->addSequence(rg.at(r)->sequence);
-			rg.at(r)->sequence->residueLockGroup=rlg;
-		}
-		rlg->setPosition(rg.at(0)->start);
-		residueLockGroups.append(rlg);
-	}
-	else{
-		QList<ResidueGroup*> &rg = residueSelection->residueGroups();
-		for (int r=0;r<rg.size();r++){
-			Sequence *seq = rg.at(r)->sequence;
-			if (NULL != seq->residueLockGroup){
-				ResidueLockGroup *rlg = seq->residueLockGroup;
-				if (rg.at(r)->start <= rlg->position() && rlg->position() <= rg.at(r)->stop){
-					rlg->removeSequence(seq);
-					if (rlg->empty()){
-						residueLockGroups.removeOne(rlg);
-						qDebug() << trace.header(__PRETTY_FUNCTION__) << " lock group empty() - removed";
-					}
-				}
-			}
-		}
-	}
+	if (lock)
+		undoStack_.push(new LockResiduesCmd(this,residueSelection->residueGroups(),"lock residues"));
+	else
+		undoStack_.push(new UnlockResiduesCmd(this,residueSelection->residueGroups(),"unlock residues"));
 	dirty_=true;
 }
+
+bool Project::canLockSelectedResidues()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	// If the selection contains a locked residue, then we can't create a lock
+	// ie overlapping locks are not allowed
+	if (residueSelection->isLocked()) return false;
+	
+	// For insertions before a lock group, there has to be a contiguous block of insertions
+	// before the lock group so that there are insertions that can be deleted to keep the locked 
+	// portion in place
+	for (int r=0;r<residueSelection->size();r++){
+		ResidueGroup *rg = residueSelection->itemAt(r);
+		if (rg->start==0) return false; // can't be anything before the start
+		if (!(rg->sequence->isInsertion(rg->start-1))) return false;
+	}
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << " the selection is lockable";
+	return true;
+}
+
+bool Project::canUnlockSelectedResidues()
+{
+	return residueSelection->isLocked();
+}
+
 
 bool Project::cutSelectedResidues()
 {

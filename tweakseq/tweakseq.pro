@@ -47,9 +47,11 @@ HEADERS       =  include/AboutDialog.h \
 								 include/GroupCmd.h \
 								 include/PasteCmd.h \
 								 include/ImportCmd.h \
+								 include/LockResiduesCmd.h \
 								 include/MoveCmd.h \
 								 include/RenameCmd.h \
 								 include/UngroupCmd.h \
+								 include/UnlockResiduesCmd.h \
 								 include/Utility.h \
 								 include/Version.h \
 								 include/XMLHelper.h \
@@ -87,10 +89,12 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/ExcludeResiduesCmd.cpp \
 									Core/UndoCommand/GroupCmd.cpp \
 									Core/UndoCommand/ImportCmd.cpp \
+									Core/UndoCommand/LockResiduesCmd.cpp \
 									Core/UndoCommand/MoveCmd.cpp \
 									Core/UndoCommand/PasteCmd.cpp \
 									Core/UndoCommand/RenameCmd.cpp \
-									Core/UndoCommand/UngroupCmd.cpp
+									Core/UndoCommand/UngroupCmd.cpp \
+									Core/UndoCommand/UnlockResiduesCmd.cpp \
 
 SOURCES				+=  Core/Annotations/Consensus.cpp
 

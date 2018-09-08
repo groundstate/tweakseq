@@ -101,6 +101,8 @@ class Project:public QObject
 		void redo();
 		void excludeSelectedResidues(bool);
 		void lockSelectedResidues(bool);
+		bool canLockSelectedResidues();
+		bool canUnlockSelectedResidues();
 		
 		bool cutSelectedResidues();
 		bool cutSelectedSequences();
