@@ -45,7 +45,7 @@ AddInsertionsCmd::AddInsertionsCmd(Project *project,QList<Sequence *> &seqs,int 
 	if (postInsert) startPos_++;
 	seqs_=seqs;
 	aligned_=project_->aligned();
-	lockConstraint_=false;
+	
 }
 
 AddInsertionsCmd::~AddInsertionsCmd()
@@ -55,43 +55,9 @@ AddInsertionsCmd::~AddInsertionsCmd()
 
 void AddInsertionsCmd::redo()
 {
-	// If the sequences are all within the same residue lock group, but not all
-	// of the lock group members are selected, then ...
-	// First, is there a ResidueLockGroup ?
-	ResidueLockGroup *rlg=NULL;
-	for (int s=0;s<seqs_.size();s++){
-		if (seqs_.at(s)->residueLockGroup != NULL){
-			rlg = seqs_.at(s)->residueLockGroup;
-			break;
-		}
-	}
-	
-	if (rlg != NULL){ // check that all sequences are in the RLG
-		lockConstraint_=true;
-		for (int s=0;s<seqs_.size();s++){
-			if (seqs_.at(s)->residueLockGroup !=rlg){
-				lockConstraint_ = false;
-				break;
-			}
-		}
-	}
 	
 	for (int s=0;s<seqs_.size();s++)
 		project_->sequences.addInsertions(seqs_.at(s),startPos_,nInsertions_);
-	
-	if (lockConstraint_){
-		qDebug() << trace.header(__PRETTY_FUNCTION__) << "residue lock constraint applies at " << rlg->position();
-		// now we have to add insertions just before the locked residue to the other sequences in the lock group 
-		bool moved=false;
-		for (int s=0;s<rlg->sequences.size();s++){
-			if (!(seqs_.contains(rlg->sequences.at(s)))){
-				project_->sequences.addInsertions(rlg->sequences.at(s),rlg->position(),nInsertions_);
-				moved=true;
-			}
-		}
-		if (moved) rlg->move(nInsertions_);
-	}
-		
 	project_->setAligned(false); 
 }
 
@@ -106,8 +72,6 @@ void AddInsertionsCmd::undo()
 
 bool AddInsertionsCmd::mergeWith(const QUndoCommand *other)
 {
-	if (lockConstraint_)
-		return false;
 	
 	// NB 'other' is the newest
 	if (other->id() != id()) 
