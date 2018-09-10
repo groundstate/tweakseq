@@ -130,6 +130,21 @@ bool Sequence::isInsertion(int pos)
 	return ((qch.unicode() & REMOVE_FLAGS)=='-');
 }
 
+int Sequence::numInsertions(int start,int stop)
+{
+	// counts the number of insertions between [start,stop]
+	if (start==-1) start=0;
+	if (stop ==-1) stop = residues.length()-1;
+	if (start < 0) start =0;
+	if (stop >= residues.length()) stop = residues.length()-1;
+	int nInsertions=0;
+	for (int r=start;r<=stop;r++){
+		QChar qch=residues[r];
+		if ((qch.unicode() & REMOVE_FLAGS)=='-') nInsertions++;
+	}
+	return nInsertions;
+}
+
 void Sequence::remove(int start,int n)
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);

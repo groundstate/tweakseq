@@ -322,13 +322,12 @@ bool Project::canLockSelectedResidues()
 	// ie overlapping locks are not allowed
 	if (residueSelection->isLocked()) return false;
 	
-	// For insertions before a lock group, there has to be a contiguous block of insertions
-	// before the lock group so that there are insertions that can be deleted to keep the locked 
-	// portion in place
+	// For insertions before a lock group, there has to be at least one insertion
+	// before the lock point in each sequence 
 	for (int r=0;r<residueSelection->size();r++){
 		ResidueGroup *rg = residueSelection->itemAt(r);
 		if (rg->start==0) return false; // can't be anything before the start
-		if (!(rg->sequence->isInsertion(rg->start-1))) return false;
+		if (rg->sequence->numInsertions(0,rg->start-1) == 0) return false;
 	}
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << " the selection is lockable";
 	return true;

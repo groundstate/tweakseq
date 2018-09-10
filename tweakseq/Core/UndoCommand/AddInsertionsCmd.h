@@ -32,6 +32,7 @@
 #include "Command.h"
 #include "SequenceSelection.h"
 
+class ResidueLockGroup;
 class Sequence;
 
 class AddInsertionsCmd: public Command
@@ -53,6 +54,7 @@ class AddInsertionsCmd: public Command
 		int startPos_;
 		int nInsertions_;
 		bool aligned_;
+		ResidueLockGroup *residueLockGroup_;
 };
 
 #endif

@@ -56,6 +56,7 @@ class Sequence
 		void exclude(int,int,bool);
 		QList<int> exclusions(); // returned as a flat list of [start,end] pairs
 		bool isInsertion(int);
+		int  numInsertions(int start=-1,int stop=-1);
 		
 		void highlight(int ,int,bool );
 		
