@@ -54,7 +54,10 @@ class AddInsertionsCmd: public Command
 		int startPos_;
 		int nInsertions_;
 		bool aligned_;
+		
 		ResidueLockGroup *residueLockGroup_;
+		QList<Sequence *> lockSeqs_;
+		QList<int>        delInsertions_;
 };
 
 #endif

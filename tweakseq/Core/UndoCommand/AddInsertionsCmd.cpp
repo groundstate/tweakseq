@@ -99,6 +99,8 @@ AddInsertionsCmd::~AddInsertionsCmd()
 
 void AddInsertionsCmd::redo()
 {
+	delInsertions_.clear();
+	lockSeqs_.clear();
 	
 	// Apply any constraints
 	if (residueLockGroup_){
@@ -108,11 +110,14 @@ void AddInsertionsCmd::redo()
 				for (int r=residueLockGroup_->position()-i;r>=0;r--){ // decrement position() to account for deletions
 					if(seq->isInsertion(r)){
 						seq->remove(r,1);
+						lockSeqs_.append(seq);
+						delInsertions_.append(r);
 						break;
 					}
 				}
 			}
 		}
+		qDebug() << delInsertions_;
 	}
 	
 	for (int s=0;s<seqs_.size();s++)
@@ -126,13 +131,19 @@ void AddInsertionsCmd::undo()
 	for (int s=0;s<seqs_.size();s++){
 		project_->sequences.removeResidues(seqs_.at(s),startPos_,nInsertions_);
 	}
+	
+	for (int s=lockSeqs_.size()-1;s>=0;s--){
+		project_->sequences.addInsertions(lockSeqs_.at(s),delInsertions_.at(s),1);
+	}
+	
 	if (aligned_) project_->setAligned(aligned_);
 }
 
 
 bool AddInsertionsCmd::mergeWith(const QUndoCommand *other)
 {
-	if (residueLockGroup_) return false;
+	
+	//if (residueLockGroup_) return false;
 	
 	// NB 'other' is the newest
 	if (other->id() != id()) 
@@ -148,11 +159,32 @@ bool AddInsertionsCmd::mergeWith(const QUndoCommand *other)
 		if (!cmd->seqs_.contains(seqs_.at(s))) return false;
 	}
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << "seqs match";
-	
+	if (residueLockGroup_!=cmd->residueLockGroup_)
+		return false;
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << "lock groups match";
 	
 	if (cmd->startPos_>=startPos_ && cmd->startPos_ <= startPos_ + nInsertions_){
 		qDebug() << "GOOD " << nInsertions_;
 		nInsertions_+= cmd->nInsertions_;
+		
+		if (residueLockGroup_){
+			// When merging, earlier deletions must have their position decremented by the 
+			// number of deletions in the new command being merged
+			int nDeletions = cmd->delInsertions_.size()/cmd->lockSeqs_.size();
+			for (int i=0;i<delInsertions_.size();i++)
+				delInsertions_[i] -= nDeletions;
+			QList<Sequence *> tmpseq = cmd->lockSeqs_;
+			tmpseq.append(lockSeqs_);
+			lockSeqs_=tmpseq;
+			//lockSeqs_.append(cmd->lockSeqs_);
+			QList<int> tmpdel =cmd->delInsertions_; 
+			tmpdel.append(delInsertions_);
+			delInsertions_ = tmpdel;
+			//delInsertions_.append(cmd->delInsertions_);
+			
+			qDebug() << delInsertions_;
+		}
+		
 		return true;
 	}
 	
