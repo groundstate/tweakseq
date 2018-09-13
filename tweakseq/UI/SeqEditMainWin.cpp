@@ -1291,6 +1291,10 @@ void SeqEditMainWin::createActions()
 	addAction(unlockResiduesAction);
 	connect(unlockResiduesAction, SIGNAL(triggered()), se, SLOT(unlockSelectedResidues()));
 	
+	trimAction = new QAction( tr("Trim insertions"), this);
+	trimAction->setStatusTip(tr("Trim redundant insertions"));
+	addAction(trimAction);
+	connect(trimAction, SIGNAL(triggered()), se, SLOT(trimInsertions()));
 	
 	readOnlyAction = new QAction( tr("Read only"), this);
 	readOnlyAction->setStatusTip(tr("Set the alignment to read only"));
@@ -1511,6 +1515,9 @@ void SeqEditMainWin::createMenus()
 
 	editMenu->addAction(excludeAction);
 	editMenu->addAction(removeExcludeAction);
+	editMenu->addSeparator();
+	
+	editMenu->addAction(trimAction);
 	editMenu->addSeparator();
 	
 	editMenu->addAction(readOnlyAction);

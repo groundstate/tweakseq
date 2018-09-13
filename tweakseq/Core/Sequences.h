@@ -63,6 +63,7 @@ class Sequences:public QObject
 		int visibleToActual(int);
 		
 		int maxLength(bool recalculate=false);
+		int minLength(bool recalculate=false);
 		
 		bool isSubGroup(int,int);
 		bool isUniqueName(QString &);
@@ -83,6 +84,8 @@ class Sequences:public QObject
 		void  removeResidues(int,int,int,int);
 		void  removeResidues(Sequence *,int,int);
 		
+		int numTrimmableInsertions();
+		
 		void  unhideAll();
 		
 	signals:
@@ -97,6 +100,7 @@ class Sequences:public QObject
 		QList<Sequence *> sequences_;
 		
 		int maxLen_;
+		int minLen_;
 };
 
 #endif

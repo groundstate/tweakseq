@@ -35,6 +35,7 @@
 Sequences::Sequences()
 {
 	maxLen_=0;
+	minLen_=0;
 }
 
 Sequences::~Sequences()
@@ -141,6 +142,14 @@ int Sequences::maxLength(bool recalculate)
 		updateCachedVariables();
 	}
 	return maxLen_;
+}
+
+int Sequences::minLength(bool recalculate)
+{
+	if (recalculate){
+		updateCachedVariables();
+	}
+	return minLen_;
 }
 
 
@@ -312,6 +321,32 @@ void Sequences::removeResidues(Sequence *seq,int startPos,int nResidues)
 	emit changed();
 }
 
+int Sequences::numTrimmableInsertions()
+{
+	int nTrimmable=0;
+	int rMax=minLength(true); 
+	qDebug() << rMax;
+	for (int r=0;r<rMax;r++){
+		bool ok=true;
+		for (int s=0;s<sequences_.count();s++){
+			Sequence *seq = sequences_.at(s);
+			if (r >= seq->residues.length()) // FIXME is that what we want ?
+				break;
+			QChar qch=seq->residues[r];
+			if ((qch.unicode() & REMOVE_FLAGS) !='-'){
+				ok=false;
+				break;
+			}
+		}
+		if (ok)
+			nTrimmable++;
+	}
+	
+	
+	return nTrimmable;
+}
+
+		
 void  Sequences::unhideAll()
 {
 	for (int s=0;s<sequences_.count();s++)
@@ -344,10 +379,18 @@ QString Sequences::getNameAt(int i)
 
 void Sequences::updateCachedVariables()
 {
+	
 	maxLen_=0;
-	for (int s=0;s<sequences_.count();s++){
+	if (sequences_.size() > 0)
+		minLen_=sequences_.at(0)->residues.length();
+	else 
+		minLen_=0;
+	for (int s=0;s<sequences_.size();s++){
 		int len =sequences_.at(s)->residues.length();
 		if (len> maxLen_)
 			maxLen_=len;
+		if (len < minLen_)
+			minLen_=len;
+		if (len==143) qDebug() << sequences_.at(s)->name;
 	}
 }

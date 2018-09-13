@@ -159,6 +159,7 @@ private:
 	QAction  *alignAllAction,*alignSelectionAction,*alignStopAction,*undoLastAction;
 	QAction  *undoAction,*redoAction,*cutAction,*copyAction,*pasteAction;
 	QAction  *excludeAction,*removeExcludeAction,*lockResiduesAction,*unlockResiduesAction,*lockAction,*unlockAction;
+	QAction  *trimAction; 
 	QAction  *hideNonSelectedGroupMembersAction,*unhideAllGroupMembersAction,*unhideAllAction;
 	QAction  *groupSequencesAction,*ungroupSequencesAction,*ungroupAllAction;
 	QAction  *renameSequenceAction,*sequencePropertiesAction;

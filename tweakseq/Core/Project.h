@@ -122,6 +122,7 @@ class Project:public QObject
 		bool modifySequenceProperties(Sequence *,Sequence *);
 		
 		void addInsertions(QList<Sequence*> &,int,int,bool);
+		int trimInsertions();
 		
 		QUndoStack &undoStack(){return undoStack_;} // main window needs access to this to validate actions
 		

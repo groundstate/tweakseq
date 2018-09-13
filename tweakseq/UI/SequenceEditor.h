@@ -118,6 +118,8 @@ class SequenceEditor: public QWidget
 		void lockSelectedResidues();
 		void unlockSelectedResidues();
 		
+		void trimInsertions();
+		
 		void sequencesCleared();
 
 		void postLoadTidy();

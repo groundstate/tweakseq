@@ -604,6 +604,18 @@ void Project::addInsertions(QList<Sequence*> &seqs,int startCol,int stopCol,bool
 }
 
 
+int Project::trimInsertions()
+{
+	// are there any to trim ?
+	int nTrimmed = sequences.numTrimmableInsertions();
+	qDebug() << trace.header(__PRETTY_FUNCTION__) << nTrimmed << " trimmable";
+	if (nTrimmed > 0){
+		clearSearchResults();
+	}
+	return nTrimmed;
+}
+
+
 void Project::setAlignmentTool(const QString & atool)
 {
 	if (atool == "clustalo" && clustalOTool_)

@@ -518,6 +518,17 @@ void SequenceEditor::unlockSelectedResidues()
 	}
 }
 
+void SequenceEditor::trimInsertions()
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	int nTrimmed = project_->trimInsertions();
+	if (nTrimmed > 0){
+		emit edited();
+		repaint();	
+	}
+}
+
+
 void SequenceEditor::sequencesCleared()
 {
 	qDebug() << trace.header(__PRETTY_FUNCTION__);
@@ -1287,7 +1298,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 
 					for (int g=0;g<sgl.count();g++){
 						SequenceGroup *sg = sgl.at(g);
-						if (sg->locked()){
+						if (sg->locked()){ 
 							for (int s=0;s<sg->size();s++){
 								Sequence *seq = sg->itemAt(s);
 								insSeqs.append(seq); // this adds non-visible sequences too
@@ -1300,6 +1311,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 								}
 							}
 						}
+						// FIXME else if the group has hidden members
 						qDebug() << trace.header(__PRETTY_FUNCTION__) << insSeqs.size() << " seqs to insert in"; 
 					}
 
