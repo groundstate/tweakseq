@@ -50,6 +50,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/LockResiduesCmd.h \
 								 include/MoveCmd.h \
 								 include/RenameCmd.h \
+								 include/TrimCmd.h \
 								 include/UngroupCmd.h \
 								 include/UnlockResiduesCmd.h \
 								 include/Utility.h \
@@ -93,6 +94,7 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/MoveCmd.cpp \
 									Core/UndoCommand/PasteCmd.cpp \
 									Core/UndoCommand/RenameCmd.cpp \
+									Core/UndoCommand/TrimCmd.cpp \
 									Core/UndoCommand/UngroupCmd.cpp \
 									Core/UndoCommand/UnlockResiduesCmd.cpp \
 

@@ -43,7 +43,7 @@ class TrimCmd: public Command
 		
 	private:
 		
-		QList<int> pos_;
+		QList<int> deletedCols_;
 
 };
 

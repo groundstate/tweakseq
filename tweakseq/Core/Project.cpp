@@ -58,6 +58,7 @@
 #include "SequenceGroup.h"
 #include "SequenceSelection.h"
 #include "SeqEditMainWin.h"
+#include "TrimCmd.h"
 #include "UngroupCmd.h"
 #include "UnlockResiduesCmd.h"
 #include "XMLHelper.h"
@@ -611,6 +612,7 @@ int Project::trimInsertions()
 	qDebug() << trace.header(__PRETTY_FUNCTION__) << nTrimmed << " trimmable";
 	if (nTrimmed > 0){
 		clearSearchResults();
+		undoStack_.push(new TrimCmd(this,"trim"));
 	}
 	return nTrimmed;
 }

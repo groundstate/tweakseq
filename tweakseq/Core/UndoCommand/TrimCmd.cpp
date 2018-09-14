@@ -27,10 +27,14 @@
 #include <QtDebug>
 #include "DebuggingInfo.h"
 
+#include "Project.h"
+#include "Sequence.h"
+#include "Sequences.h"
 #include "TrimCmd.h"
 
-TrimCmd::TrimCmd(Project *project,const QString &txt):Cmd(project,txt)
+TrimCmd::TrimCmd(Project *project,const QString &txt):Command(project,txt)
 {
+	
 }
 
 TrimCmd::~TrimCmd()
@@ -39,9 +43,43 @@ TrimCmd::~TrimCmd()
 
 void TrimCmd::redo()
 {
+	deletedCols_.clear();
+	int rMax = project_->sequences.minLength(true);
+	QList<Sequence *> & seqs = project_->sequences.sequences();
+	// Work in reverse so that indexing is fixed
+	for (int r=rMax-1;r>=0;r--){
+		bool cut=true;
+		for (int s=0;s<seqs.count();s++){
+			Sequence *seq = seqs.at(s);
+			if (r >= seq->residues.length()) // FIXME is that what we want ?
+				break;
+			QChar qch=seq->residues[r];
+			if ((qch.unicode() & REMOVE_FLAGS) !='-'){
+				cut=false;
+				break;
+			}
+		}
+		if (cut){
+			deletedCols_.append(r);
+			for (int s=0;s<seqs.count();s++){
+				Sequence *seq = seqs.at(s);
+				if (r < seq->residues.length()){ // FIXME is that what we want ?
+					seq->residues.remove(r,1);
+				}
+			}
+		}
+	}
 }
 
 void TrimCmd::undo()
 {
+	QList<Sequence *> & seqs = project_->sequences.sequences();
+	for (int r=deletedCols_.size()-1;r>=0;r--){
+		for (int s=0;s<seqs.count();s++){
+			if (r < seqs.at(s)->residues.length()) // FIXME is that what we want ?
+				project_->sequences.addInsertions(seqs.at(s),deletedCols_.at(r),1);
+		}
+	}
+	
 }
 		
