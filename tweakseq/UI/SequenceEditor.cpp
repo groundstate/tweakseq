@@ -1288,13 +1288,16 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 					if (startRow > stopRow) swap_int(&startRow,&stopRow);
 			
 					QList<SequenceGroup *> sgl = project_->residueSelection->uniqueSequenceGroups();
+					QList<Sequence *>      selSeqs= project_->residueSelection->sequences();
+					
 					qDebug() << trace.header(__PRETTY_FUNCTION__) << "unique groups " << sgl.count(); 
 
 					QList<Sequence *> insSeqs;
 					
+							
 					// Add all of the sequences in each group to the list of sequences receiving insertions
-					int firstVisibleLockedSequence = startRow;
-					int lastVisibleLockedSequence= stopRow;
+					//int firstVisibleLockedSequence = startRow;
+					//int lastVisibleLockedSequence= stopRow;
 
 					for (int g=0;g<sgl.count();g++){
 						SequenceGroup *sg = sgl.at(g);
@@ -1302,16 +1305,58 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 							for (int s=0;s<sg->size();s++){
 								Sequence *seq = sg->itemAt(s);
 								insSeqs.append(seq); // this adds non-visible sequences too
-								if (seq->visible){
-									row = rowVisibleSequence(seq);
-									if (row >= 0){
-										if (row < firstVisibleLockedSequence) firstVisibleLockedSequence = row;
-										if (row > lastVisibleLockedSequence)  lastVisibleLockedSequence= row;
-									}
-								}
+								//if (seq->visible){
+								//	row = rowVisibleSequence(seq);
+								//	if (row >= 0){
+								//		if (row < firstVisibleLockedSequence) firstVisibleLockedSequence = row;
+								//		if (row > lastVisibleLockedSequence)  lastVisibleLockedSequence= row;
+								//	}
+								//}
 							}
 						}
-						// FIXME else if the group has hidden members
+						else if (sg->hasHiddenSequences()){ // 
+							// if a sequence is visible, then all hidden sequences prior to it and after the last visible
+							// sequence are included
+							// if the selection includes the last visible sequence in the group, then all of the sequences
+							// subsequent to it are included
+							QList<Sequence *> groupSeqs = sg->sequences();
+							project_->sequences.sort(groupSeqs);
+							// Make a list of the visible sequences in the group
+							QList<Sequence *> visibleSeqs;
+							for (int s=0;s<groupSeqs.size();s++){
+								if (groupSeqs.at(s)->visible){
+									visibleSeqs.append(groupSeqs.at(s));
+									qDebug() << trace.header(__PRETTY_FUNCTION__) << groupSeqs.at(s)->name;
+								}
+							}
+							QList<Sequence *> dbg;
+							QList<Sequence *> seqbuf;
+							for (int s=0;s<groupSeqs.size();s++){
+								Sequence *seq = groupSeqs.at(s);
+								if (seq->visible){
+									if (selSeqs.contains(seq)){// if it's selected then save the buffer
+										seqbuf.append(seq);
+										insSeqs.append(seqbuf);
+										dbg.append(seqbuf);
+									}
+									seqbuf.clear();
+								}
+								else{
+									seqbuf.append(seq);
+								}
+							} // for 
+							
+							// If the last visible sequnce is in the selection, then seqbufs now contains any
+							// sequences after this and should be appended to the insertion list
+							if (selSeqs.contains(visibleSeqs.last())){
+								insSeqs.append(seqbuf);
+								dbg.append(seqbuf);
+							}	
+							qDebug() << trace.header(__PRETTY_FUNCTION__) << "inserting from group ...";
+							for (int s=0;s<dbg.size();s++)
+								qDebug() << dbg[s]->name;
+							
+						}
 						qDebug() << trace.header(__PRETTY_FUNCTION__) << insSeqs.size() << " seqs to insert in"; 
 					}
 
@@ -1335,8 +1380,8 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 				
 					project_->addInsertions(insSeqs,startCol,stopCol,postInsert);
 					updateViewExtents();
-					if (firstVisibleLockedSequence  < startRow) startRow = firstVisibleLockedSequence;
-					if (lastVisibleLockedSequence   > stopRow)   stopRow = lastVisibleLockedSequence;
+					//if (firstVisibleLockedSequence  < startRow) startRow = firstVisibleLockedSequence;
+					//if (lastVisibleLockedSequence   > stopRow)   stopRow = lastVisibleLockedSequence;
 					//for (row=startRow;row<=stopRow;++row){
 					//	for (col=startCol;col< numCols();col++)
 					//		updateCell(row,col);

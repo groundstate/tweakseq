@@ -84,6 +84,8 @@ class Sequences:public QObject
 		void  removeResidues(int,int,int,int);
 		void  removeResidues(Sequence *,int,int);
 		
+		void  sort(QList<Sequence *> &);
+		
 		int numTrimmableInsertions();
 		
 		void  unhideAll();

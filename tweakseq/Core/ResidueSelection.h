@@ -75,6 +75,7 @@ class ResidueSelection:public QObject
 		ResidueGroup * itemAt(int);
 		QList<ResidueGroup*> & residueGroups(){return sel_;}
 		QList<SequenceGroup *> uniqueSequenceGroups();
+		QList<Sequence *> sequences();
 		
 	signals:
 		

@@ -104,3 +104,10 @@ QList<SequenceGroup *> ResidueSelection::uniqueSequenceGroups()
 	return sgl;
 }
 
+QList<Sequence *> ResidueSelection::sequences()
+{
+	QList<Sequence *> seqs;
+	for (int s=0;s<sel_.size();s++)
+		seqs.append(sel_.at(s)->sequence);
+	return seqs;
+}

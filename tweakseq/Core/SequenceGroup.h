@@ -31,6 +31,7 @@
 #include <QList>
 
 class Sequence;
+class Sequences;
 
 class SequenceGroup
 {
@@ -42,6 +43,7 @@ class SequenceGroup
 		void addSequence(Sequence *);
 		void removeSequence(Sequence *);
 		void cutSequence(Sequence *);
+		QList<Sequence *> & sequences(){return seqs_;}
 		bool contains(Sequence *);
 		int size(){return seqs_.size();}
 		Sequence * itemAt(int);

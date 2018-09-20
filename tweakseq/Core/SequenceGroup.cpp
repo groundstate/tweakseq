@@ -28,6 +28,7 @@
 #include "DebuggingInfo.h"
 
 #include "Sequence.h"
+#include "Sequences.h"
 #include "SequenceGroup.h"
 
 //
@@ -93,6 +94,7 @@ void SequenceGroup::clear()
 		seqs_.at(s)->group=NULL;
 	seqs_.clear();
 }
+
 
 bool SequenceGroup::hasHiddenSequences()
 {

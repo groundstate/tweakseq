@@ -314,6 +314,26 @@ void  Sequences::removeResidues(int startSequence,int stopSequence,int startPos,
 	emit changed();
 }
 
+void Sequences::sort(QList<Sequence *> &seqs)
+{
+	qDebug() << trace.header(__PRETTY_FUNCTION__);
+	// sort into row order
+	int n=seqs.size();
+	// bubble sort
+	for (int s=0;s<n-1;s++){
+		for (int ss=0;ss<n-s-1;s++){
+			int iSS = index(seqs.at(ss));
+			int iSSnext = index(seqs.at(ss+1));
+			if (iSS > iSSnext){ //swap
+				Sequence *tmp = seqs.at(iSS);
+				seqs[iSS] = seqs[iSSnext];
+				seqs[iSSnext]=tmp;
+			}
+		}
+	}
+		
+}
+
 void Sequences::removeResidues(Sequence *seq,int startPos,int nResidues)
 {
 	seq->residues.remove(startPos,nResidues);
