@@ -27,6 +27,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/PDBFile.h \
 								 include/Project.h \
 								 include/Propertied.h \
+								 include/PropertiesDialog.h \
 								 include/ResidueLockGroup.h \
 								 include/ResidueSelection.h \
 								 include/SearchTool.h \
@@ -47,6 +48,20 @@ HEADERS       =  include/AboutDialog.h \
 								 include/FloatProperty.h \
 								 include/FileProperty.h \
 								 include/StringProperty.h \
+								 include/DoubleInput.h \
+								 include/DoublePropertyInput.h \
+								 include/EnumIntPropertyInput.h \
+								 include/FilePropertyInput.h \
+								 include/FloatInput.h \
+								 include/FloatPropertyInput.h \
+								 include/FloatRangePropertyInput.h \
+								 include/IntInput.h \
+								 include/IntPropertyInput.h \
+								 include/OptionPropertyInput.h \
+								 include/PropertyInput.h \
+								 include/PropertyWidget.h \
+								 include/StringPropertyInput.h \
+								 include/SuperSlider.h \
 								 include/Command.h \
 								 include/AddInsertionsCmd.h \
 								 include/AlignmentCmd.h \
@@ -108,12 +123,12 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/UnlockResiduesCmd.cpp \
 									
 SOURCES					+= Core/Properties/Property.cpp \
-								 Core/Properties//BoolProperty.cpp \
-								 Core/Properties//DoubleProperty.cpp \
-								 Core/Properties//IntProperty.cpp \
-								 Core/Properties//FloatProperty.cpp \
-								 Core/Properties//FileProperty.cpp \
-								 Core/Properties//StringProperty.cpp
+								 Core/Properties/BoolProperty.cpp \
+								 Core/Properties/DoubleProperty.cpp \
+								 Core/Properties/IntProperty.cpp \
+								 Core/Properties/FloatProperty.cpp \
+								 Core/Properties/FileProperty.cpp \
+								 Core/Properties/StringProperty.cpp
 								 
 SOURCES				+=  Core/Annotations/Consensus.cpp
 
@@ -127,7 +142,22 @@ SOURCES       +=  UI/GoToTool.cpp \
 SOURCES				 += UI/Dialogs/AboutDialog.cpp \
 									UI/Dialogs/AlignmentToolDlg.cpp \
 									UI/Dialogs/ImportDialog.cpp \
+									UI/Dialogs/PropertiesDialog.cpp \
 									UI/Dialogs/SequencePropertiesDialog.cpp
+
+SOURCES					+= 	UI/Widgets/DoubleInput.cpp \
+									UI/Widgets/DoublePropertyInput.cpp \
+									UI/Widgets/EnumIntPropertyInput.cpp \
+									UI/Widgets/FilePropertyInput.cpp \
+									UI/Widgets/FloatInput.cpp \
+									UI/Widgets/FloatPropertyInput.cpp \
+									UI/Widgets/FloatRangePropertyInput.cpp \
+									UI/Widgets/IntInput.cpp \
+									UI/Widgets/IntPropertyInput.cpp \
+									UI/Widgets/OptionPropertyInput.cpp \
+									UI/Widgets/PropertyWidget.cpp \
+									UI/Widgets/StringPropertyInput.cpp \
+									UI/Widgets/SuperSlider.cpp
 									
 RESOURCES = UI/Resources/application.qrc
 									
