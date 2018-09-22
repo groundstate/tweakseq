@@ -1346,7 +1346,7 @@ void SequenceEditor::keyPressEvent( QKeyEvent *ev )
 								}
 							} // for 
 							
-							// If the last visible sequnce is in the selection, then seqbufs now contains any
+							// If the last visible sequence is in the selection, then seqbufs now contains any
 							// sequences after this and should be appended to the insertion list
 							if (selSeqs.contains(visibleSeqs.last())){
 								insSeqs.append(seqbuf);

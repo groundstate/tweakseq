@@ -26,6 +26,7 @@ HEADERS       =  include/AboutDialog.h \
 								 include/PDB.h \
 								 include/PDBFile.h \
 								 include/Project.h \
+								 include/Propertied.h \
 								 include/ResidueLockGroup.h \
 								 include/ResidueSelection.h \
 								 include/SearchTool.h \
@@ -39,6 +40,13 @@ HEADERS       =  include/AboutDialog.h \
 								 include/SequencePropertiesDialog.h \
 								 include/SetupWizard.h \
 								 include/Structure.h \
+								 include/Property.h \
+								 include/BoolProperty.h \
+								 include/DoubleProperty.h \
+								 include/IntProperty.h \
+								 include/FloatProperty.h \
+								 include/FileProperty.h \
+								 include/StringProperty.h \
 								 include/Command.h \
 								 include/AddInsertionsCmd.h \
 								 include/AlignmentCmd.h \
@@ -70,6 +78,7 @@ SOURCES				 =  Core/AlignmentTool.cpp \
 									Core/PDB.cpp \
 									Core/PDBFile.cpp \
 									Core/Project.cpp \
+									Core/Propertied.cpp \
 									Core/ResidueLockGroup.cpp \
 									Core/ResidueSelection.cpp \
 									Core/Sequence.cpp \
@@ -97,7 +106,15 @@ SOURCES				+=  Core/UndoCommand/Command.cpp \
 									Core/UndoCommand/TrimCmd.cpp \
 									Core/UndoCommand/UngroupCmd.cpp \
 									Core/UndoCommand/UnlockResiduesCmd.cpp \
-
+									
+SOURCES					+= Core/Properties/Property.cpp \
+								 Core/Properties//BoolProperty.cpp \
+								 Core/Properties//DoubleProperty.cpp \
+								 Core/Properties//IntProperty.cpp \
+								 Core/Properties//FloatProperty.cpp \
+								 Core/Properties//FileProperty.cpp \
+								 Core/Properties//StringProperty.cpp
+								 
 SOURCES				+=  Core/Annotations/Consensus.cpp
 
 SOURCES       +=  UI/GoToTool.cpp \

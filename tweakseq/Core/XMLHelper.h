@@ -27,6 +27,8 @@
 #ifndef __XML_HELPER_H_
 #define __XML_HELPER_H_
 
+#include <vector>
+
 class QDomElement;
 class QDomDocument;
 class QString;
