@@ -26,14 +26,15 @@
 
 #include <cmath>
 
-#include <QTabWidget>
-#include <QPushButton>
-#include <QHBoxLayout>
 #include <QCheckBox>
+#include <QDialogButtonBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QScrollArea>
 #include <QFrame>
 #include <QPixmap>
+#include <QPushButton>
+#include <QTabWidget>
 
 //#include "Channel.h"
 //#include "ColourInput.h"
@@ -61,42 +62,27 @@ static QPixmap *dppm=0;
 
 PropertiesDialog::PropertiesDialog(QWidget *parent,
 	Propertied *propertied,
-	QString caption):QDialog(parent,caption)
+	QString caption):QDialog(parent)
 {
-	setAttribute(Qt::WA_DeleteOnClose); // Fixme temporary
-
+	
 	propertied_=propertied;
 
-	//setCaption(caption);
-	QWidget *w = new QWidget(this);
+	setWindowTitle(caption);
 	
-	QVBoxLayout *topvb = new QVBoxLayout(w);
-	topvb->setSpacing(8);
-	tw_=new QTabWidget(w);
+	QVBoxLayout *topvb = new QVBoxLayout(this);
+	//topvb->setSpacing(8);
+	tw_=new QTabWidget();
 	topvb->addWidget(tw_);
-	
-	// Buttons at the bottom
-	
-	QPushButton *pushb;
-	
-	QHBoxLayout *hb = new QHBoxLayout();
-	topvb->addLayout(hb);
 	
 	//pushb = new QPushButton("Help",this);
 	//hb->addWidget(pushb);
 	//connect(pushb,SIGNAL(clicked()),this,SLOT(help()));
 	
-	pushb = new QPushButton("OK",w);
-	hb->addWidget(pushb);
-	connect(pushb,SIGNAL(clicked()),this,SLOT(ok()));
+	buttonBox_ = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+	topvb->addWidget(buttonBox_);
 	
-	pushb = new QPushButton("Apply",w);
-	hb->addWidget(pushb);
-	connect(pushb,SIGNAL(clicked()),this,SLOT(applyB()));
-	
-	pushb = new QPushButton("Cancel",w);
-	hb->addWidget(pushb);
-	connect(pushb,SIGNAL(clicked()),this,SLOT(cancel()));
+	connect(buttonBox_, SIGNAL(accepted()), this, SLOT(accept()));
+  connect(buttonBox_, SIGNAL(rejected()), this, SLOT(reject()));
 	
 	//currComboBoxInput_=NULL; FIXME
 	containerWidgets_.push(NULL);
@@ -106,7 +92,6 @@ PropertiesDialog::PropertiesDialog(QWidget *parent,
 	if (!(dppm))
 		dppm = new QPixmap(":/images/dotpoint.xpm");
 	
-	setCentralWidget(w);
 }
 
 PropertiesDialog::~PropertiesDialog()
@@ -600,33 +585,32 @@ void PropertiesDialog::help()
 	// app->HelpBrowser("Channel Properties");
 }
 
-void PropertiesDialog::ok()
+void PropertiesDialog::accept()
 {
 
 	// Input widgets are all children of a QWidget 
 	setChildren();
 	propertied_->propertiesDialogEvent(OKClicked);
 	emit apply(OKClicked);
-	//done(Accepted);
-	hide();
-	close();
+	
+	QDialog::accept();
 }
 
-void PropertiesDialog::applyB()
+void PropertiesDialog::apply()
 {
 	setChildren();
 	propertied_->propertiesDialogEvent(ApplyClicked);
 	emit apply(ApplyClicked);
 }
 
-void PropertiesDialog::cancel()
+void PropertiesDialog::reject()
 {
 	// Undo any changes
 	restoreChildren();
 	propertied_->propertiesDialogEvent(CancelClicked);
 	emit apply(CancelClicked);
-	//done(Rejected);
-	hide();
-	close();
+	
+	QDialog::reject();
+	
 }
 

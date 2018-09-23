@@ -31,6 +31,11 @@
 #include <QProcess>
 
 #include "ClustalO.h"
+#include "BoolProperty.h"
+#include "FileProperty.h"
+#include "FilePropertyInput.h"
+#include "PropertiesDialog.h"
+
 #include "XMLHelper.h"
 //
 //	Public
@@ -85,6 +90,21 @@ void ClustalO::readSettings(QDomDocument &doc)
 	
 }
 
+PropertiesDialog * ClustalO::propertiesDialog(QWidget *parent)
+{
+	PropertiesDialog *pd = new PropertiesDialog(parent,this,"ClustalO settings");
+	pd->addTab("General");
+	pd->addFileInput("path to executable",execPath_,FilePropertyInput::OpenFile,0,0);
+	pd->addTab("Clustering");
+	pd->beginGridLayout();
+	pd->addOptionInput("[--pileup] sequentially align sequences",pileup_);
+	pd->addOptionInput("[--full] use full distance matrix for guide-tree calculation",full_);
+	pd->addOptionInput("[--full-iter] use full distance matrix for guide-tree calculation during iteration",full_iter_);
+	pd->endGridLayout();
+	return pd;
+}
+
+
 //		
 //	Private
 //	
@@ -94,7 +114,15 @@ void ClustalO::init()
 	name_="clustalo";
 	version_="";
 	executable_="/usr/local/bin/clustalo";
+	execPath_ = registerFileProperty(executable_,"exe",0);
 	
+	// Clustering
+	pileup_ = registerBoolProperty(NULL,"pileup",0);
+	pileup_->setValue(false);
+	full_   = registerBoolProperty(NULL,"full",0);
+	full_->setValue(false);
+	full_iter_   = registerBoolProperty(NULL,"full-iter",0);
+	full_iter_->setValue(false);
 }
 
 void ClustalO::getVersion()

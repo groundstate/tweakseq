@@ -29,6 +29,10 @@
 
 #include "AlignmentTool.h"
 
+class BoolProperty;
+class FileProperty;
+class PropertiesDialog;
+
 class ClustalO: public AlignmentTool
 {
 	public:
@@ -40,10 +44,17 @@ class ClustalO: public AlignmentTool
 		virtual void writeSettings(QDomDocument &,QDomElement &);
 		virtual void readSettings(QDomDocument &);
 		
+		virtual PropertiesDialog * propertiesDialog(QWidget *);
+		
 	private:
 	
 		void init();
 		void getVersion();
+		
+		FileProperty *execPath_;
+		// Clustering
+		BoolProperty *pileup_,*full_,*full_iter_;
+		
 		
 };
 

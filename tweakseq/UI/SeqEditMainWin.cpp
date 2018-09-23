@@ -67,7 +67,6 @@
 
 #include "Application.h"
 #include "AlignmentTool.h"
-#include "AlignmentToolDlg.h"
 #include "Clipboard.h"
 #include "ClustalFile.h"
 #include "ClustalO.h"
@@ -78,6 +77,7 @@
 #include "Muscle.h"
 #include "PDBFile.h"
 #include "Project.h"
+#include "PropertiesDialog.h"
 #include "ResidueSelection.h"
 #include "SearchTool.h"
 #include "SequenceEditor.h"
@@ -965,8 +965,9 @@ void SeqEditMainWin::settingsAlignmentToolMAFFT()
 
 void SeqEditMainWin::settingsAlignmentToolProperties()
 {
-		AlignmentToolDlg ad(project_->alignmentTool(),this); 
-		ad.exec();
+	PropertiesDialog *ad = project_->alignmentTool()->propertiesDialog(this); 
+	ad->exec();
+	delete ad;
 }
 
 

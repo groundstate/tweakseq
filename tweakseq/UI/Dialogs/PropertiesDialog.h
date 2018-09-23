@@ -30,6 +30,7 @@
 #include <QDialog>
 #include <QStack>
 
+class QDialogButtonBox;
 class QTabWidget;
 class QVBoxLayout;
 class QColor;
@@ -113,18 +114,20 @@ class PropertiesDialog: public QDialog
 	protected slots:
 	
 		virtual void help();
-		virtual void ok();
-		virtual void applyB();
-		virtual void cancel();
+		virtual void accept();
+		virtual void apply();
+		virtual void reject();
 		
 	private:
 	
 		QTabWidget *tw_;
 	
+		
 		//ComboBoxInput *currComboBoxInput_;
 		QStack<QWidget *> containerWidgets_;
 		QStack<QBoxLayout *> layouts_;
-
+		QDialogButtonBox *buttonBox_;
+			
 		QGridLayout *gridLayout_;
 
 		Propertied *propertied_;

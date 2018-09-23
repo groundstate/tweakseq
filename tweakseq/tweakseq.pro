@@ -8,7 +8,6 @@ DEPENDPATH=$$INCLUDEPATH
 
 HEADERS       =  include/AboutDialog.h \
 								 include/AlignmentTool.h \
-								 include/AlignmentToolDlg.h \
 								 include/AminoAcids.h \
 								 include/Application.h \
 								 include/Clipboard.h \
@@ -140,7 +139,6 @@ SOURCES       +=  UI/GoToTool.cpp \
 									UI/SetupWizard.cpp
 									
 SOURCES				 += UI/Dialogs/AboutDialog.cpp \
-									UI/Dialogs/AlignmentToolDlg.cpp \
 									UI/Dialogs/ImportDialog.cpp \
 									UI/Dialogs/PropertiesDialog.cpp \
 									UI/Dialogs/SequencePropertiesDialog.cpp

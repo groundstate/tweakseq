@@ -30,10 +30,13 @@
 
 #include <QString>
 
+#include "Propertied.h"
+
 class QDomDocument;
 class QDomElement;
 
-class AlignmentTool
+
+class AlignmentTool:public Propertied
 {
 	public:
 		

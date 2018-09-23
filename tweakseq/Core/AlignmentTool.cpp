@@ -51,7 +51,7 @@ void AlignmentTool::writeSettings(QDomDocument &,QDomElement &)
 void AlignmentTool::readSettings(QDomDocument &)
 {
 }
-		
+
 //
 //	Private
 //	
