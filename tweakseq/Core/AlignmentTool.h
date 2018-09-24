@@ -55,7 +55,6 @@ class AlignmentTool:public Propertied
 		bool usesStdOut(){return usesStdOut_;} // the alignment is written to stdout
 		
 		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
-		
 		virtual void writeSettings(QDomDocument &,QDomElement &);
 		virtual void readSettings(QDomDocument &);
 	

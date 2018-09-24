@@ -100,10 +100,12 @@ private slots:
 	void alignmentSelection();
 	void alignmentStop();
 	
+	
 	void alignmentStarted();
 	void alignmentReadyReadStdOut();
 	void alignmentReadyReadStdErr();
 	void alignmentFinished(int,QProcess::ExitStatus);
+	void alignmentCommand();
 	
 	void setupAnnotationMenu();
 	void annotationConsensus();
@@ -116,6 +118,7 @@ private slots:
 	void settingsAlignmentToolMUSCLE();
 	void settingsAlignmentToolMAFFT();
 	void settingsAlignmentToolProperties();
+	
 	void settingsSaveAppDefaults();
 	
 	void helpHelp();
@@ -157,6 +160,7 @@ private:
 	QAction  *newProjectAction,*openProjectAction,*saveProjectAction,*saveProjectAsAction;
 	QAction  *importAction, *exportFASTAAction,*exportClustalWAction,*printAction, *closeAction, *quitAction;
 	QAction  *alignAllAction,*alignSelectionAction,*alignStopAction,*undoLastAction;
+	QAction  *alignCommandAction;
 	QAction  *undoAction,*redoAction,*cutAction,*copyAction,*pasteAction;
 	QAction  *excludeAction,*removeExcludeAction,*lockResiduesAction,*unlockResiduesAction,*lockAction,*unlockAction;
 	QAction  *trimAction; 
@@ -169,6 +173,7 @@ private:
 	QAction  *helpAction,*aboutAction;
 	QAction  *settingsEditorFontAction;
 	QAction  *settingsAlignmentToolMAFFTAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
+	
 	QList<QAction *> settingsViewActions;
 	QList<QAction *> settingsProteinColourMapActions;
 	QList<QAction *> settingsDNAColourMapActions;

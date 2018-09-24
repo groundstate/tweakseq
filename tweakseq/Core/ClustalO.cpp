@@ -28,6 +28,7 @@
 #include "DebuggingInfo.h"
 
 #include <QDomDocument>
+#include <QLabel>
 #include <QProcess>
 
 #include "ClustalO.h"
@@ -94,6 +95,8 @@ PropertiesDialog * ClustalO::propertiesDialog(QWidget *parent)
 {
 	PropertiesDialog *pd = new PropertiesDialog(parent,this,"ClustalO settings");
 	pd->addTab("General");
+	QLabel *txt = new QLabel(name() + " version " + version(),pd->currContainerWidget());
+	pd->addCustomWidget(txt);
 	pd->addFileInput("path to executable",execPath_,FilePropertyInput::OpenFile,0,0);
 	pd->addTab("Clustering");
 	pd->beginGridLayout();

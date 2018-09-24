@@ -820,6 +820,30 @@ void SeqEditMainWin::alignmentStop()
 	}
 }
 
+void SeqEditMainWin::alignmentCommand()
+{
+	bool ok;
+	QString exec,fin("<fin>"),fout("<fout>");
+	QStringList args;
+	project_->alignmentTool()->makeCommand(fin,fout,exec,args);
+	QString cmd = exec + " ";
+	int i=0;
+	while (i < args.size()){
+		if (args.at(i).startsWith('-')){
+			cmd += '\n';
+			cmd += args.at(i)+" ";
+		}
+		else{
+			cmd += args.at(i)+" ";
+		}
+		i++;
+	}
+	QString text = QInputDialog::getMultiLineText(this, tr("Alignment command"),
+                                         tr("Command:"),cmd, &ok);
+  //  if (ok && !text.isEmpty())
+  //      textLabel->setText(text);
+}
+
 void SeqEditMainWin::alignmentStarted()
 {
 	qDebug() << trace.header() << "seqEditMainWin::alignmentStarted()";
@@ -969,6 +993,8 @@ void SeqEditMainWin::settingsAlignmentToolProperties()
 	ad->exec();
 	delete ad;
 }
+
+
 
 
 void SeqEditMainWin::settingsSaveAppDefaults()
@@ -1337,6 +1363,11 @@ void SeqEditMainWin::createActions()
 	alignStopAction->setEnabled(false);
 	alignStopAction->setIcon(QIcon(":/images/stop.png"));
 	
+	alignCommandAction = new QAction( "Show command", this);
+	alignCommandAction->setStatusTip(tr("Show the alignment command"));
+	addAction(alignCommandAction);
+	connect(alignCommandAction, SIGNAL(triggered()), this, SLOT(alignmentCommand()));
+	
 	// Settings actions
 	settingsEditorFontAction = new QAction( tr("Editor font"), this);
 	settingsEditorFontAction->setStatusTip(tr("Choose the font used in the sequence editor"));
@@ -1379,6 +1410,7 @@ void SeqEditMainWin::createActions()
 	addAction(settingsAlignmentToolPropertiesAction);
 	connect(settingsAlignmentToolPropertiesAction, SIGNAL(triggered()), this, SLOT(settingsAlignmentToolProperties()));
 	
+
 	settingsSaveAppDefaultsAction = new QAction( tr("Save as application defaults"), this);
 	settingsSaveAppDefaultsAction->setStatusTip(tr("Save settings as application defaults"));
 	addAction(settingsSaveAppDefaultsAction);
@@ -1528,6 +1560,8 @@ void SeqEditMainWin::createMenus()
 	alignmentMenu->addAction(alignAllAction);
 	alignmentMenu->addAction(alignSelectionAction);
 	alignmentMenu->addAction(alignStopAction);
+	alignmentMenu->addSeparator();
+	alignmentMenu->addAction(alignCommandAction);
 	
 	//annotationMenu = menuBar()->addMenu(tr("Annotations"));
 	//connect(annotationMenu,SIGNAL(aboutToShow()),this,SLOT(setupAnnotationMenu()));
