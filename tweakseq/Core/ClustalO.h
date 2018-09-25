@@ -31,6 +31,7 @@
 
 class BoolProperty;
 class FileProperty;
+class IntProperty;
 class PropertiesDialog;
 
 class ClustalO: public AlignmentTool
@@ -52,9 +53,12 @@ class ClustalO: public AlignmentTool
 		void getVersion();
 		
 		FileProperty *execPath_;
+		// Sequence input
+		BoolProperty *dealign_;
 		// Clustering
-		BoolProperty *pileup_,*full_,*full_iter_;
-		
+		FileProperty *distMatrixIn_,*distMatrixOut_,*guideTreeIn_,*guideTreeOut_,*clusteringOut_,*posteriorOut_;
+		BoolProperty *pileup_,*full_,*full_iter_,*useKimura_,*percentID_;
+		IntProperty  *clusterSize_,*transitivity_;
 		
 };
 

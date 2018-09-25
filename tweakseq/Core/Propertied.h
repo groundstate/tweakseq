@@ -63,6 +63,7 @@ class Propertied
 		IntProperty*    registerIntProperty(int *,QString,int min=INT_MIN,int max=INT_MAX,int sigs=0);
 		BoolProperty*   registerBoolProperty(bool *,QString,int sigs=0);
 		DoubleProperty* registerDoubleProperty(double *,QString,double min=DBL_MIN,double max=DBL_MAX,int sigs=0);
+		FileProperty*   registerFileProperty(QString * ,QString,int sigs=0);
 		FileProperty*   registerFileProperty(QString ,QString,int sigs=0);
 		FloatProperty*  registerFloatProperty(float *,QString,float min=FLT_MIN,float max=FLT_MAX,int sigs=0);
 		StringProperty* registerStringProperty(QString *,QString,int sigs=0);

@@ -65,12 +65,12 @@ DoubleProperty* Propertied::registerDoubleProperty(double *fval,QString n,double
 }
 
 
-// FileProperty* Propertied::registerFileProperty(QString *str,QString n,int sigs)
-// {
-// 	FileProperty *p = new FileProperty(str,this,n,"",sigs);
-// 	properties_.push_back(p);
-// 	return p;
-// }
+FileProperty* Propertied::registerFileProperty(QString *str,QString n,int sigs)
+{
+	FileProperty *p = new FileProperty(str,this,n,"",sigs);
+	properties_.push_back(p);
+	return p;
+}
 
 FileProperty* Propertied::registerFileProperty(QString str,QString n,int sigs)
 {

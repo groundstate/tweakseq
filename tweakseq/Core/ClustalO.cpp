@@ -35,6 +35,7 @@
 #include "BoolProperty.h"
 #include "FileProperty.h"
 #include "FilePropertyInput.h"
+#include "IntProperty.h"
 #include "PropertiesDialog.h"
 
 #include "XMLHelper.h"
@@ -98,12 +99,31 @@ PropertiesDialog * ClustalO::propertiesDialog(QWidget *parent)
 	QLabel *txt = new QLabel(name() + " version " + version(),pd->currContainerWidget());
 	pd->addCustomWidget(txt);
 	pd->addFileInput("path to executable",execPath_,FilePropertyInput::OpenFile,0,0);
+	
+	pd->addTab("Sequence input");
+	pd->addOptionInput("[--dealign] dealign input sequences",dealign_);
+	
 	pd->addTab("Clustering");
+	
 	pd->beginGridLayout();
+	
+	pd->addFileInput("[--distmat-in] pairwise distance matrix input file",distMatrixIn_,FilePropertyInput::OpenFile,0,0);
+	pd->addFileInput("[--distmat-out] pairwise distance matrix output file",distMatrixOut_,FilePropertyInput::OpenFile,0,0);
+	pd->addFileInput("[--guidetree-in] guide tree input file",guideTreeIn_,FilePropertyInput::OpenFile,0,0);
+	pd->addFileInput("[--guidetree-out] guide tree output file",guideTreeOut_,FilePropertyInput::OpenFile,0,0);
+	pd->addFileInput("[--clustering-out] clustering output file",clusteringOut_,FilePropertyInput::OpenFile,0,0);
+	pd->addFileInput("[--posterior-out] posterior probability output file",posteriorOut_,FilePropertyInput::OpenFile,0,0);
+	
+	pd->addIntInput("[--cluster-size] soft maximum of sequences in sub-clusters",clusterSize_,true);
+	
 	pd->addOptionInput("[--pileup] sequentially align sequences",pileup_);
 	pd->addOptionInput("[--full] use full distance matrix for guide-tree calculation",full_);
 	pd->addOptionInput("[--full-iter] use full distance matrix for guide-tree calculation during iteration",full_iter_);
+	pd->addOptionInput("[--use-kimura] use Kimura distance correction for aligned sequences",useKimura_);
+	pd->addOptionInput("[--use-percent-id] convert distances into percent identities",percentID_);
+	
 	pd->endGridLayout();
+	
 	return pd;
 }
 
@@ -119,13 +139,29 @@ void ClustalO::init()
 	executable_="/usr/local/bin/clustalo";
 	execPath_ = registerFileProperty(executable_,"exe",0);
 	
+	dealign_ = registerBoolProperty(NULL,"dealign",0);
+	dealign_->setValue(false);
+	
 	// Clustering
+	distMatrixIn_=registerFileProperty(NULL,"distMatrixIn",0);
+	distMatrixOut_=registerFileProperty(NULL,"distMatrixOut",0);;
+	guideTreeIn_=registerFileProperty(NULL,"guideTreeIn",0);;
+	guideTreeOut_=registerFileProperty(NULL,"guideTreeOut",0);;
+	clusteringOut_=registerFileProperty(NULL,"clusteringOut",0);
+	posteriorOut_=registerFileProperty(NULL,"posteriorOut",0);;
+	
+	clusterSize_=registerIntProperty(NULL,"clusterSize",0,99,0);
+	
 	pileup_ = registerBoolProperty(NULL,"pileup",0);
 	pileup_->setValue(false);
 	full_   = registerBoolProperty(NULL,"full",0);
 	full_->setValue(false);
 	full_iter_   = registerBoolProperty(NULL,"full-iter",0);
 	full_iter_->setValue(false);
+	useKimura_   = registerBoolProperty(NULL,"useKimura",0);
+	useKimura_->setValue(false);
+	percentID_   = registerBoolProperty(NULL,"percentID",0);
+	percentID_->setValue(false);
 }
 
 void ClustalO::getVersion()
