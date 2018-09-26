@@ -25,7 +25,7 @@
 //
 
 #include "AlignmentTool.h"
-
+#include "FileProperty.h"
 
 //
 // Public
@@ -39,7 +39,17 @@ AlignmentTool::AlignmentTool()
 AlignmentTool::~AlignmentTool()
 {
 }
-		
+
+void AlignmentTool::setExecutable(QString e)
+{
+	executable_->setFileName(e);
+}
+
+QString AlignmentTool::executable()
+{
+	return executable_->fileName();
+}
+
 void AlignmentTool::makeCommand(QString &, QString &, QString &, QStringList &)
 {
 }
@@ -60,4 +70,5 @@ void AlignmentTool::init()
 {
 	preferred_=false;
 	usesStdOut_=false;
+	executable_ = registerFileProperty(NULL,"executable",0);
 }

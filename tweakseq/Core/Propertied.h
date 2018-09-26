@@ -33,6 +33,8 @@
 #include <QList>
 #include <QString>
 
+class QDomDocument;
+class QDomElement;
 class QWidget;
 
 class BoolProperty;
@@ -51,13 +53,16 @@ class Propertied
 		Propertied();
 		virtual ~Propertied();
 
-		Property *getProperty(const char *);
+		Property *getProperty(QString);
 		bool locked(){return locked_;}
 		void lock(bool l){locked_=l;}
 
 		virtual PropertiesDialog *propertiesDialog(QWidget *){return NULL;}
 		virtual void propertiesDialogEvent(int ){;}
 
+		virtual void saveXML(QDomDocument &,QDomElement &);
+		virtual void readXML(QDomDocument &,QDomElement &);
+		
 	protected:
 		
 		IntProperty*    registerIntProperty(int *,QString,int min=INT_MIN,int max=INT_MAX,int sigs=0);

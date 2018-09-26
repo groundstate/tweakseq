@@ -46,9 +46,7 @@ FileProperty::FileProperty(QString *f,Propertied *o,QString n,QString sval,int s
 		setLocalStorage(true);
 	}
 }
-//struct stat sbuf;
-	//int ret = stat(fileName_,&sbuf);
-	//return (ret==0);
+
 FileProperty::FileProperty(QString &f,Propertied *o,QString n,int s):
 	Property(o,n,Property::FileV,s)
 {

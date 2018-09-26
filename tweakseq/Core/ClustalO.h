@@ -52,7 +52,6 @@ class ClustalO: public AlignmentTool
 		void init();
 		void getVersion();
 		
-		FileProperty *execPath_;
 		// Sequence input
 		BoolProperty *dealign_;
 		// Clustering

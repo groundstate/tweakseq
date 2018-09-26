@@ -25,6 +25,11 @@
 // THE SOFTWARE.
 //
 
+#include <QtDebug>
+#include "DebuggingInfo.h"
+
+#include <QDomDocument>
+
 #include "BoolProperty.h"
 #include "DoubleProperty.h"
 #include "FileProperty.h"
@@ -48,7 +53,7 @@ Propertied::~Propertied()
 	
 }
 
-Property *Propertied::getProperty(const char *pname)
+Property *Propertied::getProperty(QString pname)
 {
 	for (int i=0;i<properties_.size();i++){
 		if (properties_[i]->name() == pname)
@@ -57,6 +62,59 @@ Property *Propertied::getProperty(const char *pname)
 	return NULL;
 }
 
+void Propertied::saveXML(QDomDocument &doc,QDomElement &pelem)
+{
+	for (int i=0;i<properties_.size();i++)
+		properties_.at(i)->saveXML(doc,pelem);
+}
+
+void Propertied::readXML(QDomDocument &,QDomElement &pelem)
+{
+	QDomElement elem = pelem.firstChildElement();
+	while (!elem.isNull()){
+		QDomAttr nameAttr = elem.attributeNode("name");
+		Property *prop = getProperty(nameAttr.value());
+		if (prop){
+			switch (prop->type())
+			{
+				case Property::BoolV:
+				{
+					BoolProperty *bp = static_cast<BoolProperty *>(prop);
+					if (elem.text() == "yes")
+						bp->setValue(true);
+					else if (elem.text() == "no")
+						bp->setValue(false);
+					break;
+				}
+				case Property::DoubleV:
+				{
+					DoubleProperty *dp = static_cast<DoubleProperty *>(prop);
+					dp->setValue(elem.text().toDouble());
+					break;
+				}
+				case Property::FileV:
+				{
+					FileProperty *fp = static_cast<FileProperty *>(prop);
+					fp->setFileName(elem.text());
+					break;
+				}
+				case Property::IntV:
+				{
+					IntProperty *ip = static_cast<IntProperty *>(prop);
+					ip->setValue(elem.text().toInt());
+				}
+				case Property::StringV:
+				{
+					StringProperty *sp = static_cast<StringProperty *>(prop);
+					sp->setValue(elem.text());
+				}
+			}
+		}
+		elem=elem.nextSiblingElement();
+	}
+			
+}
+		
 DoubleProperty* Propertied::registerDoubleProperty(double *fval,QString n,double min,double max,int sigs)
 {
 	DoubleProperty *p = new DoubleProperty(fval,this,n,0,min,max,sigs);

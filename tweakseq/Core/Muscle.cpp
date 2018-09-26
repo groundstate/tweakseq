@@ -48,7 +48,7 @@ Muscle::~Muscle()
 		
 void Muscle::makeCommand(QString &fin, QString &fout, QString &exec, QStringList &arglist)
 {
-	exec = executable_;
+	exec = executable();
 	arglist <<  "-in" << fin << "-out" << fout;
 }
 
@@ -73,7 +73,7 @@ void Muscle::readSettings(QDomDocument &doc)
 					break;
 			}
 			if (elem.tagName() == "path"){
-				executable_=elem.text();
+				setExecutable(elem.text());
 			}
 			if (elem.tagName() == "preferred"){
 				setPreferred(elem.text() == "yes");
@@ -93,14 +93,14 @@ void Muscle::init()
 {
 	name_="MUSCLE";
 	version_="";
-	executable_="/usr/local/bin/muscle3.8.31_i86linux64";
+	setExecutable("/usr/local/bin/muscle3.8.31_i86linux64");
 	
 }
 
 void Muscle::getVersion()
 {
 	QProcess getver;
-	getver.start(executable_, QStringList() << "-version");
+	getver.start(executable(), QStringList() << "-version");
 	if (getver.waitForStarted()){
 		getver.waitForReadyRead();
 		getver.waitForFinished();

@@ -97,7 +97,7 @@ const char * FilePropertyInput::value()
 
 void FilePropertyInput::set()
 {
-	filevar_->setFileName(le_->text());
+	filevar_->setFileName(le_->text().trimmed()); // removes whoopsies like an accidentally typed space(s)
 }
 
 void FilePropertyInput::restore()

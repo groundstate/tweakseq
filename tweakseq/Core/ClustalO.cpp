@@ -54,8 +54,17 @@ ClustalO::~ClustalO()
 		
 void ClustalO::makeCommand(QString &fin, QString &fout, QString &exec, QStringList &arglist)
 {
-	exec = executable_;
+	exec = executable();
+	// The basic command
 	arglist << "--force" << "-v" << "--outfmt=fa" << "--output-order=tree-order" << "-i" << fin << "-o" << fout;
+	//Optional stuff
+	if (pileup_->value()) arglist << "--pileup";
+	if (full_->value()) arglist << "--full";
+	if (full_iter_->value()) arglist << "--full-iter";
+	if (useKimura_->value()) arglist << "--use-kimura";
+	if (percentID_->value()) arglist << "--percent-id";
+	
+	if (!distMatrixIn_->fileName().isEmpty()) arglist << ("--distmat-in="+distMatrixIn_->fileName());
 }
 
 void ClustalO::writeSettings(QDomDocument &doc,QDomElement &parentElem)
@@ -65,6 +74,10 @@ void ClustalO::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 	XMLHelper::addElement(doc,pelem,"name",name());
 	XMLHelper::addElement(doc,pelem,"path",executable());
 	XMLHelper::addElement(doc,pelem,"preferred",(preferred() ? "yes":"no"));
+	QDomElement propElem = doc.createElement("properties");
+	pelem.appendChild(propElem);
+	saveXML(doc,propElem);
+	
 }
 
 void ClustalO::readSettings(QDomDocument &doc)
@@ -73,19 +86,37 @@ void ClustalO::readSettings(QDomDocument &doc)
 	for (int i=0;i<nl.count();++i){
 		QDomNode gNode = nl.item(i);
 		QDomElement elem = gNode.firstChildElement();
+		bool foundIt=false;
+		
 		while (!elem.isNull()){
 			if (elem.tagName() == "name"){
 				if (elem.text() != name_)
 					break;
-			}
-			if (elem.tagName() == "path"){
-				executable_=elem.text();
-			}
-			if (elem.tagName() == "preferred"){
-				setPreferred(elem.text() == "yes");
+				else{
+					foundIt=true;
+				}
 			}
 			elem=elem.nextSiblingElement();
 		}
+		
+		if (foundIt){
+			
+			elem = gNode.firstChildElement();
+			while (!elem.isNull()){
+				if (elem.tagName() == "path"){
+					setExecutable(elem.text());
+				}
+				if (elem.tagName() == "preferred"){
+					setPreferred(elem.text() == "yes");
+				}
+				if (elem.tagName()=="properties"){
+					qDebug() << trace.header(__PRETTY_FUNCTION__) << "reading properties";
+					readXML(doc,elem);
+				}
+				elem=elem.nextSiblingElement();
+			}
+		}
+		
 	}
 	
 	getVersion();
@@ -98,7 +129,7 @@ PropertiesDialog * ClustalO::propertiesDialog(QWidget *parent)
 	pd->addTab("General");
 	QLabel *txt = new QLabel(name() + " version " + version(),pd->currContainerWidget());
 	pd->addCustomWidget(txt);
-	pd->addFileInput("path to executable",execPath_,FilePropertyInput::OpenFile,0,0);
+	pd->addFileInput("path to executable",executable_,FilePropertyInput::OpenFile,0,0);
 	
 	pd->addTab("Sequence input");
 	pd->addOptionInput("[--dealign] dealign input sequences",dealign_);
@@ -136,8 +167,7 @@ void ClustalO::init()
 {
 	name_="clustalo";
 	version_="";
-	executable_="/usr/local/bin/clustalo";
-	execPath_ = registerFileProperty(executable_,"exe",0);
+	setExecutable("/usr/local/bin/clustalo");
 	
 	dealign_ = registerBoolProperty(NULL,"dealign",0);
 	dealign_->setValue(false);
@@ -167,7 +197,7 @@ void ClustalO::init()
 void ClustalO::getVersion()
 {
 	QProcess getver;
-	getver.start(executable_, QStringList() << "--version");
+	getver.start(executable(), QStringList() << "--version");
 	if (getver.waitForStarted()){
 		getver.waitForReadyRead();
 		getver.waitForFinished();

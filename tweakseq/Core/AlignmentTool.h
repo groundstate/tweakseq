@@ -35,6 +35,7 @@
 class QDomDocument;
 class QDomElement;
 
+class FileProperty;
 
 class AlignmentTool:public Propertied
 {
@@ -45,9 +46,9 @@ class AlignmentTool:public Propertied
 		
 		QString name(){return name_;}
 		QString version(){return version_;}
-		QString executable(){return executable_;}
 		
-		void setExecutable(QString e){executable_=e;}
+		void setExecutable(QString);
+		QString executable();
 		
 		void setPreferred(bool pref){preferred_=pref;}
 		bool preferred(){return preferred_;}
@@ -62,7 +63,7 @@ class AlignmentTool:public Propertied
 	
 		QString name_;
 		QString version_;
-		QString executable_;
+		FileProperty* executable_;
 		bool preferred_;
 		bool usesStdOut_;
 		

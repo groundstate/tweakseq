@@ -54,6 +54,7 @@ class StringProperty:public Property
 		QString *theString_;
 		QString last_;
 		QString saved_;
+		
 };
 
 #endif
