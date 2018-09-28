@@ -838,10 +838,11 @@ void SeqEditMainWin::alignmentCommand()
 		}
 		i++;
 	}
-	QString text = QInputDialog::getMultiLineText(this, tr("Alignment command"),
+	QString newcmd = QInputDialog::getMultiLineText(this, tr("Alignment command"),
                                          tr("Command:"),cmd, &ok);
-  //  if (ok && !text.isEmpty())
-  //      textLabel->setText(text);
+  if (ok && !newcmd.isEmpty())
+		project_->alignmentTool()->setCommand(newcmd);
+	
 }
 
 void SeqEditMainWin::alignmentStarted()
@@ -1363,8 +1364,8 @@ void SeqEditMainWin::createActions()
 	alignStopAction->setEnabled(false);
 	alignStopAction->setIcon(QIcon(":/images/stop.png"));
 	
-	alignCommandAction = new QAction( "Show command", this);
-	alignCommandAction->setStatusTip(tr("Show the alignment command"));
+	alignCommandAction = new QAction( "Edit command line", this);
+	alignCommandAction->setStatusTip(tr("Edit the alignment command"));
 	addAction(alignCommandAction);
 	connect(alignCommandAction, SIGNAL(triggered()), this, SLOT(alignmentCommand()));
 	

@@ -50,6 +50,8 @@ class AlignmentTool:public Propertied
 		void setExecutable(QString);
 		QString executable();
 		
+		void setCommand(QString cmd){customCommand_=cmd;}
+		
 		void setPreferred(bool pref){preferred_=pref;}
 		bool preferred(){return preferred_;}
 		
@@ -63,9 +65,13 @@ class AlignmentTool:public Propertied
 	
 		QString name_;
 		QString version_;
+		QString customCommand_;
+		
 		FileProperty* executable_;
 		bool preferred_;
 		bool usesStdOut_;
+		
+		void parseCustomCommand(QString &, QStringList &);
 		
 	private:
 	

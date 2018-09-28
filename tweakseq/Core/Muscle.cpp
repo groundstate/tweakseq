@@ -28,9 +28,12 @@
 #include "DebuggingInfo.h"
 
 #include <QDomDocument>
+#include <QLabel>
 #include <QProcess>
 
 #include "Muscle.h"
+#include "FilePropertyInput.h"
+#include "PropertiesDialog.h"
 #include "XMLHelper.h"
 
 //
@@ -48,6 +51,18 @@ Muscle::~Muscle()
 		
 void Muscle::makeCommand(QString &fin, QString &fout, QString &exec, QStringList &arglist)
 {
+	if (!customCommand_.isEmpty()){
+		parseCustomCommand(exec,arglist);
+		// now replace the input and output files
+		for (int a=0;a<arglist.size();a++){
+			if (arglist.at(a) == "<fin>")
+				arglist[a]=fin;
+			else if (arglist.at(a) == "<fout>")
+				arglist[a]=fout;
+		}
+		return;
+	}
+	
 	exec = executable();
 	arglist <<  "-in" << fin << "-out" << fout;
 }
@@ -57,8 +72,13 @@ void Muscle::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 	QDomElement pelem = doc.createElement("alignment_tool");
 	parentElem.appendChild(pelem);
 	XMLHelper::addElement(doc,pelem,"name",name());
-	XMLHelper::addElement(doc,pelem,"path",executable());
 	XMLHelper::addElement(doc,pelem,"preferred",(preferred() ? "yes":"no"));
+	if (!customCommand_.isEmpty()){
+		XMLHelper::addElement(doc,pelem,"customcommand",customCommand_);
+	}
+	QDomElement propElem = doc.createElement("properties");
+	pelem.appendChild(propElem);
+	saveXML(doc,propElem);
 }
 
 void Muscle::readSettings(QDomDocument &doc)
@@ -67,22 +87,52 @@ void Muscle::readSettings(QDomDocument &doc)
 	for (int i=0;i<nl.count();++i){
 		QDomNode gNode = nl.item(i);
 		QDomElement elem = gNode.firstChildElement();
+		bool foundIt=false;
+		
 		while (!elem.isNull()){
 			if (elem.tagName() == "name"){
 				if (elem.text() != name_)
 					break;
-			}
-			if (elem.tagName() == "path"){
-				setExecutable(elem.text());
-			}
-			if (elem.tagName() == "preferred"){
-				setPreferred(elem.text() == "yes");
+				else{
+					foundIt=true;
+				}
 			}
 			elem=elem.nextSiblingElement();
 		}
+		
+		if (foundIt){
+			
+			elem = gNode.firstChildElement();
+			while (!elem.isNull()){
+				if (elem.tagName() == "preferred"){
+					setPreferred(elem.text() == "yes");
+				}
+				if (elem.tagName() == "customcommand"){
+					setCommand(elem.text());
+				}
+				if (elem.tagName()=="properties"){
+					qDebug() << trace.header(__PRETTY_FUNCTION__) << "reading properties";
+					readXML(doc,elem);
+				}
+				elem=elem.nextSiblingElement();
+			}
+		}
+		
 	}
 	
 	getVersion();
+}
+
+PropertiesDialog * Muscle::propertiesDialog(QWidget *parent)
+{
+	PropertiesDialog *pd = new PropertiesDialog(parent,this,"MUSCLE settings");
+	pd->addTab("General");
+	QLabel *txt = new QLabel(name() + " version " + version(),pd->currContainerWidget());
+	pd->addCustomWidget(txt);
+	pd->addFileInput("path to executable",executable_,FilePropertyInput::OpenFile,0,0);
+	pd->endGridLayout();
+	
+	return pd;
 }
 
 //		

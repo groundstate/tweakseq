@@ -54,6 +54,20 @@ ClustalO::~ClustalO()
 		
 void ClustalO::makeCommand(QString &fin, QString &fout, QString &exec, QStringList &arglist)
 {
+	if (!customCommand_.isEmpty()){
+		parseCustomCommand(exec,arglist);
+		// now replace the input and output files
+		for (int a=0;a<arglist.size();a++){
+			if (arglist.at(a) == "<fin>")
+				arglist[a]=fin;
+			else if (arglist.at(a) == "<fout>")
+				arglist[a]=fout;
+		}
+		return;
+	}
+	
+	// otherwise  ...
+	
 	exec = executable();
 	// The basic command
 	arglist << "--force" << "-v" << "--outfmt=fa" << "--output-order=tree-order" << "-i" << fin << "-o" << fout;
@@ -72,8 +86,10 @@ void ClustalO::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 	QDomElement pelem = doc.createElement("alignment_tool");
 	parentElem.appendChild(pelem);
 	XMLHelper::addElement(doc,pelem,"name",name());
-	XMLHelper::addElement(doc,pelem,"path",executable());
 	XMLHelper::addElement(doc,pelem,"preferred",(preferred() ? "yes":"no"));
+	if (!customCommand_.isEmpty()){
+		XMLHelper::addElement(doc,pelem,"customcommand",customCommand_);
+	}
 	QDomElement propElem = doc.createElement("properties");
 	pelem.appendChild(propElem);
 	saveXML(doc,propElem);
@@ -103,11 +119,11 @@ void ClustalO::readSettings(QDomDocument &doc)
 			
 			elem = gNode.firstChildElement();
 			while (!elem.isNull()){
-				if (elem.tagName() == "path"){
-					setExecutable(elem.text());
-				}
 				if (elem.tagName() == "preferred"){
 					setPreferred(elem.text() == "yes");
+				}
+				if (elem.tagName() == "customcommand"){
+					setCommand(elem.text());
 				}
 				if (elem.tagName()=="properties"){
 					qDebug() << trace.header(__PRETTY_FUNCTION__) << "reading properties";

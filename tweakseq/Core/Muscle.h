@@ -29,6 +29,8 @@
 
 #include "AlignmentTool.h"
 
+class PropertiesDialog;
+
 class Muscle: public AlignmentTool
 {
 	public:
@@ -39,6 +41,8 @@ class Muscle: public AlignmentTool
 		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
 		virtual void writeSettings(QDomDocument &,QDomElement &);
 		virtual void readSettings(QDomDocument &);
+		
+		virtual PropertiesDialog * propertiesDialog(QWidget *);
 		
 	private:
 	

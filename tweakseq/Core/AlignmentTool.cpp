@@ -24,6 +24,11 @@
 // THE SOFTWARE.
 //
 
+#include <QtDebug>
+#include "DebuggingInfo.h"
+
+#include <QRegExp>
+
 #include "AlignmentTool.h"
 #include "FileProperty.h"
 
@@ -61,6 +66,21 @@ void AlignmentTool::writeSettings(QDomDocument &,QDomElement &)
 void AlignmentTool::readSettings(QDomDocument &)
 {
 }
+
+//
+//
+//
+void AlignmentTool::parseCustomCommand(QString &exec, QStringList &arglist){
+	arglist = customCommand_.split(QRegExp("\\s+"));
+	if (arglist.size() > 0){
+		exec = arglist.at(0);
+		arglist.pop_front();
+	}
+	// Get an empty item in the list at the end
+	if (arglist.at(arglist.size()-1).isEmpty())
+		arglist.pop_back();
+}
+
 
 //
 //	Private

@@ -74,6 +74,7 @@ void Propertied::readXML(QDomDocument &,QDomElement &pelem)
 	while (!elem.isNull()){
 		QDomAttr nameAttr = elem.attributeNode("name");
 		Property *prop = getProperty(nameAttr.value());
+		qDebug() << prop->name();
 		if (prop){
 			switch (prop->type())
 			{
@@ -98,21 +99,28 @@ void Propertied::readXML(QDomDocument &,QDomElement &pelem)
 					fp->setFileName(elem.text());
 					break;
 				}
+				case Property::FloatV:
+				{
+					FloatProperty *fp = static_cast<FloatProperty *>(prop);
+					fp->setValue(elem.text().toFloat());
+					break;
+				}
 				case Property::IntV:
 				{
 					IntProperty *ip = static_cast<IntProperty *>(prop);
 					ip->setValue(elem.text().toInt());
+					break;
 				}
 				case Property::StringV:
 				{
 					StringProperty *sp = static_cast<StringProperty *>(prop);
 					sp->setValue(elem.text());
+					break;
 				}
 			}
 		}
 		elem=elem.nextSiblingElement();
 	}
-			
 }
 		
 DoubleProperty* Propertied::registerDoubleProperty(double *fval,QString n,double min,double max,int sigs)

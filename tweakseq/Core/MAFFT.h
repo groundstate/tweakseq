@@ -29,6 +29,11 @@
 
 #include "AlignmentTool.h"
 
+class BoolProperty;
+class DoubleProperty;
+class IntProperty;
+class PropertiesDialog;
+
 class MAFFT: public AlignmentTool
 {
 	public:
@@ -40,12 +45,18 @@ class MAFFT: public AlignmentTool
 		virtual void writeSettings(QDomDocument &,QDomElement &);
 		virtual void readSettings(QDomDocument &);
 		
+		virtual PropertiesDialog * propertiesDialog(QWidget *);
+		
 	private:
 	
 		void init();
 		void getVersion();
 		
 		int idealThreadCount_;
+		
+		//BoolProperty *reorder_;
+		//DoubleProperty *gapOpeningPenalty_,*gapExtensionPenalty_;
+		IntProperty *numThreads_;
 		
 };
 
