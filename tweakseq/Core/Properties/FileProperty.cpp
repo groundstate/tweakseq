@@ -138,6 +138,22 @@ QString FileProperty::fileName(bool fullPath)
 	}
 	return *fileName_;
 }
+
+void FileProperty::setDefaultValue(QString val)
+{
+	defaultValue_=val;
+}
+
+QString FileProperty::defaultValue()
+{
+	return defaultValue_;
+}
+
+bool FileProperty::isDefaultValue()
+{
+	return (*fileName_==defaultValue_);
+}
+
 		
 bool FileProperty::exists()
 {
@@ -159,4 +175,5 @@ QString FileProperty::path()
 void FileProperty::init()
 {
 	fileName_=NULL;
+	defaultValue_="";
 }

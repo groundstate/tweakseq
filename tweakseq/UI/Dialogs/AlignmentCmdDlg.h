@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2000-2017  Michael J. Wouters, Merridee A. Wouters
+/// Copyright (c) 2000-2018  Merridee A. Wouters, Michael J. Wouters
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,59 +24,37 @@
 // THE SOFTWARE.
 //
 
+#ifndef __ALIGNMENT_CMD_DLG_H_
+#define __ALIGNMENT_CMD_DLG_H_
 
-#ifndef __ALIGNMENT_TOOL_H_
-#define __ALIGNMENT_TOOL_H_
-
+#include <QDialog>
 #include <QString>
 
-#include "Propertied.h"
+class QDialogButtonBox;
+class QPlainTextEdit;
 
-class QDomDocument;
-class QDomElement;
-
-class FileProperty;
-
-class AlignmentTool:public Propertied
+class AlignmentCmdDlg:public QDialog
 {
+	Q_OBJECT
+	
 	public:
 		
-		AlignmentTool();
-		virtual ~AlignmentTool();
-		
-		QString name(){return name_;}
-		QString version(){return version_;}
-		
-		void setExecutable(QString);
-		QString executable();
-		
-		void setCommand(QString cmd){customCommand_=cmd;}
-		
-		void setPreferred(bool pref){preferred_=pref;}
-		bool preferred(){return preferred_;}
-		
-		bool usesStdOut(){return usesStdOut_;} // the alignment is written to stdout
-		
-		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
-		virtual void makeDefaultCommand(QString &, QString &, QString &, QStringList &);
-		virtual void writeSettings(QDomDocument &,QDomElement &);
-		virtual void readSettings(QDomDocument &);
+		AlignmentCmdDlg( QString,QString,QWidget* parent = 0 );
+		~AlignmentCmdDlg();
 	
-	protected:
+		QString command();
+		
+	private slots:
 	
-		QString name_;
-		QString version_;
-		QString customCommand_;
-		
-		FileProperty* executable_;
-		bool preferred_;
-		bool usesStdOut_;
-		
-		void parseCustomCommand(QString &, QStringList &);
+		void setToDefaults();
+		void setToOriginal();
 		
 	private:
-	
-		void init();
+		
+		QPlainTextEdit *cmdTE_;
+		QDialogButtonBox *buttonBox_;
+		
+		QString cmd_,defaultCmd_;
 		
 };
 

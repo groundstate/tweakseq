@@ -133,10 +133,27 @@ void FloatProperty::setValue(float val)
 	notifyDependers();
 }
 
+void FloatProperty::setDefaultValue(float val)
+{
+	defaultValue_=val;
+}
+
+float FloatProperty::defaultValue()
+{
+	return *theFloat_;
+}
+
+bool FloatProperty::isDefaultValue()
+{
+	return (defaultValue_=*theFloat_);
+}
+
+		
 //
 //
 //
 void FloatProperty::init()
 {
 	theFloat_=NULL;
+	defaultValue_=0.0;
 }

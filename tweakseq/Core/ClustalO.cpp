@@ -81,6 +81,13 @@ void ClustalO::makeCommand(QString &fin, QString &fout, QString &exec, QStringLi
 	if (!distMatrixIn_->fileName().isEmpty()) arglist << ("--distmat-in="+distMatrixIn_->fileName());
 }
 
+void ClustalO::makeDefaultCommand(QString &fin, QString &fout, QString &exec, QStringList &arglist)
+{
+	exec = executable();
+	arglist << "--force" << "-v" << "--outfmt=fa" << "--output-order=tree-order" << "-i" << fin << "-o" << fout;
+}
+
+
 void ClustalO::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 {
 	QDomElement pelem = doc.createElement("alignment_tool");

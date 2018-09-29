@@ -110,7 +110,23 @@ void StringProperty::setValue(QString val)
 	notifyDependers();
 }
 
+void StringProperty::setDefaultValue(QString val)
+{
+	defaultValue_= val;
+}
+
+QString StringProperty::defaultValue()
+{
+	return defaultValue_;
+}
+
+bool StringProperty::isDefaultValue()
+{
+	return (defaultValue_==*theString_);
+}
+		
 void StringProperty::init()
 {
 	theString_=NULL;
+	defaultValue_="";
 }

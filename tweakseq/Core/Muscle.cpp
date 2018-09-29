@@ -67,6 +67,12 @@ void Muscle::makeCommand(QString &fin, QString &fout, QString &exec, QStringList
 	arglist <<  "-in" << fin << "-out" << fout;
 }
 
+void Muscle::makeDefaultCommand(QString &fin, QString &fout, QString &exec, QStringList &arglist)
+{
+	exec = executable();
+	arglist <<  "-in" << fin << "-out" << fout;
+}
+
 void Muscle::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 {
 	QDomElement pelem = doc.createElement("alignment_tool");

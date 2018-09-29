@@ -48,6 +48,10 @@ class FileProperty:public Property
 		void setFileName(QString);
 		QString fileName(bool fullPath=true);
 		
+		void setDefaultValue(QString);
+		QString defaultValue();
+		bool isDefaultValue();
+		
 		bool exists();
 		bool defined();
 		
@@ -60,7 +64,7 @@ class FileProperty:public Property
 		QString *fileName_;
 		QString lastName_;
 		QString savedName_;
-		
+		QString defaultValue_;
 };
 
 #endif

@@ -127,10 +127,26 @@ void DoubleProperty::setValue(double val)
 	notifyDependers();
 }
 
+void DoubleProperty::setDefaultValue(double val)
+{
+	defaultValue_=val;
+}
+
+double DoubleProperty::defaultValue()
+{
+	return defaultValue_;
+}
+
+bool DoubleProperty::isDefaultValue()
+{
+	return (*theDouble_ == defaultValue_);
+}
+		
 //
 //
 //
 void DoubleProperty::init()
 {
 	theDouble_=NULL;
+	defaultValue_=0.0;
 }

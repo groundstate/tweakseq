@@ -53,6 +53,10 @@ class DoubleProperty:public Property
 		double value(){return *theDouble_;}
 		void  setValue(double);
 
+		void setDefaultValue(double);
+		double defaultValue();
+		bool isDefaultValue();
+		
 	private:
 		
 		void init();
@@ -62,6 +66,7 @@ class DoubleProperty:public Property
 		double *theDouble_;
 		double last_;
 		double saved_;
+		double defaultValue_;
 };
 
 #endif

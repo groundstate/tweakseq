@@ -53,6 +53,10 @@ class FloatProperty:public Property
 		float value(){return *theFloat_;}
 		void  setValue(float);
 
+		void setDefaultValue(float);
+		float defaultValue();
+		bool isDefaultValue();
+		
 	private:
 		
 		void init();
@@ -62,6 +66,7 @@ class FloatProperty:public Property
 		float *theFloat_;
 		float last_;
 		float saved_;
+		float defaultValue_;
 };
 
 #endif

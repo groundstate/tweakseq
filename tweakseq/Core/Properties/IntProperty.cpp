@@ -65,7 +65,7 @@ IntProperty::IntProperty(int *theInt,Propertied *o,
 	
 	min_=min;
 	max_=max;
-
+	
 	if (theInt)
 		theInt_=theInt;
 	else{
@@ -114,6 +114,21 @@ void IntProperty::setValue(int val)
 	if (val==*theInt_) return; // didn't change so no need to shout it out
 	*theInt_=val;
 	notifyDependers(); // this sets the value of changed() 
+}
+
+void IntProperty::setDefaultValue(int val)
+{
+	defaultValue_=val;
+}
+
+int  IntProperty::defaultValue()
+{
+	return defaultValue_;
+}
+
+bool IntProperty::isDefaultValue()
+{
+	return (defaultValue_==*theInt_);
 }
 
 void  IntProperty::setRange(int minVal,int maxVal)
@@ -174,4 +189,5 @@ void IntProperty::init()
 {
 	theInt_=NULL;
 	enumerated_=false;
+	defaultValue_=0;
 }

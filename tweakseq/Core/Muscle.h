@@ -39,6 +39,7 @@ class Muscle: public AlignmentTool
 		~Muscle();
 		
 		virtual void makeCommand(QString &, QString &, QString &, QStringList &);
+		virtual void makeDefaultCommand(QString &, QString &, QString &, QStringList &);
 		virtual void writeSettings(QDomDocument &,QDomElement &);
 		virtual void readSettings(QDomDocument &);
 		

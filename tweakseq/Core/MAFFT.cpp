@@ -69,6 +69,12 @@ void MAFFT::makeCommand(QString &fin, QString &, QString &exec, QStringList &arg
 	arglist << "--auto" << "--thread" << "-1" << fin; // output is to stdout
 }
 
+void MAFFT::makeDefaultCommand(QString &fin, QString &, QString &exec, QStringList &arglist)
+{
+	exec = executable();
+	arglist << "--auto" << "--thread" << "-1" << fin;
+}
+
 void MAFFT::writeSettings(QDomDocument &doc,QDomElement &parentElem)
 {
 	QDomElement pelem = doc.createElement("alignment_tool");

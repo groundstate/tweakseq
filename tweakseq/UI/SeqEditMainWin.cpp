@@ -67,6 +67,7 @@
 
 #include "Application.h"
 #include "AlignmentTool.h"
+#include "AlignmentCmdDlg.h"
 #include "Clipboard.h"
 #include "ClustalFile.h"
 #include "ClustalO.h"
@@ -838,11 +839,26 @@ void SeqEditMainWin::alignmentCommand()
 		}
 		i++;
 	}
-	QString newcmd = QInputDialog::getMultiLineText(this, tr("Alignment command"),
-                                         tr("Command:"),cmd, &ok);
-  if (ok && !newcmd.isEmpty())
-		project_->alignmentTool()->setCommand(newcmd);
+
+	args.clear();
+	project_->alignmentTool()->makeDefaultCommand(fin,fout,exec,args);
+	QString defcmd = exec + " ";
+	i=0;
+	while (i < args.size()){
+		if (args.at(i).startsWith('-')){
+			defcmd += '\n';
+			defcmd += args.at(i)+" ";
+		}
+		else{
+			defcmd += args.at(i)+" ";
+		}
+		i++;
+	}
 	
+	AlignmentCmdDlg dlg(cmd,defcmd,this);
+	if (dlg.exec()==QDialog::Accepted){
+		project_->alignmentTool()->setCommand(dlg.command());
+	}
 }
 
 void SeqEditMainWin::alignmentStarted()

@@ -50,6 +50,10 @@ class BoolProperty:public Property
 		void setValue(bool);
 		bool value(){return *theBool_;}
 	
+		void setDefaultValue(bool);
+		bool defaultValue();
+		bool isDefaultValue();
+		
 	private:
 		
 		void init();
@@ -57,6 +61,7 @@ class BoolProperty:public Property
 		bool *theBool_;
 		bool last_;
 		bool saved_;
+		bool defaultValue_;
 };
 
 #endif

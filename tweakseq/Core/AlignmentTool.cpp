@@ -59,6 +59,10 @@ void AlignmentTool::makeCommand(QString &, QString &, QString &, QStringList &)
 {
 }
 
+void AlignmentTool::makeDefaultCommand(QString &, QString &, QString &, QStringList &)
+{
+}
+
 void AlignmentTool::writeSettings(QDomDocument &,QDomElement &)
 {
 }

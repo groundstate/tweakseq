@@ -114,6 +114,22 @@ void BoolProperty::setValue(bool val)
 	notifyDependers();
 }
 
+void BoolProperty::setDefaultValue(bool val)
+{
+	defaultValue_=val;
+}
+
+bool BoolProperty::defaultValue()
+{
+	return defaultValue_;
+}
+
+bool BoolProperty::isDefaultValue()
+{
+	return (*theBool_ == defaultValue_);
+}
+
+		
 void BoolProperty::applyValue(bool val)
 {
 	if (val==*theBool_ || val==last_) return;
@@ -125,4 +141,5 @@ void BoolProperty::applyValue(bool val)
 void BoolProperty::init()
 {
 	theBool_=NULL;
+	defaultValue_=false;
 }

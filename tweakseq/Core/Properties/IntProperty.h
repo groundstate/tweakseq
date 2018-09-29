@@ -48,6 +48,10 @@ class IntProperty:public Property
 		int value(){return *theInt_;}
 		void setValue(int);
 
+		void setDefaultValue(int);
+		int defaultValue();
+		bool isDefaultValue();
+		
 		void setRange(int,int);
 		int min();
 		int max();
@@ -71,7 +75,8 @@ class IntProperty:public Property
 		int *theInt_;
 		int last_;
 		int saved_;
-
+		int defaultValue_;
+		
 		bool enumerated_;
 		QList<int> enumValues_;
 		QList<QString> enumDescriptions_;

@@ -47,6 +47,10 @@ class StringProperty:public Property
 		QString value(){return *theString_;}
 		void setValue(QString);
 
+		void setDefaultValue(QString);
+		QString defaultValue();
+		bool isDefaultValue();
+		
 	private:
 		
 		void init();
@@ -54,7 +58,7 @@ class StringProperty:public Property
 		QString *theString_;
 		QString last_;
 		QString saved_;
-		
+		QString defaultValue_;
 };
 
 #endif
