@@ -53,6 +53,7 @@ class BoolProperty:public Property
 		void setDefaultValue(bool);
 		bool defaultValue();
 		bool isDefaultValue();
+		void setToDefaultValue();
 		
 	private:
 		

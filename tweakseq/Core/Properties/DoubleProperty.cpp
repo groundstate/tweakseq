@@ -141,7 +141,11 @@ bool DoubleProperty::isDefaultValue()
 {
 	return (*theDouble_ == defaultValue_);
 }
-		
+	
+void DoubleProperty::setToDefaultValue()
+{
+	*theDouble_ = defaultValue_;
+}
 //
 //
 //

@@ -131,6 +131,11 @@ bool IntProperty::isDefaultValue()
 	return (defaultValue_==*theInt_);
 }
 
+void IntProperty::setToDefaultValue()
+{
+	*theInt_=defaultValue_;
+}
+
 void  IntProperty::setRange(int minVal,int maxVal)
 {
 	min_=minVal;

@@ -50,6 +50,7 @@ class StringProperty:public Property
 		void setDefaultValue(QString);
 		QString defaultValue();
 		bool isDefaultValue();
+		void setToDefaultValue();
 		
 	private:
 		

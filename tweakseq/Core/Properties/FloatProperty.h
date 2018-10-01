@@ -56,6 +56,7 @@ class FloatProperty:public Property
 		void setDefaultValue(float);
 		float defaultValue();
 		bool isDefaultValue();
+		void setToDefaultValue();
 		
 	private:
 		

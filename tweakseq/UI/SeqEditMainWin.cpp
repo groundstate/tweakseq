@@ -35,7 +35,6 @@
 
 #include <iostream>
 
-
 #include <QBoxLayout>
 #include <QClipboard>
 #include <QColor>
@@ -63,7 +62,6 @@
 #include <QTextStream>
 #include <QToolBar>
 #include <QToolButton>
-
 
 #include "Application.h"
 #include "AlignmentTool.h"
@@ -172,7 +170,6 @@ SeqEditMainWin::~SeqEditMainWin(){
 	if (alignmentFileOut_ != NULL) delete alignmentFileOut_;
 }
 
-
 void SeqEditMainWin::doAlignment(){
 }
 
@@ -237,7 +234,6 @@ void SeqEditMainWin::readSettings(QDomDocument &doc)
 //
 // Public slots
 //	
-
 
 //
 // Protected
@@ -796,6 +792,11 @@ void SeqEditMainWin::setupAlignmentActions()
 	if (NULL != alignmentProc_){
 		alignStopAction->setEnabled(alignmentProc_->state() == QProcess::Running);
 	}
+	if (NULL != alignmentToolMenuAction_)
+		alignmentMenu->removeAction(alignmentToolMenuAction_);
+	QMenu *m = project_->alignmentTool()->createCustomMenu();
+	if (m)
+		alignmentToolMenuAction_ = alignmentMenu->addMenu(m);
 }
 
 void SeqEditMainWin::alignmentAll()
@@ -1011,9 +1012,6 @@ void SeqEditMainWin::settingsAlignmentToolProperties()
 	delete ad;
 }
 
-
-
-
 void SeqEditMainWin::settingsSaveAppDefaults()
 {
 	app->saveDefaultSettings(project_);
@@ -1050,7 +1048,6 @@ void SeqEditMainWin::search(const QString &txt)
 		se->setSearchResults(results);
 	se->goToSearchResult(0);
 }
-
 
 void SeqEditMainWin::createContextMenu(const QPoint &)
 {
@@ -1166,6 +1163,7 @@ void SeqEditMainWin::init()
 	lastImportedFile="";
 	alignmentProc_=NULL;
 	alignmentFileOut_=alignmentFileIn_=NULL;
+	alignmentToolMenuAction_=NULL;
 }
 			
 void SeqEditMainWin::createActions()
@@ -1391,7 +1389,6 @@ void SeqEditMainWin::createActions()
 	addAction(settingsEditorFontAction);
 	connect(settingsEditorFontAction, SIGNAL(triggered()), this, SLOT(settingsEditorFont()));
 
-	
 	settingsAlignmentToolClustalOAction = new QAction( tr("ClustalO"), this);
 	settingsAlignmentToolClustalOAction->setStatusTip(tr("Select Clustal Omega"));
 	addAction(settingsAlignmentToolClustalOAction);
@@ -1422,7 +1419,7 @@ void SeqEditMainWin::createActions()
 	ag->addAction(settingsAlignmentToolMUSCLEAction);
 	ag->addAction(settingsAlignmentToolMAFFTAction);
 	
-	settingsAlignmentToolPropertiesAction = new QAction( project_->alignmentTool()->name(), this);
+	settingsAlignmentToolPropertiesAction = new QAction( project_->alignmentTool()->name()+" properties", this);
 	settingsAlignmentToolPropertiesAction->setStatusTip(tr("Alignment tool properties"));
 	addAction(settingsAlignmentToolPropertiesAction);
 	connect(settingsAlignmentToolPropertiesAction, SIGNAL(triggered()), this, SLOT(settingsAlignmentToolProperties()));
@@ -1451,7 +1448,6 @@ void SeqEditMainWin::createActions()
 	addAction(aboutAction);
 	connect(aboutAction, SIGNAL(triggered()), this, SLOT(helpAbout()));
 	
-
 	// Miscellaneous actions
 	createBookmarkAction = new QAction( tr("Create bookmark"), this);
 	createBookmarkAction->setStatusTip(tr("Bookmark the selected sequence"));
@@ -1579,7 +1575,11 @@ void SeqEditMainWin::createMenus()
 	alignmentMenu->addAction(alignStopAction);
 	alignmentMenu->addSeparator();
 	alignmentMenu->addAction(alignCommandAction);
-	
+	QMenu  *m = project_->alignmentTool()->createCustomMenu();
+	if (m){
+		alignmentToolMenuAction_=alignmentMenu->addMenu(m);
+	}
+		
 	//annotationMenu = menuBar()->addMenu(tr("Annotations"));
 	//connect(annotationMenu,SIGNAL(aboutToShow()),this,SLOT(setupAnnotationMenu()));
 	//annotationMenu->addAction(annotationConsensusAction);
@@ -1646,7 +1646,6 @@ void SeqEditMainWin::createMenus()
 	
 	
 }
-
 
 void SeqEditMainWin::createToolBars()
 {

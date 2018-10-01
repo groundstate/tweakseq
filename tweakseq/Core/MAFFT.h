@@ -29,6 +29,9 @@
 
 #include "AlignmentTool.h"
 
+class QAction;
+class QMenu;
+
 class BoolProperty;
 class DoubleProperty;
 class IntProperty;
@@ -36,6 +39,8 @@ class PropertiesDialog;
 
 class MAFFT: public AlignmentTool
 {
+	Q_OBJECT
+	
 	public:
 		
 		MAFFT();
@@ -47,17 +52,40 @@ class MAFFT: public AlignmentTool
 		virtual void readSettings(QDomDocument &);
 		
 		virtual PropertiesDialog * propertiesDialog(QWidget *);
+		virtual QMenu *createCustomMenu();
+	
+		enum Strategies {Auto,L_INSI_i,G_INSI_i,E_INSI_i,
+										 FFT_NS_i_2,DEFAULT_FFT_NS_2,FFT_NS_1,
+										 NW_NS_i,NW_NS_2,NW_NS_PartTree_1,
+										 Custom};
+	private slots:
+		
+		void setStrategy(QAction *);
 		
 	private:
 	
 		void init();
 		void getVersion();
+		void setPropertiesFromStrategy(int);
+		
+		QMenu *customMenu_;
+		QList<QAction *> actions_;
 		
 		int idealThreadCount_;
+		int strategy_;
 		
-		//BoolProperty *reorder_;
-		//DoubleProperty *gapOpeningPenalty_,*gapExtensionPenalty_;
 		IntProperty *numThreads_;
+		
+		BoolProperty *localPair_,*globalPair_;
+		IntProperty  *maxIterate_;
+		DoubleProperty  *ep_;
+		BoolProperty *genafpair_;
+		IntProperty  *retree_;
+		BoolProperty *nofft_;
+		BoolProperty *parttree_;
+		BoolProperty *auto_;
+		
+		QList<Property *> strategyProperties_;
 		
 };
 

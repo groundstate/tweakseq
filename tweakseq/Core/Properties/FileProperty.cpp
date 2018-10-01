@@ -154,7 +154,11 @@ bool FileProperty::isDefaultValue()
 	return (*fileName_==defaultValue_);
 }
 
-		
+void FileProperty::setToDefaultValue()
+{
+	*fileName_=defaultValue_;
+}
+
 bool FileProperty::exists()
 {
 	if (fileName_->isEmpty()) return false;

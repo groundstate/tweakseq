@@ -68,6 +68,10 @@ void Property::postLoadTidy()
 {
 }
 
+void Property::setToDefaultValue()
+{
+}
+
 void Property::saveValue()
 {
 }

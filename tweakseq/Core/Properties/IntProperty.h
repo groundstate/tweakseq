@@ -51,6 +51,7 @@ class IntProperty:public Property
 		void setDefaultValue(int);
 		int defaultValue();
 		bool isDefaultValue();
+		void setToDefaultValue();
 		
 		void setRange(int,int);
 		int min();

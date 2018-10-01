@@ -53,6 +53,8 @@ class Propertied
 		Propertied();
 		virtual ~Propertied();
 
+		void setPropertiesToDefaults();
+		
 		Property *getProperty(QString);
 		bool locked(){return locked_;}
 		void lock(bool l){locked_=l;}

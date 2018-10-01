@@ -148,6 +148,11 @@ bool FloatProperty::isDefaultValue()
 	return (defaultValue_=*theFloat_);
 }
 
+void FloatProperty::setToDefaultValue()
+{
+	*theFloat_ = defaultValue_;
+}
+
 		
 //
 //

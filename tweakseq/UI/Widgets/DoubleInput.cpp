@@ -43,7 +43,7 @@ DoubleInput::DoubleInput(QWidget *parent,QString name):
 	v=0.0;
 	setValue(v);
 	setMaxLength(12);
-	validator= new QDoubleValidator(DBL_MIN,DBL_MAX,8,this);
+	validator= new QDoubleValidator(-DBL_MAX,DBL_MAX,8,this);
 	connect(this,SIGNAL(returnPressed()),this,SLOT(handleValueChange()));
 }
 

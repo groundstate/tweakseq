@@ -53,6 +53,13 @@ Propertied::~Propertied()
 	
 }
 
+void Propertied::setPropertiesToDefaults()
+{
+	for (int i=0;i<properties_.size();i++){
+		properties_[i]->setToDefaultValue();
+	}
+}
+
 Property *Propertied::getProperty(QString pname)
 {
 	for (int i=0;i<properties_.size();i++){

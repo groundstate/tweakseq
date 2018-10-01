@@ -59,6 +59,8 @@ class Property
 		
 		virtual void postLoadTidy();
 		
+		virtual void setToDefaultValue();
+		
 		virtual void saveValue();
 		virtual void restoreSavedValue();
 		

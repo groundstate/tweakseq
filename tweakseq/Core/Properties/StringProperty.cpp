@@ -124,7 +124,11 @@ bool StringProperty::isDefaultValue()
 {
 	return (defaultValue_==*theString_);
 }
-		
+
+void StringProperty::setToDefaultValue()
+{
+}
+
 void StringProperty::init()
 {
 	theString_=NULL;

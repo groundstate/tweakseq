@@ -34,9 +34,9 @@ class DoubleProperty:public Property
 {
 	public:
 	
-		DoubleProperty(double *,Propertied *,QString,double fval=0,double minVal = DBL_MIN ,double maxVal = DBL_MAX,int s=0);
+		DoubleProperty(double *,Propertied *,QString,double fval=0,double minVal = -DBL_MAX ,double maxVal = DBL_MAX,int s=0);
 		DoubleProperty(DoubleProperty *);
-		DoubleProperty(double *,Propertied *,QDomElement &,double minVal = DBL_MIN ,double maxVal = DBL_MAX,int s=0);
+		DoubleProperty(double *,Propertied *,QDomElement &,double minVal = -DBL_MAX ,double maxVal = DBL_MAX,int s=0);
 		DoubleProperty();
 
 		virtual ~DoubleProperty();
@@ -56,6 +56,7 @@ class DoubleProperty:public Property
 		void setDefaultValue(double);
 		double defaultValue();
 		bool isDefaultValue();
+		void setToDefaultValue();
 		
 	private:
 		

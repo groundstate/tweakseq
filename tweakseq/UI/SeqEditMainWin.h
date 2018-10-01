@@ -174,6 +174,8 @@ private:
 	QAction  *settingsEditorFontAction;
 	QAction  *settingsAlignmentToolMAFFTAction,*settingsAlignmentToolMUSCLEAction,*settingsAlignmentToolClustalOAction;
 	
+	QAction  *alignmentToolMenuAction_;
+	
 	QList<QAction *> settingsViewActions;
 	QList<QAction *> settingsProteinColourMapActions;
 	QList<QAction *> settingsDNAColourMapActions;

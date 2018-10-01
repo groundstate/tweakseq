@@ -51,6 +51,7 @@ class FileProperty:public Property
 		void setDefaultValue(QString);
 		QString defaultValue();
 		bool isDefaultValue();
+		void setToDefaultValue();
 		
 		bool exists();
 		bool defined();

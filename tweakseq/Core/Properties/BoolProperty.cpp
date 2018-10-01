@@ -129,6 +129,11 @@ bool BoolProperty::isDefaultValue()
 	return (*theBool_ == defaultValue_);
 }
 
+void BoolProperty::setToDefaultValue()
+{
+	*theBool_ = defaultValue_;
+}
+
 		
 void BoolProperty::applyValue(bool val)
 {

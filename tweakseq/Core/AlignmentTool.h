@@ -28,17 +28,21 @@
 #ifndef __ALIGNMENT_TOOL_H_
 #define __ALIGNMENT_TOOL_H_
 
+#include <QObject>
 #include <QString>
 
 #include "Propertied.h"
 
 class QDomDocument;
 class QDomElement;
+class QMenu;
 
 class FileProperty;
 
-class AlignmentTool:public Propertied
+class AlignmentTool:public QObject, public Propertied
 {
+	Q_OBJECT
+	
 	public:
 		
 		AlignmentTool();
@@ -62,6 +66,8 @@ class AlignmentTool:public Propertied
 		virtual void writeSettings(QDomDocument &,QDomElement &);
 		virtual void readSettings(QDomDocument &);
 	
+		virtual QMenu *createCustomMenu(){return NULL;}
+		
 	protected:
 	
 		QString name_;
